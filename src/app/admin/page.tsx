@@ -1,0 +1,27 @@
+"use client";
+
+import Link from "next/link";
+import { Activity, ArrowUpRight, CalendarDays, Check, ChevronRight, FolderKanban, MoreHorizontal, ShieldCheck, Users, UserRoundCheck, TriangleAlert } from "lucide-react";
+import { useState } from "react";
+import { Pill, SectionHeading } from "@/components/app-shell";
+
+const metrics = [
+  { label: "Total members", value: "04.8k", change: "+12.4%", icon: Users, tone: "lime" },
+  { label: "Active this week", value: "1,286", change: "+8.2%", icon: Activity, tone: "cyan" },
+  { label: "Projects live", value: "72", change: "+14", icon: FolderKanban, tone: "coral" },
+  { label: "Open reports", value: "07", change: "Needs review", icon: TriangleAlert, tone: "violet" },
+];
+
+const members = [
+  ["Maya Chen", "@mayacodes", "AI Lab", "Active", "MC"],
+  ["Noah Williams", "@northstar", "Design", "Active", "NW"],
+  ["Sofia Reyes", "@sofiar", "Content", "Review", "SR"],
+  ["Ari Okafor", "@ariok", "Technology", "Active", "AO"],
+];
+
+const adminNav = ["Overview", "Users", "Projects", "Events", "Categories", "Badges", "Moderation", "Discord", "Roles & permissions", "Audit logs"];
+
+export default function AdminPage() {
+  const [active, setActive] = useState("Overview");
+  return <main className="admin-page"><header className="admin-header"><div><div className="eyebrow">Control room / 04</div><h1>Keep the room<br /><span>worth joining.</span></h1><p>One place to protect the culture, celebrate the work, and keep the network moving.</p></div><div className="admin-header-actions"><Link href="/" className="button button-ghost">Exit admin</Link><div className="admin-user"><span className="user-avatar">MC</span><span><strong>Maya Chen</strong><small>Super admin</small></span></div></div></header><div className="admin-layout"><aside className="admin-nav"><div className="admin-nav-label">Workspace</div>{adminNav.map((item, index) => <button key={item} className={active === item ? "active" : ""} onClick={() => setActive(item)}>{index === 0 ? <Activity size={15} /> : index === 1 ? <Users size={15} /> : index === 2 ? <FolderKanban size={15} /> : index === 3 ? <CalendarDays size={15} /> : index === 6 ? <ShieldCheck size={15} /> : <ChevronRight size={15} />}{item}</button>)}</aside><section className="admin-content"><div className="admin-content-top"><div><div className="eyebrow">{active}</div><h2>{active === "Overview" ? "Today at a glance." : `${active} management.`}</h2></div><button className="button button-primary">{active === "Overview" ? "Export report" : `Add ${active.toLowerCase()}`} <ArrowUpRight size={14} /></button></div>{active === "Overview" ? <><div className="admin-metrics">{metrics.map(({ label, value, change, icon: Icon, tone }) => <div className="admin-metric" key={label}><div className={`admin-metric-icon ${tone}`}><Icon size={17} /></div><span>{label}</span><strong>{value}</strong><small>{change}</small></div>)}</div><div className="admin-grid"><div className="admin-panel"><SectionHeading eyebrow="Community growth" title="Members over time" action={<button className="filter active">Last 30 days</button>} /><div className="chart"><div className="chart-line" /><div className="chart-labels"><span>01 SEP</span><span>08 SEP</span><span>15 SEP</span><span>22 SEP</span><span>30 SEP</span></div></div></div><div className="admin-panel"><SectionHeading eyebrow="Needs your attention" title="Moderation queue" action={<span className="section-link">7 open</span>} /><div className="queue-list"><div className="queue-item"><span className="queue-icon coral">!</span><div><strong>Project reported</strong><small>Unclear content · 12 min ago</small></div><MoreHorizontal size={16} /></div><div className="queue-item"><span className="queue-icon violet">!</span><div><strong>Profile flagged</strong><small>Spam links · 42 min ago</small></div><MoreHorizontal size={16} /></div><div className="queue-item"><span className="queue-icon cyan">!</span><div><strong>Event needs review</strong><small>New submission · 1 hr ago</small></div><MoreHorizontal size={16} /></div></div><button className="admin-text-button">Open moderation queue <ArrowUpRight size={13} /></button></div></div><div className="admin-panel admin-table-panel"><SectionHeading eyebrow="Latest members" title="The newest faces" action={<button className="admin-text-button">View all <ArrowUpRight size={13} /></button>} /><div className="admin-table"><div className="admin-table-head"><span>Member</span><span>Category</span><span>Status</span><span>Joined</span><span /></div>{members.map(([name, handle, category, status, initials]) => <div className="admin-table-row" key={handle}><div className="admin-member"><span className="admin-avatar">{initials}</span><span><strong>{name}</strong><small>{handle}</small></span></div><span><Pill tone={category === "AI Lab" ? "lime" : category === "Design" ? "coral" : "cyan"}>{category}</Pill></span><span className={status === "Review" ? "status-review" : "status-active"}>{status === "Active" ? <Check size={12} /> : <UserRoundCheck size={12} />}{status}</span><span className="muted-text">Today</span><MoreHorizontal size={16} color="var(--muted)" /></div>)}</div></div></> : <div className="admin-empty"><ShieldCheck size={25} /><h3>{active} is ready to manage.</h3><p>The permissions, filters, bulk actions, and audit history for this workspace live here.</p><button className="button button-primary">Open workspace <ArrowUpRight size={14} /></button></div>}</section></div></main>;
+}

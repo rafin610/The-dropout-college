@@ -1,0 +1,7 @@
+"use client";
+import { Search, SlidersHorizontal } from "lucide-react";
+import { categories, members } from "@/lib/data";
+import { MemberCard } from "@/components/cards";
+import { useState } from "react";
+
+export default function ExplorePage() { const [active, setActive] = useState("All members"); return <><div className="page-title"><div className="eyebrow">Explore the network</div><h1>Find your next<br /><span style={{ color: "var(--lime)" }}>interesting person.</span></h1><p>Search across disciplines, projects, and ambitions. The best collaborators are rarely looking for the same thing you are.</p></div><div className="toolbar"><div className="input-wrap"><Search size={15} /><input placeholder="Search members, skills, projects..." /></div><button className="filter"><SlidersHorizontal size={14} /> Filters</button></div><div className="filter-row" style={{ marginBottom: 24 }}>{["All members", ...categories.slice(0, 6).map(item => item.name)].map(label => <button key={label} className={`filter ${active === label ? "active" : ""}`} onClick={() => setActive(label)}>{label}</button>)}</div><div className="member-grid">{[...members, ...members].map((member, index) => <MemberCard key={`${member.handle}-${index}`} member={member} />)}</div></>; }

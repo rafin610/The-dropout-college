@@ -1,0 +1,5 @@
+import { Plus, Search } from "lucide-react";
+import { projects } from "@/lib/data";
+import { ProjectCard } from "@/components/cards";
+
+export default function ProjectsPage() { return <><div className="page-title"><div className="eyebrow">The project index</div><h1>Good ideas deserve<br /><span style={{ color: "var(--lime)" }}>good company.</span></h1><p>See what members are building, find a gap you can fill, and put your name next to something real.</p></div><div className="toolbar"><div className="input-wrap"><Search size={15} /><input placeholder="Search projects..." /></div><button className="button button-primary"><Plus size={15} /> Submit a project</button></div><div className="project-grid">{projects.concat(projects).map((project, index) => <ProjectCard key={`${project.name}-${index}`} project={project} />)}</div></>; }

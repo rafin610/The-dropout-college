@@ -1,0 +1,9 @@
+import { getCurrentUser } from "@/server/auth/current-user";
+import { toErrorResponse, ApiError } from "@/server/errors";
+import { createSupabaseServerClient } from "@/server/supabase/server";
+import { teamSchema } from "@/server/validation/resources";
+
+export const runtime = "nodejs";
+
+export async function GET(request: Request) { const requestId = request.headers.get("x-request-id") ?? crypto.randomUUID(); try { const supabase = await createSupabaseServerClient(); const { data, error } = await supabase.from("teams").select("*, team_members(profile_id, role)").order("created_at", { ascending: false }); if (error) throw error; return Response.json({ data, requestId }); } catch (error) { return toErrorResponse(error, requestId); } }
+export async function POST(request: Request) { const requestId = request.headers.get("x-request-id") ?? crypto.randomUUID(); try { const user = await getCurrentUser(); const parsed = teamSchema.safeParse(await request.json()); if (!parsed.success) throw new ApiError("VALIDATION_ERROR", "Team data is invalid.", 400); const supabase = await createSupabaseServerClient(); const { data, error } = await supabase.from("teams").insert({ owner_id: user.id, name: parsed.data.name, slug: parsed.data.slug, description: parsed.data.description, visibility: parsed.data.visibility }).select().single(); if (error) throw error; const membership = await supabase.from("team_members").insert({ team_id: data.id, profile_id: user.id, role: "owner" }); if (membership.error) throw membership.error; return Response.json({ data, requestId }, { status: 201 }); } catch (error) { return toErrorResponse(error, requestId); } }
