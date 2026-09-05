@@ -28,11 +28,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <Link href="/dashboard" className={`nav-item ${pathname === "/dashboard" ? "active" : ""}`}><LayoutDashboard size={17} strokeWidth={1.8} />Dashboard</Link>
         <Link href="/profile" className={`nav-item ${pathname === "/profile" ? "active" : ""}`}><Users size={17} strokeWidth={1.8} />My profile</Link>
         <div className="sidebar-spacer" />
-        <div className="sidebar-status"><span className="status-pulse" /><div><strong>Community online</strong><span>286 creators active</span></div></div>
+        <div className="sidebar-status"><span className="status-pulse" /><div><strong>Community online</strong><span>Live network</span></div></div>
         <Link href="https://discord.gg/3xfu5TMgF" target="_blank" rel="noreferrer" className="discord-mini"><span>Join Discord</span><span>↗</span></Link>
       </aside>
       <main className="main-content">
-        <header className="topbar"><button className="mobile-brand" onClick={() => setSearchOpen(false)}><Image src="/logo.svg" alt="The DropOut College" width={30} height={30} className="brand-logo" /><span>The DropOut College</span></button><div className="topbar-search"><Search size={16} /><span>Search the community</span><kbd>⌘ K</kbd></div><div className="topbar-actions"><button className="icon-button search-mobile" aria-label="Open search" onClick={() => setSearchOpen(true)}><Search size={18} /></button><button className="icon-button" aria-label="Notifications"><Bell size={18} /></button><Link href="/login" className="login-link">Sign in</Link><Link href="/profile" className="user-avatar">MC</Link></div></header>
+        <header className="topbar"><button className="mobile-brand" onClick={() => setSearchOpen(false)}><Image src="/logo.svg" alt="The DropOut College" width={30} height={30} className="brand-logo" /><span>The DropOut College</span></button><div className="topbar-search"><Search size={16} /><span>Search the community</span><kbd>⌘ K</kbd></div><div className="topbar-actions"><button className="icon-button search-mobile" aria-label="Open search" onClick={() => setSearchOpen(true)}><Search size={18} /></button><button className="icon-button" aria-label="Notifications"><Bell size={18} /></button><Link href="/login" className="login-link">Sign in</Link><Link href="/profile" className="login-link">Profile</Link></div></header>
         {searchOpen && <div className="mobile-search"><Search size={16} /><input autoFocus placeholder="Search members, projects, skills..." /><button onClick={() => setSearchOpen(false)} aria-label="Close search"><X size={18} /></button></div>}
         <div className="page-wrap">{children}</div>
       </main>
