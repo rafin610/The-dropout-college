@@ -20,7 +20,7 @@ export function getPublicEnv() {
   });
 
   if (!parsed.success) {
-    throw new ApiError("SERVICE_UNAVAILABLE", "The platform services are not configured yet.", 503);
+    throw new ApiError("SERVICE_UNAVAILABLE", "Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in the deployment environment.", 503);
   }
 
   return parsed.data;

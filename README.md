@@ -33,3 +33,23 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 # The-dropout-college
+
+## Supabase environment
+
+The application reads all dynamic data from the existing Supabase project. Configure these variables in Vercel for **Production**, **Preview**, and **Development**:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-public-key
+```
+
+Use the values from Supabase Dashboard -> Project Settings -> API. The anon key is safe for browser use when Row Level Security is enabled. Never add `SUPABASE_SERVICE_ROLE_KEY` to client code or expose it to the browser.
+
+After saving the variables, redeploy the latest commit. Verify the deployment with:
+
+```text
+https://your-domain/api/v1/health
+https://your-domain/api/v1/categories
+```
+
+The categories endpoint should return a JSON `data` array. An empty array is a valid empty database state; a `503` means the deployment variables are still missing.
