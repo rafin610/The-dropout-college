@@ -49,6 +49,7 @@ create table public.skills (
   category_id uuid references public.categories(id) on delete set null,
   slug text unique not null,
   name text unique not null,
+  is_active boolean not null default true,
   created_at timestamptz not null default now()
 );
 

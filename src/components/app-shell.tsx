@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Bell, Compass, FolderKanban, Home, LayoutDashboard, Search, Sparkles, Users, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 const nav = [
   { label: "Home", href: "/", icon: Home },
@@ -15,7 +16,27 @@ const nav = [
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [searchOpen, setSearchOpen] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    const supabase = createSupabaseBrowserClient();
+    if (!supabase) return;
+
+    void supabase.auth.getUser().then(({ data }) => setUserEmail(data.user?.email ?? null));
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => setUserEmail(session?.user?.email ?? null));
+    return () => authListener.subscription.unsubscribe();
+  }, []);
+
+  async function signOut() {
+    const supabase = createSupabaseBrowserClient();
+    if (!supabase) return;
+    await supabase.auth.signOut();
+    router.push("/");
+    router.refresh();
+  }
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -32,7 +53,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <Link href="https://discord.gg/3xfu5TMgF" target="_blank" rel="noreferrer" className="discord-mini"><span>Join Discord</span><span>↗</span></Link>
       </aside>
       <main className="main-content">
-        <header className="topbar"><button className="mobile-brand" onClick={() => setSearchOpen(false)}><Image src="/logo.svg" alt="The DropOut College" width={30} height={30} className="brand-logo" /><span>The DropOut College</span></button><div className="topbar-search"><Search size={16} /><span>Search the community</span><kbd>⌘ K</kbd></div><div className="topbar-actions"><button className="icon-button search-mobile" aria-label="Open search" onClick={() => setSearchOpen(true)}><Search size={18} /></button><button className="icon-button" aria-label="Notifications"><Bell size={18} /></button><Link href="/login" className="login-link">Sign in</Link><Link href="/profile" className="login-link">Profile</Link></div></header>
+        <header className="topbar"><button className="mobile-brand" onClick={() => setSearchOpen(false)}><Image src="/logo.svg" alt="The DropOut College" width={30} height={30} className="brand-logo" /><span>The DropOut College</span></button><div className="topbar-search"><Search size={16} /><span>Search the community</span><kbd>⌘ K</kbd></div><div className="topbar-actions"><button className="icon-button search-mobile" aria-label="Open search" onClick={() => setSearchOpen(true)}><Search size={18} /></button><button className="icon-button" aria-label="Notifications"><Bell size={18} /></button>{userEmail ? <><Link href="/profile" className="login-link">{userEmail}</Link><button className="login-link" onClick={signOut}>Sign out</button></> : <Link href="/login" className="login-link">Sign in</Link>}</div></header>
         {searchOpen && <div className="mobile-search"><Search size={16} /><input autoFocus placeholder="Search members, projects, skills..." /><button onClick={() => setSearchOpen(false)} aria-label="Close search"><X size={18} /></button></div>}
         <div className="page-wrap">{children}</div>
       </main>
