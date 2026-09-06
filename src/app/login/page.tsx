@@ -25,7 +25,7 @@ export default function LoginPage() {
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `https://the-dropout-college.vercel.app/auth/callback?next=${encodeURIComponent(searchParams.get("next") || "/dashboard")}` },
+      options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(searchParams.get("next") || "/dashboard")}` },
     });
 
     if (error) {
