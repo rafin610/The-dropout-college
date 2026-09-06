@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { Bell, Compass, FolderKanban, Home, LayoutDashboard, Search, Sparkles, Users, X } from "lucide-react";
+import { Bell, Compass, FolderKanban, Home, LayoutDashboard, Menu, Search, Sparkles, Users, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
@@ -18,6 +18,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [searchOpen, setSearchOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
 
   useEffect(() => {
@@ -43,7 +44,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <Link href="/" className="brand"><Image src="/logo.svg" alt="The DropOut College" width={30} height={30} className="brand-logo" /><span>The DropOut College</span></Link>
         <div className="eyebrow sidebar-eyebrow">The talent network</div>
         <nav className="nav-list" aria-label="Primary navigation">
-          {nav.map(({ label, href, icon: Icon }) => <Link key={href} href={href} className={`nav-item ${pathname === href ? "active" : ""}`}><Icon size={17} strokeWidth={1.8} />{label}</Link>)}
+          {nav.map(({ label, href, icon: Icon }) => (
+            <Link key={href} href={href} className={`nav-item ${pathname === href ? "active" : ""}`}>
+              <Icon size={17} strokeWidth={1.8} />{label}
+            </Link>
+          ))}
         </nav>
         <div className="sidebar-group-label">Your space</div>
         <Link href="/dashboard" className={`nav-item ${pathname === "/dashboard" ? "active" : ""}`}><LayoutDashboard size={17} strokeWidth={1.8} />Dashboard</Link>
@@ -52,12 +57,43 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="sidebar-status"><span className="status-pulse" /><div><strong>Community online</strong><span>Live network</span></div></div>
         <Link href="https://discord.gg/3xfu5TMgF" target="_blank" rel="noreferrer" className="discord-mini"><span>Join Discord</span><span>↗</span></Link>
       </aside>
+
       <main className="main-content">
-        <header className="topbar"><button className="mobile-brand" onClick={() => setSearchOpen(false)}><Image src="/logo.svg" alt="The DropOut College" width={30} height={30} className="brand-logo" /><span>The DropOut College</span></button><div className="topbar-search"><Search size={16} /><span>Search the community</span><kbd>⌘ K</kbd></div><div className="topbar-actions"><button className="icon-button search-mobile" aria-label="Open search" onClick={() => setSearchOpen(true)}><Search size={18} /></button><button className="icon-button" aria-label="Notifications"><Bell size={18} /></button>{userEmail ? <><Link href="/profile" className="login-link">{userEmail}</Link><button className="login-link" onClick={signOut}>Sign out</button></> : <Link href="/login" className="login-link">Sign in</Link>}</div></header>
+        <header className="topbar">
+          <button className="mobile-menu-toggle" aria-label="Open menu" onClick={() => setMobileMenuOpen((value) => !value)}>
+            {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
+          </button>
+          <button className="mobile-brand" onClick={() => setSearchOpen(false)}>
+            <Image src="/logo.svg" alt="The DropOut College" width={30} height={30} className="brand-logo" /><span>The DropOut College</span>
+          </button>
+          <div className="topbar-search"><Search size={16} /><span>Search the community</span><kbd>⌘ K</kbd></div>
+          <div className="topbar-actions">
+            <button className="icon-button search-mobile" aria-label="Open search" onClick={() => setSearchOpen(true)}><Search size={18} /></button>
+            <button className="icon-button" aria-label="Notifications"><Bell size={18} /></button>
+            {userEmail ? <>
+              <Link href="/profile" className="login-link">{userEmail}</Link>
+              <button className="login-link" onClick={signOut}>Sign out</button>
+            </> : <Link href="/login" className="login-link">Sign in</Link>}
+          </div>
+        </header>
+
+        {mobileMenuOpen && (
+          <div className="mobile-menu-panel" aria-label="Mobile navigation">
+            {nav.map(({ label, href, icon: Icon }) => (
+              <Link key={href} href={href} className={pathname === href ? "active" : ""} onClick={() => setMobileMenuOpen(false)}>
+                <Icon size={18} />
+                <span>{label}</span>
+              </Link>
+            ))}
+            <Link href="/dashboard" className={pathname === "/dashboard" ? "active" : ""} onClick={() => setMobileMenuOpen(false)}><LayoutDashboard size={18} /><span>Dashboard</span></Link>
+            <Link href="/profile" className={pathname === "/profile" ? "active" : ""} onClick={() => setMobileMenuOpen(false)}><Users size={18} /><span>My profile</span></Link>
+          </div>
+        )}
+
         {searchOpen && <div className="mobile-search"><Search size={16} /><input autoFocus placeholder="Search members, projects, skills..." /><button onClick={() => setSearchOpen(false)} aria-label="Close search"><X size={18} /></button></div>}
         <div className="page-wrap">{children}</div>
       </main>
-      <nav className="mobile-nav">{nav.slice(0, 4).map(({ label, href, icon: Icon }) => <Link key={href} href={href} className={pathname === href ? "active" : ""}><Icon size={18} /><span>{label}</span></Link>)}</nav>
+      <nav className="mobile-nav">{nav.map(({ label, href, icon: Icon }) => <Link key={href} href={href} className={pathname === href ? "active" : ""}><Icon size={18} /><span>{label}</span></Link>)}</nav>
     </div>
   );
 }

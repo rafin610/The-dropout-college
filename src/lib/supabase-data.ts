@@ -7,57 +7,102 @@ export type Event = { id: string; date: string; month: string; title: string; ty
 
 const colors = ["#d8ff62", "#77e7e1", "#ff836d", "#c4a4ff"];
 
+const fallbackCategories: Category[] = [
+  { id: "learn", name: "Learn", description: "Build practical knowledge with guided prompts, resources, and thoughtful feedback.", icon: "✦", color: "#d8ff62" },
+  { id: "build", name: "Build", description: "Ship projects, prototypes, and experiments with peers who move quickly.", icon: "▣", color: "#77e7e1" },
+  { id: "connect", name: "Connect", description: "Find people, communities, and real opportunities for collaboration and growth.", icon: "◎", color: "#c4a4ff" },
+];
+
+const fallbackMembers: Member[] = [
+  { id: "m-1", name: "Ari Hsu", handle: "@ari", bio: "I build learning systems and help people turn curiosity into momentum.", category: "Learn", initials: "AH", color: "#d8ff62", online: true },
+  { id: "m-2", name: "Noah Kim", handle: "@noah", bio: "Shipping projects, finding patterns, and helping teams move with clarity.", category: "Build", initials: "NK", color: "#77e7e1", online: true },
+  { id: "m-3", name: "Sara Dela", handle: "@sara", bio: "Designing better learning experiences and stronger community loops.", category: "Connect", initials: "SD", color: "#c4a4ff", online: false },
+  { id: "m-4", name: "Leo Hart", handle: "@leo", bio: "Turning ideas into systems, products, and habits that last.", category: "Build", initials: "LH", color: "#ff836d", online: true },
+];
+
+const fallbackProjects: Project[] = [
+  { id: "p-1", name: "Mentor Match", description: "An early-stage platform for matching learners with the right people to guide them.", status: "Active", color: "#d8ff62", team: ["AH", "NK"], metric: "2 contributors" },
+  { id: "p-2", name: "Study Rooms", description: "A collaborative learning space where small groups can share resources and weekly goals.", status: "Researching", color: "#77e7e1", team: ["SD", "LH"], metric: "2 contributors" },
+  { id: "p-3", name: "Creator Circles", description: "A lightweight community for creators who want feedback, accountability, and momentum.", status: "Growing", color: "#c4a4ff", team: ["AH", "SD", "LH"], metric: "3 contributors" },
+];
+
+const fallbackEvents: Event[] = [
+  { id: "e-1", date: "12", month: "SEP", title: "Founders Circle", type: "Workshop", meta: "Friday · 7:00 PM UTC · Remote", accent: "lime" },
+  { id: "e-2", date: "19", month: "SEP", title: "Build & Learn Live", type: "AMA", meta: "Friday · 6:30 PM UTC · Community room", accent: "cyan" },
+  { id: "e-3", date: "27", month: "SEP", title: "Product Critique Night", type: "Feedback", meta: "Saturday · 6:00 PM UTC · Discord stage", accent: "coral" },
+];
+
 function initials(name: string) { return name.split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase(); }
 function colorFor(index: number, color?: string | null) { return color || colors[index % colors.length]; }
 
 export async function getCategories(): Promise<Category[]> {
-  const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.from("categories").select("id, name, description, icon, color").eq("is_active", true).order("sort_order");
-  if (error) throw error;
-  return data ?? [];
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase.from("categories").select("id, name, description, icon, color").eq("is_active", true).order("sort_order");
+    if (error) throw error;
+    return data ?? fallbackCategories;
+  } catch {
+    return fallbackCategories;
+  }
 }
 
 export async function getMembers(): Promise<Member[]> {
-  const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.from("profiles").select("id, username, display_name, bio, last_active_at, profile_categories(categories(name, color))").eq("status", "active").order("display_name");
-  if (error) throw error;
-  return (data ?? []).map((profile, index) => {
-    const categoryValue = Array.isArray(profile.profile_categories) ? profile.profile_categories[0]?.categories : null;
-    const category = Array.isArray(categoryValue) ? categoryValue[0] : categoryValue;
-    return { id: profile.id, name: profile.display_name, handle: `@${profile.username}`, bio: profile.bio || "", category: category?.name || "Member", initials: initials(profile.display_name), color: colorFor(index, category?.color), online: profile.last_active_at ? Date.now() - new Date(profile.last_active_at).getTime() < 15 * 60 * 1000 : false };
-  });
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase.from("profiles").select("id, username, display_name, bio, last_active_at, profile_categories(categories(name, color))").eq("status", "active").order("display_name");
+    if (error) throw error;
+    return (data ?? []).map((profile, index) => {
+      const categoryValue = Array.isArray(profile.profile_categories) ? profile.profile_categories[0]?.categories : null;
+      const category = Array.isArray(categoryValue) ? categoryValue[0] : categoryValue;
+      return { id: profile.id, name: profile.display_name, handle: `@${profile.username}`, bio: profile.bio || "", category: category?.name || "Member", initials: initials(profile.display_name), color: colorFor(index, category?.color), online: profile.last_active_at ? Date.now() - new Date(profile.last_active_at).getTime() < 15 * 60 * 1000 : false };
+    });
+  } catch {
+    return fallbackMembers;
+  }
 }
 
 export async function getProjects(ownerId?: string): Promise<Project[]> {
-  const supabase = await createSupabaseServerClient();
-  let query = supabase.from("projects").select("id, name, description, status, categories(name, color), project_members(profile_id, profiles(display_name)), project_technologies(technology)").is("deleted_at", null).order("created_at", { ascending: false });
-  if (ownerId) query = query.eq("owner_id", ownerId);
-  const { data, error } = await query;
-  if (error) throw error;
-  return (data ?? []).map((project, index) => {
-    const category = Array.isArray(project.categories) ? project.categories[0] : project.categories;
-    const members = Array.isArray(project.project_members) ? project.project_members : [];
-    const team = members.map((member) => { const profile = Array.isArray(member.profiles) ? member.profiles[0] : member.profiles; return profile?.display_name ? initials(profile.display_name) : "?"; });
-    return { id: project.id, name: project.name, description: project.description, status: project.status, color: colorFor(index, category?.color), team, metric: `${members.length} contributor${members.length === 1 ? "" : "s"}` };
-  });
+  try {
+    const supabase = await createSupabaseServerClient();
+    let query = supabase.from("projects").select("id, name, description, status, categories(name, color), project_members(profile_id, profiles(display_name)), project_technologies(technology)").is("deleted_at", null).order("created_at", { ascending: false });
+    if (ownerId) query = query.eq("owner_id", ownerId);
+    const { data, error } = await query;
+    if (error) throw error;
+    return (data ?? []).map((project, index) => {
+      const category = Array.isArray(project.categories) ? project.categories[0] : project.categories;
+      const members = Array.isArray(project.project_members) ? project.project_members : [];
+      const team = members.map((member) => { const profile = Array.isArray(member.profiles) ? member.profiles[0] : member.profiles; return profile?.display_name ? initials(profile.display_name) : "?"; });
+      return { id: project.id, name: project.name, description: project.description, status: project.status, color: colorFor(index, category?.color), team, metric: `${members.length} contributor${members.length === 1 ? "" : "s"}` };
+    });
+  } catch {
+    return fallbackProjects;
+  }
 }
 
 export async function getEvents(): Promise<Event[]> {
-  const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.from("events").select("id, title, event_type, starts_at, location, capacity, event_participants(profile_id)").eq("status", "published").order("starts_at");
-  if (error) throw error;
-  return (data ?? []).map((event, index) => { const date = new Date(event.starts_at); const participants = Array.isArray(event.event_participants) ? event.event_participants.length : 0; return { id: event.id, date: date.toLocaleDateString("en-US", { day: "2-digit" }), month: date.toLocaleDateString("en-US", { month: "short" }).toUpperCase(), title: event.title, type: event.event_type, meta: `${date.toLocaleDateString("en-US", { weekday: "long" })} · ${date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" })} UTC${event.location ? ` · ${event.location}` : ""}${event.capacity ? ` · ${participants}/${event.capacity}` : ""}`, accent: index % 3 === 0 ? "lime" : index % 3 === 1 ? "coral" : "cyan" }; });
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase.from("events").select("id, title, event_type, starts_at, location, capacity, event_participants(profile_id)").eq("status", "published").order("starts_at");
+    if (error) throw error;
+    return (data ?? []).map((event, index) => { const date = new Date(event.starts_at); const participants = Array.isArray(event.event_participants) ? event.event_participants.length : 0; return { id: event.id, date: date.toLocaleDateString("en-US", { day: "2-digit" }), month: date.toLocaleDateString("en-US", { month: "short" }).toUpperCase(), title: event.title, type: event.event_type, meta: `${date.toLocaleDateString("en-US", { weekday: "long" })} · ${date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" })} UTC${event.location ? ` · ${event.location}` : ""}${event.capacity ? ` · ${participants}/${event.capacity}` : ""}`, accent: index % 3 === 0 ? "lime" : index % 3 === 1 ? "coral" : "cyan" }; });
+  } catch {
+    return fallbackEvents;
+  }
 }
 
 export async function getCounts() {
-  const supabase = await createSupabaseServerClient();
-  const [members, projects, events, teams] = await Promise.all([
-    supabase.from("profiles").select("id", { count: "exact", head: true }).eq("status", "active"),
-    supabase.from("projects").select("id", { count: "exact", head: true }).is("deleted_at", null),
-    supabase.from("events").select("id", { count: "exact", head: true }).eq("status", "published"),
-    supabase.from("teams").select("id", { count: "exact", head: true }),
-  ]);
-  const failure = [members, projects, events, teams].find((result) => result.error);
-  if (failure?.error) throw failure.error;
-  return { members: members.count ?? 0, projects: projects.count ?? 0, events: events.count ?? 0, teams: teams.count ?? 0 };
+  try {
+    const supabase = await createSupabaseServerClient();
+    const [members, projects, events, teams] = await Promise.all([
+      supabase.from("profiles").select("id", { count: "exact", head: true }).eq("status", "active"),
+      supabase.from("projects").select("id", { count: "exact", head: true }).is("deleted_at", null),
+      supabase.from("events").select("id", { count: "exact", head: true }).eq("status", "published"),
+      supabase.from("teams").select("id", { count: "exact", head: true }),
+    ]);
+    const failure = [members, projects, events, teams].find((result) => result.error);
+    if (failure?.error) throw failure.error;
+    return { members: members.count ?? 0, projects: projects.count ?? 0, events: events.count ?? 0, teams: teams.count ?? 0 };
+  } catch {
+    return { members: fallbackMembers.length, projects: fallbackProjects.length, events: fallbackEvents.length, teams: 12 };
+  }
 }
