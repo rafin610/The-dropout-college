@@ -4,9 +4,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, LoaderCircle } from "lucide-react";
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -23,7 +25,7 @@ export default function LoginPage() {
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback?next=/dashboard` },
+      options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(searchParams.get("next") || "/dashboard")}` },
     });
 
     if (error) {
