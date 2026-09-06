@@ -7,9 +7,9 @@
 
 -- Sample Categories (if not already present)
 insert into public.categories (id, slug, name, description, icon, color, is_active, sort_order) values
-  ('cat-learn', 'learn', 'Learn', 'Build practical knowledge with guided prompts, resources, and thoughtful feedback.', '✦', '#d8ff62', true, 1),
-  ('cat-build', 'build', 'Build', 'Ship projects, prototypes, and experiments with peers who move quickly.', '▣', '#77e7e1', true, 2),
-  ('cat-connect', 'connect', 'Connect', 'Find people, communities, and real opportunities for collaboration and growth.', '◎', '#c4a4ff', true, 3)
+  (gen_random_uuid(), 'learn', 'Learn', 'Build practical knowledge with guided prompts, resources, and thoughtful feedback.', 'spark', '#d8ff62', true, 1),
+  (gen_random_uuid(), 'build', 'Build', 'Ship projects, prototypes, and experiments with peers who move quickly.', 'box', '#77e7e1', true, 2),
+  (gen_random_uuid(), 'connect', 'Connect', 'Find people, communities, and real opportunities for collaboration and growth.', 'users', '#c4a4ff', true, 3)
 on conflict (slug) do nothing;
 
 -- Sample Skills
