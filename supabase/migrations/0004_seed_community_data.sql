@@ -44,6 +44,7 @@ insert into public.permissions (key, description) values
 on conflict (key) do nothing;
 
 -- Connect admin roles to permissions (if not already done)
+-- Keep these mappings idempotent so a partially seeded live database can be repaired.
 insert into public.admin_role_permissions (role_id, permission_id)
 select 
   (select id from public.admin_roles where slug = 'super_admin'),

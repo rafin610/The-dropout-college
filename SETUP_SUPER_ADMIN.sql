@@ -32,7 +32,17 @@ INSERT INTO public.permissions (key, description) VALUES
 ON CONFLICT (key) DO NOTHING;
 
 -- ============================================================================
--- STEP 3: Assign Super Admin to You
+-- STEP 3: Connect Super Admin to all permissions
+-- ============================================================================
+INSERT INTO public.admin_role_permissions (role_id, permission_id)
+SELECT roles.id, permissions.id
+FROM public.admin_roles roles
+CROSS JOIN public.permissions permissions
+WHERE roles.slug = 'super_admin'
+ON CONFLICT DO NOTHING;
+
+-- ============================================================================
+-- STEP 4: Assign Super Admin to You
 -- ============================================================================
 INSERT INTO public.user_admin_roles (user_id, role_id)
 SELECT 
@@ -43,7 +53,7 @@ WHERE slug = 'super_admin'
 ON CONFLICT DO NOTHING;
 
 -- ============================================================================
--- STEP 4: Verify Your Admin Status
+-- STEP 5: Verify Your Admin Status
 -- ============================================================================
 SELECT 
   u.username, 
