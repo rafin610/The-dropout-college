@@ -7,7 +7,9 @@ import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
-const CANONICAL_SITE_URL = "https://the-dropout-college.vercel.app";
+// Vercel redirects the apex project domain to this stable team deployment alias.
+// OAuth must start and finish on the same host so Supabase's PKCE verifier cookie survives.
+const CANONICAL_SITE_URL = "https://the-dropout-college-ahmedrafin014-9807s-projects.vercel.app";
 
 function LoginForm() {
   const router = useRouter();
