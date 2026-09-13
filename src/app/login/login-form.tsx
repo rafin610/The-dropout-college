@@ -7,6 +7,8 @@ import { useState, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
+const OAUTH_SITE_URL = "https://the-dropout-college-ahmedrafin014-9807s-projects.vercel.app";
+
 function GoogleIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -81,8 +83,7 @@ export function LoginForm({
 
     try {
       const supabase = createSupabaseBrowserClient();
-      const origin = typeof window !== "undefined" ? window.location.origin : "";
-      const redirectTo = `${origin}/auth/callback?next=${encodeURIComponent(nextUrl)}`;
+      const redirectTo = `${OAUTH_SITE_URL}/auth/callback?next=${encodeURIComponent(nextUrl)}`;
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
