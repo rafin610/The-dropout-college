@@ -2,10 +2,18 @@ import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/server/supabase/update-session";
 
 export async function proxy(request: NextRequest) {
-  if (request.nextUrl.pathname === "/" && request.nextUrl.searchParams.has("code")) {
+  // If OAuth callback hits the root URL, forward all parameters to /auth/callback
+  if (
+    request.nextUrl.pathname === "/" &&
+    (request.nextUrl.searchParams.has("code") || request.nextUrl.searchParams.has("error"))
+  ) {
     const callbackUrl = new URL("/auth/callback", request.url);
-    callbackUrl.searchParams.set("code", request.nextUrl.searchParams.get("code") || "");
-    callbackUrl.searchParams.set("next", request.nextUrl.searchParams.get("next") || "/dashboard");
+    request.nextUrl.searchParams.forEach((val, key) => {
+      callbackUrl.searchParams.set(key, val);
+    });
+    if (!callbackUrl.searchParams.has("next")) {
+      callbackUrl.searchParams.set("next", "/dashboard");
+    }
     return NextResponse.redirect(callbackUrl);
   }
 

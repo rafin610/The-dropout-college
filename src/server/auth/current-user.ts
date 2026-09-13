@@ -44,26 +44,44 @@ export async function ensureUserProfile(user: User) {
     // 2. Check if profile already exists
     const { data: existingProfile } = await supabase
       .from("profiles")
-      .select("id")
+      .select("id, avatar_url, display_name")
       .eq("id", user.id)
       .maybeSingle();
+
+    const googleAvatar =
+      (user.user_metadata?.avatar_url as string | undefined) ||
+      (user.user_metadata?.picture as string | undefined) ||
+      null;
 
     if (!existingProfile) {
       const emailPrefix = (user.email?.split("@")[0] || "member").replace(/[^a-zA-Z0-9_]/g, "_").toLowerCase();
       const randomSuffix = user.id.slice(0, 4);
       const username = `${emailPrefix}_${randomSuffix}`;
-      const displayName = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split("@")[0] || "Community Member";
-      const avatarUrl = user.user_metadata?.avatar_url || user.user_metadata?.picture || null;
+      const displayName =
+        (user.user_metadata?.full_name as string | undefined) ||
+        (user.user_metadata?.name as string | undefined) ||
+        user.email?.split("@")[0] ||
+        "Community Member";
 
       await supabase.from("profiles").upsert({
         id: user.id,
         username,
         display_name: displayName,
-        avatar_url: avatarUrl,
+        avatar_url: googleAvatar,
         status: "active",
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
+        last_active_at: new Date().toISOString(),
       }, { onConflict: "id" });
+    } else {
+      // Existing user: safely update last_active_at and fill missing avatar without overwriting custom data
+      const updates: Record<string, unknown> = {
+        last_active_at: new Date().toISOString(),
+      };
+      if (!existingProfile.avatar_url && googleAvatar) {
+        updates.avatar_url = googleAvatar;
+      }
+      await supabase.from("profiles").update(updates).eq("id", user.id);
     }
   } catch (err) {
     console.error("Failed to ensure user profile:", err);
