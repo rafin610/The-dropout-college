@@ -1,21 +1,93 @@
-/* eslint-disable react-hooks/error-boundaries */
 import Link from "next/link";
-import { Code2 as Github, Globe, AtSign as Linkedin } from "lucide-react";
-import { getCurrentUser } from "@/server/auth/current-user";
+import { getOptionalUser, ensureUserProfile } from "@/server/auth/current-user";
 import { createSupabaseServerClient } from "@/server/supabase/server";
 import { getProjects } from "@/lib/supabase-data";
-import { ProjectCard } from "@/components/cards";
-import { Pill, SectionHeading } from "@/components/app-shell";
+import { ProfileClient, type ProfileData } from "@/app/profile/profile-client";
 
 export const dynamic = "force-dynamic";
 
-export default async function ProfilePage() {
-  try {
-    const user = await getCurrentUser();
-    const supabase = await createSupabaseServerClient();
-    const [{ data: profile }, { data: links }, projects] = await Promise.all([supabase.from("profiles").select("id, username, display_name, avatar_url, bio, created_at, profile_categories(categories(name)), profile_skills(skills(name))").eq("id", user.id).maybeSingle(), supabase.from("social_links").select("platform, url").eq("profile_id", user.id), getProjects(user.id)]);
-    if (!profile) return <section className="panel"><h2>Profile not found</h2><p className="member-bio">Complete your profile to appear in the community.</p></section>;
-    const skills = (profile.profile_skills ?? []).flatMap((item) => { const skill = item.skills as unknown as { name?: string } | { name?: string }[] | null; return Array.isArray(skill) ? skill.flatMap((entry) => entry.name ? [entry.name] : []) : skill?.name ? [skill.name] : []; });
-    return <><div className="profile-header"><div className="profile-large">{profile.display_name.slice(0, 2).toUpperCase()}</div><div><div className="eyebrow">Member since {new Date(profile.created_at).getFullYear()}</div><h1>{profile.display_name}</h1><p>@{profile.username}</p></div><button className="button button-ghost" style={{ marginLeft: "auto" }}>Edit profile</button></div><div className="profile-layout"><div><section className="panel"><SectionHeading eyebrow="About" title={profile.bio ? "About" : "No bio yet"} /><p className="hero-copy">{profile.bio || "Add a short introduction to help members get to know you."}</p><div className="skill-cloud">{skills.length ? skills.map((skill) => <Pill key={skill} tone="lime">{skill}</Pill>) : <span className="muted-text">No skills added yet.</span>}</div><div className="skill-cloud" style={{ marginTop: 24 }}>{(links ?? []).map((link) => <Link href={link.url} className="section-link" key={link.platform}>{link.platform === "github" ? <Github size={14} /> : link.platform === "linkedin" ? <Linkedin size={14} /> : <Globe size={14} />} {link.platform}</Link>)}</div></section><section className="section"><SectionHeading eyebrow="Selected work" title="Projects" action={<Link href="/projects" className="section-link">View all</Link>} />{projects.length ? <div className="project-grid">{projects.slice(0, 2).map((project) => <ProjectCard key={project.id} project={project} />)}</div> : <p className="muted-text">No projects added yet.</p>}</section></div></div></>;
-  } catch { return <section className="panel"><h2>Unable to load your profile</h2><p className="member-bio">Please sign in and try again.</p></section>; }
+export default async function ProfilePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ member?: string }>;
+}) {
+  const { member: memberId } = await searchParams;
+  const currentUser = await getOptionalUser();
+
+  const supabase = await createSupabaseServerClient();
+  let targetUserId = memberId;
+
+  if (!targetUserId) {
+    if (!currentUser) {
+      return (
+        <section className="panel" style={{ maxWidth: 540, margin: "40px auto", textAlign: "center" }}>
+          <div className="eyebrow" style={{ color: "var(--lime)" }}>Community Profile</div>
+          <h2 style={{ fontSize: 28, margin: "14px 0" }}>Sign in to view your profile</h2>
+          <p className="member-bio" style={{ margin: "0 0 24px" }}>
+            Create your profile, showcase your projects, and connect with other learners across the talent network.
+          </p>
+          <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
+            <Link href="/login?next=/profile" className="button button-primary">
+              Sign in
+            </Link>
+            <Link href="/explore" className="button button-ghost">
+              Browse community
+            </Link>
+          </div>
+        </section>
+      );
+    }
+    targetUserId = currentUser.id;
+    await ensureUserProfile(currentUser);
+  }
+
+  // Fetch target profile
+  const [{ data: profile }, { data: links }, projects] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("id, username, display_name, avatar_url, bio, created_at, profile_categories(categories(name)), profile_skills(skills(name))")
+      .or(`id.eq.${targetUserId},username.eq.${targetUserId}`)
+      .maybeSingle(),
+    supabase.from("social_links").select("platform, url").eq("profile_id", targetUserId),
+    getProjects(targetUserId),
+  ]);
+
+  if (!profile) {
+    return (
+      <section className="panel" style={{ maxWidth: 540, margin: "40px auto", textAlign: "center" }}>
+        <div className="eyebrow" style={{ color: "var(--coral)" }}>Not Found</div>
+        <h2 style={{ fontSize: 26, margin: "14px 0" }}>Member profile not found</h2>
+        <p className="member-bio" style={{ margin: "0 0 24px" }}>
+          The requested member could not be located in the community directory.
+        </p>
+        <Link href="/explore" className="button button-ghost">
+          Back to Explore
+        </Link>
+      </section>
+    );
+  }
+
+  const rawSkills = profile.profile_skills ?? [];
+  const skills = (rawSkills as Array<{ skills?: unknown }>).flatMap((item) => {
+    const skill = item.skills as { name?: string } | Array<{ name?: string }> | null;
+    return Array.isArray(skill)
+      ? skill.flatMap((entry) => (entry.name ? [entry.name] : []))
+      : skill?.name ? [skill.name] : [];
+  });
+
+  const profileData: ProfileData = {
+    id: profile.id,
+    username: profile.username,
+    displayName: profile.display_name,
+    avatarUrl: profile.avatar_url,
+    bio: profile.bio,
+    createdAt: profile.created_at,
+    skills,
+    links: (links ?? []).map((l) => ({ platform: l.platform, url: l.url })),
+    projects,
+  };
+
+  const isOwner = currentUser?.id === profile.id;
+
+  return <ProfileClient profile={profileData} isOwner={isOwner} />;
 }

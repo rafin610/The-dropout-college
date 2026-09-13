@@ -35,6 +35,9 @@ export async function GET(request: Request) {
     return Response.json({
       data: (data ?? []).map((row) => {
         const rowUser = Array.isArray(row.users) ? row.users[0] : row.users;
+        const rawRoles = Array.isArray(row.user_roles) ? row.user_roles : row.user_roles ? [row.user_roles] : [];
+        const roles = rawRoles.map((entry: { role?: string } | null) => entry?.role).filter(Boolean) as string[];
+
         return {
           id: row.id,
           displayName: row.display_name,
@@ -43,7 +46,7 @@ export async function GET(request: Request) {
           status: row.status ?? "active",
           accountStatus: rowUser?.account_status ?? "active",
           createdAt: row.created_at,
-          roles: Array.isArray(row.user_roles) ? row.user_roles.map((entry: any) => entry.role) : [],
+          roles: roles.length ? roles : ["member"],
         };
       }),
       pagination: { page, pageSize, total: count ?? 0 },
@@ -63,15 +66,24 @@ export async function PUT(request: Request) {
     const { userId, status, role } = payload ?? {};
     if (!userId) throw new Error("A user ID is required.");
 
+    const validStatuses = ["active", "suspended", "deleted"];
+    const validRoles = ["member", "mentor", "event_organizer", "moderator", "admin", "super_admin"];
+
     const supabase = await createSupabaseServerClient();
-    if (status) {
+    if (status && validStatuses.includes(status)) {
       await supabase.from("profiles").update({ status, updated_at: new Date().toISOString() }).eq("id", userId);
-      await supabase.from("users").update({ account_status: status, updated_at: new Date().toISOString() }).eq("id", userId);
+      try {
+        await supabase.from("users").update({ account_status: status, updated_at: new Date().toISOString() }).eq("id", userId);
+      } catch {
+        // Continue if public.users is not accessible
+      }
     }
 
-    if (role) {
+    if (role && validRoles.includes(role)) {
       await supabase.from("user_roles").delete().eq("profile_id", userId);
-      await supabase.from("user_roles").insert({ profile_id: userId, role });
+      if (role !== "member") {
+        await supabase.from("user_roles").insert({ profile_id: userId, role });
+      }
     }
 
     return Response.json({ data: { updated: true }, requestId });

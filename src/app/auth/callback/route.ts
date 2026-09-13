@@ -11,8 +11,12 @@ export async function GET(request: Request) {
 
   try {
     const supabase = await createSupabaseServerClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { data: sessionData, error } = await supabase.auth.exchangeCodeForSession(code);
     if (error) return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent(error.message)}`, url.origin));
+    if (sessionData?.user) {
+      const { ensureUserProfile } = await import("@/server/auth/current-user");
+      await ensureUserProfile(sessionData.user);
+    }
     return NextResponse.redirect(new URL(safeNext, url.origin));
   } catch {
     return NextResponse.redirect(new URL("/login?error=service_unavailable", url.origin));

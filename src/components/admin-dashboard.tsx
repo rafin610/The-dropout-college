@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 type Metric = { label: string; value: number; tone: string };
@@ -82,6 +83,7 @@ export function AdminDashboard() {
   const [metrics, setMetrics] = useState<Metric[]>([]);
   const [message, setMessage] = useState("");
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "suspended">("all");
 
   useEffect(() => {
     async function load() {
@@ -89,7 +91,7 @@ export function AdminDashboard() {
         const [siteRes, overviewRes, usersRes] = await Promise.all([
           fetch("/api/v1/admin/site", { cache: "no-store" }),
           fetch("/api/v1/admin/overview", { cache: "no-store" }),
-          fetch("/api/v1/admin/users?page=1&pageSize=10", { cache: "no-store" }),
+          fetch("/api/v1/admin/users?page=1&pageSize=50", { cache: "no-store" }),
         ]);
 
         if (siteRes.ok) {
@@ -126,40 +128,78 @@ export function AdminDashboard() {
   }, []);
 
   const filteredUsers = useMemo(() => {
-    if (!search.trim()) return userRows;
-    return userRows.filter((user) => `${user.displayName} ${user.username} ${user.email}`.toLowerCase().includes(search.toLowerCase()));
-  }, [search, userRows]);
+    return userRows.filter((user) => {
+      const matchesSearch =
+        !search.trim() ||
+        `${user.displayName} ${user.username} ${user.email}`.toLowerCase().includes(search.toLowerCase());
+      const matchesStatus = statusFilter === "all" || user.status.toLowerCase() === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [search, statusFilter, userRows]);
 
   async function saveSiteChanges() {
     setMessage("Saving website content...");
-    const response = await fetch("/api/v1/admin/site", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ settings, sections, socialLinks }),
-    });
+    try {
+      const response = await fetch("/api/v1/admin/site", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ settings, sections, socialLinks }),
+      });
 
-    if (!response.ok) {
-      setMessage("The website updates could not be saved.");
-      return;
+      if (!response.ok) {
+        setMessage("The website updates could not be saved.");
+        return;
+      }
+
+      setMessage("Website changes saved successfully.");
+      setTimeout(() => setMessage(""), 4000);
+    } catch {
+      setMessage("Network error saving website content.");
     }
-
-    setMessage("Website changes saved successfully.");
   }
 
   async function updateUserStatus(userId: string, status: string) {
-    const response = await fetch("/api/v1/admin/users", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId, status }),
-    });
+    setMessage(`Updating status to ${status}...`);
+    try {
+      const response = await fetch("/api/v1/admin/users", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, status }),
+      });
 
-    if (response.ok) {
-      setUserRows((current) => current.map((user) => (user.id === userId ? { ...user, status } : user)));
-      setMessage("User status updated.");
-      return;
+      if (response.ok) {
+        setUserRows((current) => current.map((user) => (user.id === userId ? { ...user, status } : user)));
+        setMessage("User status updated successfully.");
+        setTimeout(() => setMessage(""), 3000);
+        return;
+      }
+
+      setMessage("You do not have permission to change this user.");
+    } catch {
+      setMessage("Network error while updating user status.");
     }
+  }
 
-    setMessage("You do not have permission to change this user.");
+  async function updateUserRole(userId: string, role: string) {
+    setMessage(`Updating role to ${role}...`);
+    try {
+      const response = await fetch("/api/v1/admin/users", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, role }),
+      });
+
+      if (response.ok) {
+        setUserRows((current) => current.map((user) => (user.id === userId ? { ...user, roles: [role] } : user)));
+        setMessage(`User role changed to ${role}.`);
+        setTimeout(() => setMessage(""), 3000);
+        return;
+      }
+
+      setMessage("You do not have permission to modify roles.");
+    } catch {
+      setMessage("Network error while updating user role.");
+    }
   }
 
   return (
@@ -171,7 +211,7 @@ export function AdminDashboard() {
           <p>Use the admin dashboard to manage users, community content, navigation, and the public website.</p>
         </div>
         <div className="admin-header-actions">
-          <a className="button button-ghost" href="/">Exit admin</a>
+          <Link className="button button-ghost" href="/">Exit admin</Link>
         </div>
       </header>
 
@@ -235,7 +275,21 @@ export function AdminDashboard() {
                             <span className={`status-badge ${user.status === "active" ? "active" : "inactive"}`}>{user.status}</span>
                             <span>{new Date(user.createdAt).toLocaleDateString()}</span>
                             <div className="inline-actions">
-                              <button onClick={() => updateUserStatus(user.id, user.status === "active" ? "suspended" : "active")}>Toggle</button>
+                              <button
+                                type="button"
+                                onClick={() => updateUserStatus(user.id, user.status === "active" ? "suspended" : "active")}
+                                style={{
+                                  background: user.status === "active" ? "rgba(255, 107, 107, 0.1)" : "rgba(34, 197, 94, 0.1)",
+                                  border: `1px solid ${user.status === "active" ? "rgba(255, 107, 107, 0.3)" : "rgba(34, 197, 94, 0.3)"}`,
+                                  color: user.status === "active" ? "#ff6b6b" : "var(--lime)",
+                                  borderRadius: "6px",
+                                  padding: "4px 10px",
+                                  fontSize: "0.8rem",
+                                  cursor: "pointer",
+                                }}
+                              >
+                                {user.status === "active" ? "Suspend" : "Activate"}
+                              </button>
                             </div>
                           </div>
                         )) : <div className="admin-table-row"><span>No users found</span></div>}
@@ -256,12 +310,30 @@ export function AdminDashboard() {
 
                   <div className="toolbar" style={{ marginBottom: 20 }}>
                     <div className="input-wrap">
-                      <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search users" />
+                      <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search users by name, handle, or email" />
                     </div>
                     <div className="filter-row">
-                      <button className="filter active" type="button">All</button>
-                      <button className="filter" type="button">Active</button>
-                      <button className="filter" type="button">Suspended</button>
+                      <button
+                        className={`filter ${statusFilter === "all" ? "active" : ""}`}
+                        type="button"
+                        onClick={() => setStatusFilter("all")}
+                      >
+                        All
+                      </button>
+                      <button
+                        className={`filter ${statusFilter === "active" ? "active" : ""}`}
+                        type="button"
+                        onClick={() => setStatusFilter("active")}
+                      >
+                        Active
+                      </button>
+                      <button
+                        className={`filter ${statusFilter === "suspended" ? "active" : ""}`}
+                        type="button"
+                        onClick={() => setStatusFilter("suspended")}
+                      >
+                        Suspended
+                      </button>
                     </div>
                   </div>
 
@@ -274,7 +346,7 @@ export function AdminDashboard() {
                         <span>Status</span>
                         <span>Action</span>
                       </div>
-                      {filteredUsers.map((user) => (
+                      {filteredUsers.length ? filteredUsers.map((user) => (
                         <div className="admin-table-row" key={user.id}>
                           <div className="admin-member">
                             <span className="admin-avatar">{user.displayName.slice(0, 2).toUpperCase()}</span>
@@ -284,13 +356,52 @@ export function AdminDashboard() {
                             </div>
                           </div>
                           <span>{user.email}</span>
-                          <span>{user.roles[0] || "member"}</span>
+                          <div>
+                            <select
+                              value={user.roles[0] || "member"}
+                              onChange={(e) => updateUserRole(user.id, e.target.value)}
+                              aria-label={`Change role for ${user.displayName}`}
+                              style={{
+                                background: "rgba(255,255,255,0.05)",
+                                border: "1px solid var(--border)",
+                                borderRadius: "6px",
+                                color: "var(--foreground)",
+                                padding: "4px 8px",
+                                fontSize: "0.85rem",
+                                outline: "none",
+                              }}
+                            >
+                              <option value="member" style={{ background: "#111" }}>member</option>
+                              <option value="mentor" style={{ background: "#111" }}>mentor</option>
+                              <option value="event_organizer" style={{ background: "#111" }}>organizer</option>
+                              <option value="moderator" style={{ background: "#111" }}>moderator</option>
+                              <option value="admin" style={{ background: "#111" }}>admin</option>
+                            </select>
+                          </div>
                           <span className={`status-badge ${user.status === "active" ? "active" : "inactive"}`}>{user.status}</span>
                           <div className="inline-actions">
-                            <button onClick={() => updateUserStatus(user.id, user.status === "active" ? "suspended" : "active")}>Toggle</button>
+                            <button
+                              type="button"
+                              onClick={() => updateUserStatus(user.id, user.status === "active" ? "suspended" : "active")}
+                              style={{
+                                background: user.status === "active" ? "rgba(255, 107, 107, 0.1)" : "rgba(34, 197, 94, 0.1)",
+                                border: `1px solid ${user.status === "active" ? "rgba(255, 107, 107, 0.3)" : "rgba(34, 197, 94, 0.3)"}`,
+                                color: user.status === "active" ? "#ff6b6b" : "var(--lime)",
+                                borderRadius: "6px",
+                                padding: "4px 10px",
+                                fontSize: "0.8rem",
+                                cursor: "pointer",
+                              }}
+                            >
+                              {user.status === "active" ? "Suspend" : "Activate"}
+                            </button>
                           </div>
                         </div>
-                      ))}
+                      )) : (
+                        <div className="admin-table-row">
+                          <span style={{ color: "var(--muted)" }}>No users found</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

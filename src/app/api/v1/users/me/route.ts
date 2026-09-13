@@ -9,9 +9,17 @@ export async function GET(request: Request) {
   return withRequestId(request, async () => {
     const user = await getCurrentUser();
     const supabase = await createSupabaseServerClient();
-    const { data, error } = await supabase.from("profiles").select("*, profile_categories(*), profile_skills(*), social_links(*)").eq("id", user.id).single();
+    const result = await supabase.from("profiles").select("*, profile_categories(*), profile_skills(*), social_links(*)").eq("id", user.id).maybeSingle();
 
-    if (error) throw new ApiError("NOT_FOUND", "Profile not found.", 404);
+    let data = result.data;
+    if (result.error || !data) {
+      const { ensureUserProfile } = await import("@/server/auth/current-user");
+      await ensureUserProfile(user);
+      const retry = await supabase.from("profiles").select("*, profile_categories(*), profile_skills(*), social_links(*)").eq("id", user.id).maybeSingle();
+      data = retry.data;
+    }
+
+    if (!data) throw new ApiError("NOT_FOUND", "Profile not found.", 404);
     return Response.json({ data });
   });
 }
@@ -22,6 +30,9 @@ export async function PATCH(request: Request) {
     const payload = updateProfileSchema.safeParse(await request.json());
 
     if (!payload.success) throw new ApiError("VALIDATION_ERROR", "Profile data is invalid.", 400);
+
+    const { ensureUserProfile } = await import("@/server/auth/current-user");
+    await ensureUserProfile(user);
 
     const updates = {
       ...(payload.data.username !== undefined && { username: payload.data.username }),

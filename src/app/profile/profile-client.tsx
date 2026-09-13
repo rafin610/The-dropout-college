@@ -1,0 +1,273 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Code2 as Github, Globe, AtSign as Linkedin, LoaderCircle, MessageCircle, X } from "lucide-react";
+import { Pill, SectionHeading } from "@/components/app-shell";
+import { ProjectCard } from "@/components/cards";
+import type { Project } from "@/lib/supabase-data";
+
+export type ProfileData = {
+  id: string;
+  username: string;
+  displayName: string;
+  avatarUrl: string | null;
+  bio: string | null;
+  createdAt: string;
+  skills: string[];
+  links: Array<{ platform: string; url: string }>;
+  projects: Project[];
+};
+
+export function ProfileClient({
+  profile,
+  isOwner,
+}: {
+  profile: ProfileData;
+  isOwner: boolean;
+}) {
+  const router = useRouter();
+  const [modalOpen, setModalOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  const [displayName, setDisplayName] = useState(profile.displayName);
+  const [username, setUsername] = useState(profile.username);
+  const [bio, setBio] = useState(profile.bio || "");
+  const [avatarUrl, setAvatarUrl] = useState(profile.avatarUrl || "");
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault();
+    if (!displayName.trim()) {
+      setError("Display name cannot be empty.");
+      return;
+    }
+    if (!username.trim() || username.length < 3) {
+      setError("Username must be at least 3 characters.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      const res = await fetch("/api/v1/users/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          displayName: displayName.trim(),
+          username: username.trim(),
+          bio: bio.trim() || null,
+          avatarUrl: avatarUrl.trim() || null,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error?.message || "Failed to update profile");
+      }
+
+      setSuccess("Profile updated successfully!");
+      setTimeout(() => {
+        setModalOpen(false);
+        setSuccess("");
+        router.refresh();
+      }, 1000);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to update profile");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const initials = profile.displayName.slice(0, 2).toUpperCase() || "ME";
+
+  return (
+    <>
+      <div className="profile-header">
+        <div className="profile-large">{initials}</div>
+        <div>
+          <div className="eyebrow">Member since {new Date(profile.createdAt).getFullYear()}</div>
+          <h1>{profile.displayName}</h1>
+          <p>@{profile.username}</p>
+        </div>
+        {isOwner ? (
+          <button
+            onClick={() => setModalOpen(true)}
+            className="button button-ghost"
+            style={{ marginLeft: "auto" }}
+            type="button"
+          >
+            Edit profile
+          </button>
+        ) : (
+          <Link
+            href="https://discord.gg/3xfu5TMgF"
+            target="_blank"
+            rel="noreferrer"
+            className="button button-primary"
+            style={{ marginLeft: "auto" }}
+          >
+            Say hello on Discord <MessageCircle size={14} />
+          </Link>
+        )}
+      </div>
+
+      <div className="profile-layout">
+        <div>
+          <section className="panel">
+            <SectionHeading eyebrow="About" title={profile.bio ? "About" : "No bio yet"} />
+            <p className="hero-copy">
+              {profile.bio || (isOwner ? "Add a short introduction to help members get to know you." : "This member has not added a bio yet.")}
+            </p>
+
+            <div className="skill-cloud">
+              {profile.skills.length ? (
+                profile.skills.map((skill) => <Pill key={skill} tone="lime">{skill}</Pill>)
+              ) : (
+                <span className="muted-text">No skills listed yet.</span>
+              )}
+            </div>
+
+            {profile.links.length > 0 && (
+              <div className="skill-cloud" style={{ marginTop: 24 }}>
+                {profile.links.map((link) => (
+                  <Link href={link.url} className="section-link" key={link.platform} target="_blank" rel="noreferrer">
+                    {link.platform.toLowerCase() === "github" ? <Github size={14} /> : link.platform.toLowerCase() === "linkedin" ? <Linkedin size={14} /> : <Globe size={14} />}{" "}
+                    {link.platform}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className="section">
+            <SectionHeading
+              eyebrow="Selected work"
+              title="Projects"
+              action={<Link href="/projects" className="section-link">View all projects</Link>}
+            />
+            {profile.projects.length ? (
+              <div className="project-grid">
+                {profile.projects.map((project) => (
+                  <ProjectCard key={project.id} project={project} />
+                ))}
+              </div>
+            ) : (
+              <p className="muted-text">No projects added yet.</p>
+            )}
+          </section>
+        </div>
+      </div>
+
+      {/* Edit Profile Modal */}
+      {modalOpen && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(10,12,11,0.85)",
+            backdropFilter: "blur(8px)",
+            zIndex: 100,
+            display: "grid",
+            placeItems: "center",
+            padding: 20,
+          }}
+          onClick={(e) => { if (e.target === e.currentTarget && !loading) setModalOpen(false); }}
+        >
+          <div
+            style={{
+              width: "min(520px, 94vw)",
+              background: "rgba(22,26,24,0.98)",
+              border: "1px solid var(--line)",
+              borderRadius: 8,
+              padding: 28,
+              boxShadow: "0 24px 60px rgba(0,0,0,0.8)",
+              position: "relative",
+              maxHeight: "90vh",
+              overflowY: "auto",
+            }}
+          >
+            <button
+              onClick={() => setModalOpen(false)}
+              disabled={loading}
+              style={{ position: "absolute", top: 20, right: 20, background: "transparent", border: 0, color: "var(--muted)", cursor: "pointer" }}
+              aria-label="Close modal"
+            >
+              <X size={20} />
+            </button>
+
+            <div className="eyebrow" style={{ color: "var(--lime)" }}>Member Settings</div>
+            <h2 style={{ fontSize: 24, margin: "8px 0 20px" }}>Edit profile</h2>
+
+            <form onSubmit={handleSave} style={{ display: "grid", gap: 16 }}>
+              {error && <p style={{ color: "var(--coral)", fontSize: 12, margin: 0 }}>{error}</p>}
+              {success && <p style={{ color: "var(--lime)", fontSize: 12, margin: 0 }}>{success}</p>}
+
+              <div className="field">
+                <label>Display Name *</label>
+                <input
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="Your full name"
+                  required
+                />
+              </div>
+
+              <div className="field">
+                <label>Username *</label>
+                <input
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="username"
+                  required
+                />
+              </div>
+
+              <div className="field">
+                <label>Avatar URL (optional)</label>
+                <input
+                  value={avatarUrl}
+                  onChange={(e) => setAvatarUrl(e.target.value)}
+                  placeholder="https://..."
+                />
+              </div>
+
+              <div className="field">
+                <label>Bio</label>
+                <textarea
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  placeholder="Tell the community what you're working on, learning, or looking for..."
+                  rows={4}
+                />
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 12 }}>
+                <button
+                  type="button"
+                  onClick={() => setModalOpen(false)}
+                  className="button button-ghost"
+                  disabled={loading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="button button-primary"
+                  disabled={loading}
+                >
+                  {loading ? <LoaderCircle size={14} className="spin" /> : null}
+                  {loading ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}

@@ -1,6 +1,6 @@
 import { requirePermission } from "@/server/auth/permissions";
 import { toErrorResponse } from "@/server/errors";
-import { defaultSiteSettings, getSiteSections, getSiteSettings, getSiteSocialLinks, upsertSiteSection, upsertSiteSetting, upsertSiteSocialLink, type SiteSettingKey } from "@/server/site-content";
+import { getSiteSections, getSiteSettings, getSiteSocialLinks, upsertSiteSection, upsertSiteSocialLink } from "@/server/site-content";
 
 export const runtime = "nodejs";
 
@@ -22,42 +22,37 @@ export async function PUT(request: Request) {
   try {
     await requirePermission("dashboard.read");
     const payload = await request.json();
-    const settings = payload?.settings ?? {};
-    const sections = payload?.sections ?? [];
-    const socialLinks = payload?.socialLinks ?? [];
+    const settings = (payload?.settings ?? {}) as Record<string, string>;
+    const sections = (payload?.sections ?? []) as Array<Record<string, unknown>>;
+    const socialLinks = (payload?.socialLinks ?? []) as Array<Record<string, unknown>>;
+
+    const { upsertSiteSettingsBulk } = await import("@/server/site-content");
+    await upsertSiteSettingsBulk(settings);
 
     await Promise.all(
-      Object.entries(settings).map(([key, value]) => {
-        const nextKey = key as string;
-        if (!(nextKey in defaultSiteSettings)) return null;
-        return upsertSiteSetting(nextKey as SiteSettingKey, String(value ?? ""));
-      }),
-    );
-
-    await Promise.all(
-      sections.map((section: any) =>
+      sections.map((section) =>
         upsertSiteSection({
-          id: section.id,
-          slug: section.slug,
-          title: section.title,
-          description: section.description,
-          cta_label: section.cta_label,
-          cta_href: section.cta_href,
-          enabled: section.enabled,
+          id: typeof section.id === "string" ? section.id : undefined,
+          slug: String(section.slug || ""),
+          title: String(section.title || ""),
+          description: String(section.description || ""),
+          cta_label: String(section.cta_label || ""),
+          cta_href: String(section.cta_href || ""),
+          enabled: Boolean(section.enabled ?? true),
           sort_order: Number(section.sort_order ?? 0),
-          content: section.content ?? {},
+          content: (typeof section.content === "object" && section.content !== null ? section.content : {}) as Record<string, unknown>,
         }),
       ),
     );
 
     await Promise.all(
-      socialLinks.map((link: any) =>
+      socialLinks.map((link) =>
         upsertSiteSocialLink({
-          id: link.id,
-          platform: link.platform,
-          label: link.label,
-          url: link.url ?? "",
-          enabled: link.enabled,
+          id: typeof link.id === "string" ? link.id : undefined,
+          platform: String(link.platform || ""),
+          label: String(link.label || ""),
+          url: String(link.url || ""),
+          enabled: Boolean(link.enabled ?? true),
           sort_order: Number(link.sort_order ?? 0),
         }),
       ),

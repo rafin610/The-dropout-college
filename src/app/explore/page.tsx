@@ -1,8 +1,43 @@
-/* eslint-disable react-hooks/error-boundaries */
-import { Search, SlidersHorizontal } from "lucide-react";
+import { Suspense } from "react";
 import { getCategories, getMembers } from "@/lib/supabase-data";
-import { MemberCard } from "@/components/cards";
+import { ExploreClient } from "@/app/explore/explore-client";
 
 export const dynamic = "force-dynamic";
 
-export default async function ExplorePage() { try { const [members, categories] = await Promise.all([getMembers(), getCategories()]); return <><div className="page-title"><div className="eyebrow">Explore the network</div><h1>Find your next<br /><span style={{ color: "var(--lime)" }}>interesting person.</span></h1><p>Search across disciplines, projects, and ambitions. The best collaborators are rarely looking for the same thing you are.</p></div><div className="toolbar"><div className="input-wrap"><Search size={15} /><input placeholder="Search members, skills, projects..." /></div><button className="filter"><SlidersHorizontal size={14} /> Filters</button></div><div className="filter-row" style={{ marginBottom: 24 }}>{["All members", ...categories.slice(0, 6).map((item) => item.name)].map((label) => <button key={label} className="filter">{label}</button>)}</div>{members.length ? <div className="member-grid">{members.map((member) => <MemberCard key={member.id} member={member} />)}</div> : <p className="muted-text">No members have joined yet.</p>}</>; } catch { return <section className="panel"><h2>Unable to load members</h2><p className="member-bio">Please try again later.</p></section>; } }
+export default async function ExplorePage() {
+  let members: Awaited<ReturnType<typeof getMembers>> = [];
+  let categories: Awaited<ReturnType<typeof getCategories>> = [];
+  let loadError = false;
+
+  try {
+    [members, categories] = await Promise.all([getMembers(), getCategories()]);
+  } catch {
+    loadError = true;
+  }
+
+  if (loadError) {
+    return (
+      <section className="panel">
+        <h2>Unable to load members</h2>
+        <p className="member-bio">Please try again later.</p>
+      </section>
+    );
+  }
+
+  return (
+    <>
+      <div className="page-title">
+        <div className="eyebrow">Explore the network</div>
+        <h1>
+          Find your next<br />
+          <span style={{ color: "var(--lime)" }}>interesting person.</span>
+        </h1>
+        <p>Search across disciplines, projects, and ambitions. The best collaborators are rarely looking for the same thing you are.</p>
+      </div>
+
+      <Suspense fallback={<div className="panel"><p className="loading">Loading explore...</p></div>}>
+        <ExploreClient initialMembers={members} categories={categories} />
+      </Suspense>
+    </>
+  );
+}
