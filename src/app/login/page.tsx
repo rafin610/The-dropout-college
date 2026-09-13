@@ -7,6 +7,8 @@ import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
+const CANONICAL_SITE_URL = "https://the-dropout-college.vercel.app";
+
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -23,6 +25,12 @@ function LoginForm() {
     setLoading(true);
     setMessage("");
     setSuccess("");
+
+    if (window.location.origin !== CANONICAL_SITE_URL) {
+      router.push(`${CANONICAL_SITE_URL}/login?next=${encodeURIComponent(nextUrl)}`);
+      return;
+    }
+
     const supabase = createSupabaseBrowserClient();
 
     if (!supabase) {
@@ -33,7 +41,7 @@ function LoginForm() {
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextUrl)}` },
+      options: { redirectTo: `${CANONICAL_SITE_URL}/auth/callback?next=${encodeURIComponent(nextUrl)}` },
     });
 
     if (error) {
