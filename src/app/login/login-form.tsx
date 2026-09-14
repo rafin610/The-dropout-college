@@ -80,7 +80,7 @@ export function LoginForm({
     if (loading) return;
 
     if (window.location.origin !== OAUTH_SITE_URL) {
-      router.push(`${OAUTH_SITE_URL}/login?next=${encodeURIComponent(nextUrl)}`);
+      window.location.href = `${OAUTH_SITE_URL}/login?next=${encodeURIComponent(nextUrl)}`;
       return;
     }
 
