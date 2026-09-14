@@ -1,7 +1,7 @@
 import { createSupabaseServerClient } from "@/server/supabase/server";
 
 export type Category = { id: string; name: string; description: string | null; icon: string | null; color: string | null };
-export type Member = { id: string; name: string; handle: string; bio: string; category: string; initials: string; color: string; online: boolean };
+export type Member = { id: string; name: string; handle: string; bio: string; category: string; initials: string; color: string; online: boolean; avatarUrl?: string | null };
 export type Project = { id: string; name: string; description: string; status: string; color: string; team: string[]; metric: string };
 export type Event = { id: string; date: string; month: string; title: string; type: string; meta: string; accent: string };
 
@@ -49,12 +49,22 @@ export async function getCategories(): Promise<Category[]> {
 export async function getMembers(): Promise<Member[]> {
   try {
     const supabase = await createSupabaseServerClient();
-    const { data, error } = await supabase.from("profiles").select("id, username, display_name, bio, last_active_at, profile_categories(categories(name, color))").eq("status", "active").order("display_name");
+    const { data, error } = await supabase.from("profiles").select("id, username, display_name, avatar_url, bio, last_active_at, profile_categories(categories(name, color))").eq("status", "active").order("display_name");
     if (error) throw error;
     return (data ?? []).map((profile, index) => {
       const categoryValue = Array.isArray(profile.profile_categories) ? profile.profile_categories[0]?.categories : null;
       const category = Array.isArray(categoryValue) ? categoryValue[0] : categoryValue;
-      return { id: profile.id, name: profile.display_name, handle: `@${profile.username}`, bio: profile.bio || "", category: category?.name || "Member", initials: initials(profile.display_name), color: colorFor(index, category?.color), online: profile.last_active_at ? Date.now() - new Date(profile.last_active_at).getTime() < 15 * 60 * 1000 : false };
+      return {
+        id: profile.id,
+        name: profile.display_name,
+        handle: `@${profile.username}`,
+        bio: profile.bio || "",
+        category: category?.name || "Member",
+        initials: initials(profile.display_name),
+        color: colorFor(index, category?.color),
+        online: profile.last_active_at ? Date.now() - new Date(profile.last_active_at).getTime() < 15 * 60 * 1000 : false,
+        avatarUrl: profile.avatar_url,
+      };
     });
   } catch {
     return fallbackMembers;

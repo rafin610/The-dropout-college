@@ -8,7 +8,7 @@ export async function GET(request: Request) {
 
   try {
     const user = await getCurrentUser();
-    return Response.json({ data: { id: user.id, email: user.email, metadata: user.user_metadata }, requestId });
+    return Response.json({ data: { id: user.id }, requestId });
   } catch (error) {
     return toErrorResponse(error, requestId);
   }

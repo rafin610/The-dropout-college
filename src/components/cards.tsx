@@ -7,10 +7,26 @@ import { Pill } from "@/components/app-shell";
 import type { Event, Member, Project } from "@/lib/supabase-data";
 
 export function MemberCard({ member }: { member: Member }) {
+  const [avatarError, setAvatarError] = useState(false);
+
   return (
     <Link href={`/profile?member=${encodeURIComponent(member.id)}`} className="member-card">
       <div className="member-top">
-        <div className="member-avatar" style={{ background: member.color }}>{member.initials}</div>
+        <div className="member-avatar" style={{ background: member.color }}>
+          {member.avatarUrl && !avatarError ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={member.avatarUrl}
+              alt={`${member.name} profile`}
+              referrerPolicy="no-referrer"
+              loading="lazy"
+              onError={() => setAvatarError(true)}
+              style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }}
+            />
+          ) : (
+            <span>{member.initials}</span>
+          )}
+        </div>
         {member.online && <span className="online-dot" aria-label="Online" />}
       </div>
       <h3>{member.name}</h3>

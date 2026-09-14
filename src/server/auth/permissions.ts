@@ -54,6 +54,7 @@ export async function getUserPermissions(userId: string, email?: string | null):
       permissions.add("reports.manage");
       permissions.add("discord.manage");
       permissions.add("audit_logs.read");
+      permissions.add("roles.manage");
     }
     if (roles.includes("moderator")) {
       permissions.add("dashboard.read");

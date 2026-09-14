@@ -20,7 +20,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [accountName, setAccountName] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
 
   // Notifications state
@@ -34,7 +35,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
     void supabase.auth.getUser().then(({ data }) => {
       const email = data.user?.email ?? null;
-      setUserEmail(email);
+      setUserId(data.user?.id ?? null);
+      setAccountName((data.user?.user_metadata?.full_name as string | undefined) || (data.user?.user_metadata?.name as string | undefined) || null);
       if (email && email.toLowerCase() === "ahmedrafin014@gmail.com") {
         setIsAdmin(true);
       } else if (data.user) {
@@ -47,9 +49,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       const email = session?.user?.email ?? null;
-      setUserEmail(email);
+      setUserId(session?.user?.id ?? null);
+      setAccountName((session?.user?.user_metadata?.full_name as string | undefined) || (session?.user?.user_metadata?.name as string | undefined) || null);
       if (email && email.toLowerCase() === "ahmedrafin014@gmail.com") {
         setIsAdmin(true);
+      } else if (!session?.user) {
+        setIsAdmin(false);
       }
     });
 
@@ -73,7 +78,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   async function loadNotifications() {
-    if (!userEmail) return;
+    if (!userId) return;
     setNotificationsLoading(true);
     try {
       const res = await fetch("/api/v1/notifications");
@@ -116,7 +121,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     const supabase = createSupabaseBrowserClient();
     if (!supabase) return;
     await supabase.auth.signOut();
-    setUserEmail(null);
+    setUserId(null);
+    setAccountName(null);
     setIsAdmin(false);
     router.push("/");
     router.refresh();
@@ -202,7 +208,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   </div>
                   {notificationsLoading ? (
                     <p style={{ color: "var(--muted)", fontSize: 12, margin: "12px 0" }}>Loading...</p>
-                  ) : !userEmail ? (
+                  ) : !userId ? (
                     <div style={{ textAlign: "center", padding: "12px 0" }}>
                       <p style={{ color: "var(--muted)", fontSize: 11, margin: "0 0 10px" }}>Sign in to view notifications</p>
                       <Link href="/login" className="button button-primary" style={{ padding: "6px 12px", fontSize: 11 }} onClick={() => setNotificationsOpen(false)}>
@@ -225,9 +231,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </div>
               )}
             </div>
-            {userEmail ? (
+            {userId ? (
               <>
-                <Link href="/profile" className="login-link">{userEmail}</Link>
+                <Link href="/profile" className="login-link">{accountName || "My profile"}</Link>
                 <button className="login-link" onClick={signOut} style={{ background: "transparent", border: 0, cursor: "pointer" }}>Sign out</button>
               </>
             ) : (
@@ -309,7 +315,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <span>{label}</span>
           </Link>
         ))}
-        {userEmail ? (
+        {userId ? (
           <Link href="/profile" className={pathname === "/profile" ? "active" : ""}>
             <Users size={18} />
             <span>Profile</span>

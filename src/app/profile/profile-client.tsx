@@ -28,15 +28,19 @@ export function ProfileClient({
   isOwner: boolean;
 }) {
   const router = useRouter();
+  const [currentProfile, setCurrentProfile] = useState(profile);
   const [modalOpen, setModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [avatarError, setAvatarError] = useState(false);
 
   const [displayName, setDisplayName] = useState(profile.displayName);
   const [username, setUsername] = useState(profile.username);
   const [bio, setBio] = useState(profile.bio || "");
   const [avatarUrl, setAvatarUrl] = useState(profile.avatarUrl || "");
+  const [facebookUrl, setFacebookUrl] = useState(profile.links.find((link) => link.platform.toLowerCase() === "facebook")?.url || "");
+  const [youtubeUrl, setYoutubeUrl] = useState(profile.links.find((link) => link.platform.toLowerCase() === "youtube")?.url || "");
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -62,6 +66,8 @@ export function ProfileClient({
           username: username.trim(),
           bio: bio.trim() || null,
           avatarUrl: avatarUrl.trim() || null,
+          facebookUrl: facebookUrl.trim() || null,
+          youtubeUrl: youtubeUrl.trim() || null,
         }),
       });
 
@@ -69,6 +75,18 @@ export function ProfileClient({
       if (!res.ok) {
         throw new Error(data?.error?.message || "Failed to update profile");
       }
+
+      const savedLinks = Array.isArray(data?.data?.social_links)
+        ? data.data.social_links.filter((link: { platform?: unknown; url?: unknown }) => typeof link.platform === "string" && typeof link.url === "string")
+        : currentProfile.links;
+      setCurrentProfile((current) => ({
+        ...current,
+        displayName: displayName.trim(),
+        username: username.trim(),
+        bio: bio.trim() || null,
+        avatarUrl: avatarUrl.trim() || null,
+        links: savedLinks,
+      }));
 
       setSuccess("Profile updated successfully!");
       setTimeout(() => {
@@ -83,16 +101,30 @@ export function ProfileClient({
     }
   }
 
-  const initials = profile.displayName.slice(0, 2).toUpperCase() || "ME";
+  const initials = currentProfile.displayName.slice(0, 2).toUpperCase() || "ME";
+  const visibleLinks = currentProfile.links.filter((link) => link?.url && /^https?:\/\//i.test(link.url));
 
   return (
     <>
       <div className="profile-header">
-        <div className="profile-large">{initials}</div>
+        <div className="profile-large" style={{ overflow: "hidden" }}>
+          {currentProfile.avatarUrl && !avatarError ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={currentProfile.avatarUrl}
+              alt={`${currentProfile.displayName} profile`}
+              referrerPolicy="no-referrer"
+              style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }}
+              onError={() => setAvatarError(true)}
+            />
+          ) : (
+            initials
+          )}
+        </div>
         <div>
-          <div className="eyebrow">Member since {new Date(profile.createdAt).getFullYear()}</div>
-          <h1>{profile.displayName}</h1>
-          <p>@{profile.username}</p>
+          <div className="eyebrow">Member since {new Date(currentProfile.createdAt).getFullYear()}</div>
+          <h1>{currentProfile.displayName}</h1>
+          <p>@{currentProfile.username}</p>
         </div>
         {isOwner ? (
           <button
@@ -119,27 +151,31 @@ export function ProfileClient({
       <div className="profile-layout">
         <div>
           <section className="panel">
-            <SectionHeading eyebrow="About" title={profile.bio ? "About" : "No bio yet"} />
+            <SectionHeading eyebrow="About" title={currentProfile.bio ? "About" : "No bio yet"} />
             <p className="hero-copy">
-              {profile.bio || (isOwner ? "Add a short introduction to help members get to know you." : "This member has not added a bio yet.")}
+              {currentProfile.bio || (isOwner ? "Add a short introduction to help members get to know you." : "This member has not added a bio yet.")}
             </p>
 
             <div className="skill-cloud">
-              {profile.skills.length ? (
-                profile.skills.map((skill) => <Pill key={skill} tone="lime">{skill}</Pill>)
+              {currentProfile.skills.length ? (
+                currentProfile.skills.map((skill) => <Pill key={skill} tone="lime">{skill}</Pill>)
               ) : (
                 <span className="muted-text">No skills listed yet.</span>
               )}
             </div>
 
-            {profile.links.length > 0 && (
+            {visibleLinks.length > 0 && (
               <div className="skill-cloud" style={{ marginTop: 24 }}>
-                {profile.links.map((link) => (
-                  <Link href={link.url} className="section-link" key={link.platform} target="_blank" rel="noreferrer">
-                    {link.platform.toLowerCase() === "github" ? <Github size={14} /> : link.platform.toLowerCase() === "linkedin" ? <Linkedin size={14} /> : <Globe size={14} />}{" "}
-                    {link.platform}
-                  </Link>
-                ))}
+                {visibleLinks.map((link) => {
+                  const platform = link.platform.toLowerCase();
+                  const label = platform === "facebook" ? "Facebook" : platform === "youtube" ? "YouTube" : platform === "github" ? "GitHub" : platform === "linkedin" ? "LinkedIn" : platform === "instagram" ? "Instagram" : platform === "x" ? "X" : "Website";
+
+                  return (
+                    <Link href={link.url} className="section-link" key={`${platform}-${link.url}`} target="_blank" rel="noreferrer">
+                      {platform === "youtube" || platform === "facebook" ? <Globe size={14} /> : platform === "github" ? <Github size={14} /> : platform === "linkedin" ? <Linkedin size={14} /> : <Globe size={14} />} {label}
+                    </Link>
+                  );
+                })}
               </div>
             )}
           </section>
@@ -150,9 +186,9 @@ export function ProfileClient({
               title="Projects"
               action={<Link href="/projects" className="section-link">View all projects</Link>}
             />
-            {profile.projects.length ? (
+            {currentProfile.projects.length ? (
               <div className="project-grid">
-                {profile.projects.map((project) => (
+                {currentProfile.projects.map((project) => (
                   <ProjectCard key={project.id} project={project} />
                 ))}
               </div>
@@ -233,6 +269,24 @@ export function ProfileClient({
                   value={avatarUrl}
                   onChange={(e) => setAvatarUrl(e.target.value)}
                   placeholder="https://..."
+                />
+              </div>
+
+              <div className="field">
+                <label>Facebook</label>
+                <input
+                  value={facebookUrl}
+                  onChange={(e) => setFacebookUrl(e.target.value)}
+                  placeholder="https://facebook.com/your-profile"
+                />
+              </div>
+
+              <div className="field">
+                <label>YouTube</label>
+                <input
+                  value={youtubeUrl}
+                  onChange={(e) => setYoutubeUrl(e.target.value)}
+                  placeholder="https://youtube.com/@yourchannel"
                 />
               </div>
 

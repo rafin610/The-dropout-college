@@ -82,6 +82,8 @@ export function AdminDashboard() {
   const [userRows, setUserRows] = useState<UserRow[]>([]);
   const [metrics, setMetrics] = useState<Metric[]>([]);
   const [message, setMessage] = useState("");
+  const [canManageRoles, setCanManageRoles] = useState(false);
+  const [pendingUserId, setPendingUserId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "suspended">("all");
 
@@ -116,6 +118,7 @@ export function AdminDashboard() {
         if (usersRes.ok) {
           const userData = await usersRes.json();
           setUserRows(userData?.data ?? []);
+          setCanManageRoles(Boolean(userData?.capabilities?.canManageRoles));
         }
       } catch {
         setMessage("Unable to load admin data right now.");
@@ -159,6 +162,7 @@ export function AdminDashboard() {
   }
 
   async function updateUserStatus(userId: string, status: string) {
+    setPendingUserId(userId);
     setMessage(`Updating status to ${status}...`);
     try {
       const response = await fetch("/api/v1/admin/users", {
@@ -167,20 +171,25 @@ export function AdminDashboard() {
         body: JSON.stringify({ userId, status }),
       });
 
-      if (response.ok) {
-        setUserRows((current) => current.map((user) => (user.id === userId ? { ...user, status } : user)));
+      const body = await response.json().catch(() => null);
+      if (response.ok && body?.data) {
+        setUserRows((current) => current.map((user) => (user.id === userId ? body.data : user)));
         setMessage("User status updated successfully.");
         setTimeout(() => setMessage(""), 3000);
         return;
       }
 
-      setMessage("You do not have permission to change this user.");
+      setMessage(body?.error?.message || "The member status could not be updated.");
     } catch {
       setMessage("Network error while updating user status.");
+    } finally {
+      setPendingUserId(null);
     }
   }
 
   async function updateUserRole(userId: string, role: string) {
+    if (!canManageRoles) return;
+    setPendingUserId(userId);
     setMessage(`Updating role to ${role}...`);
     try {
       const response = await fetch("/api/v1/admin/users", {
@@ -189,16 +198,19 @@ export function AdminDashboard() {
         body: JSON.stringify({ userId, role }),
       });
 
-      if (response.ok) {
-        setUserRows((current) => current.map((user) => (user.id === userId ? { ...user, roles: [role] } : user)));
+      const body = await response.json().catch(() => null);
+      if (response.ok && body?.data) {
+        setUserRows((current) => current.map((user) => (user.id === userId ? body.data : user)));
         setMessage(`User role changed to ${role}.`);
         setTimeout(() => setMessage(""), 3000);
         return;
       }
 
-      setMessage("You do not have permission to modify roles.");
+      setMessage(body?.error?.message || "The member role could not be updated.");
     } catch {
       setMessage("Network error while updating user role.");
+    } finally {
+      setPendingUserId(null);
     }
   }
 
@@ -355,33 +367,27 @@ export function AdminDashboard() {
                               <small>@{user.username}</small>
                             </div>
                           </div>
-                          <span>{user.email}</span>
+                          <span className="admin-email" title={user.email}>{user.email}</span>
                           <div>
                             <select
+                              className="role-select"
                               value={user.roles[0] || "member"}
                               onChange={(e) => updateUserRole(user.id, e.target.value)}
                               aria-label={`Change role for ${user.displayName}`}
-                              style={{
-                                background: "rgba(255,255,255,0.05)",
-                                border: "1px solid var(--border)",
-                                borderRadius: "6px",
-                                color: "var(--foreground)",
-                                padding: "4px 8px",
-                                fontSize: "0.85rem",
-                                outline: "none",
-                              }}
+                              disabled={!canManageRoles || pendingUserId === user.id}
                             >
-                              <option value="member" style={{ background: "#111" }}>member</option>
-                              <option value="mentor" style={{ background: "#111" }}>mentor</option>
-                              <option value="event_organizer" style={{ background: "#111" }}>organizer</option>
-                              <option value="moderator" style={{ background: "#111" }}>moderator</option>
-                              <option value="admin" style={{ background: "#111" }}>admin</option>
+                              <option value="member">member</option>
+                              <option value="mentor">mentor</option>
+                              <option value="event_organizer">organizer</option>
+                              <option value="moderator">moderator</option>
+                              <option value="admin">admin</option>
                             </select>
                           </div>
                           <span className={`status-badge ${user.status === "active" ? "active" : "inactive"}`}>{user.status}</span>
                           <div className="inline-actions">
                             <button
                               type="button"
+                              disabled={pendingUserId === user.id}
                               onClick={() => updateUserStatus(user.id, user.status === "active" ? "suspended" : "active")}
                               style={{
                                 background: user.status === "active" ? "rgba(255, 107, 107, 0.1)" : "rgba(34, 197, 94, 0.1)",
@@ -390,10 +396,10 @@ export function AdminDashboard() {
                                 borderRadius: "6px",
                                 padding: "4px 10px",
                                 fontSize: "0.8rem",
-                                cursor: "pointer",
+                                cursor: pendingUserId === user.id ? "wait" : "pointer",
                               }}
                             >
-                              {user.status === "active" ? "Suspend" : "Activate"}
+                                {pendingUserId === user.id ? "Saving…" : user.status === "active" ? "Suspend" : "Activate"}
                             </button>
                           </div>
                         </div>

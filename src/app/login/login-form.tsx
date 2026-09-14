@@ -80,7 +80,9 @@ export function LoginForm({
     if (loading) return;
 
     if (window.location.origin !== OAUTH_SITE_URL) {
-      window.location.href = `${OAUTH_SITE_URL}/login?next=${encodeURIComponent(nextUrl)}`;
+      // This redirect intentionally leaves the current origin for the hosted OAuth flow.
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+      window.location.assign(`${OAUTH_SITE_URL}/login?next=${encodeURIComponent(nextUrl)}`);
       return;
     }
 

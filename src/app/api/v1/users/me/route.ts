@@ -9,13 +9,14 @@ export async function GET(request: Request) {
   return withRequestId(request, async () => {
     const user = await getCurrentUser();
     const supabase = await createSupabaseServerClient();
-    const result = await supabase.from("profiles").select("*, profile_categories(*), profile_skills(*), social_links(*)").eq("id", user.id).maybeSingle();
+    const profileFields = "id, username, display_name, avatar_url, bio, status, created_at, updated_at, profile_categories(category_id), profile_skills(skill_id, level, years_experience), social_links(platform, url)";
+    const result = await supabase.from("profiles").select(profileFields).eq("id", user.id).maybeSingle();
 
     let data = result.data;
     if (result.error || !data) {
       const { ensureUserProfile } = await import("@/server/auth/current-user");
       await ensureUserProfile(user);
-      const retry = await supabase.from("profiles").select("*, profile_categories(*), profile_skills(*), social_links(*)").eq("id", user.id).maybeSingle();
+      const retry = await supabase.from("profiles").select(profileFields).eq("id", user.id).maybeSingle();
       data = retry.data;
     }
 
@@ -41,6 +42,7 @@ export async function PATCH(request: Request) {
       ...(payload.data.bio !== undefined && { bio: payload.data.bio }),
       updated_at: new Date().toISOString(),
     };
+
     const supabase = await createSupabaseServerClient();
     const { data, error } = await supabase.from("profiles").update(updates).eq("id", user.id).select().single();
 
@@ -49,7 +51,27 @@ export async function PATCH(request: Request) {
       throw error;
     }
 
-    return Response.json({ data });
+    const requestedLinks = new Map<string, string | null>();
+    for (const entry of payload.data.socialLinks ?? []) requestedLinks.set(entry.platform, entry.url);
+    if (payload.data.facebookUrl !== undefined) requestedLinks.set("facebook", payload.data.facebookUrl);
+    if (payload.data.youtubeUrl !== undefined) requestedLinks.set("youtube", payload.data.youtubeUrl);
+
+    for (const [platform, url] of requestedLinks) {
+      const mutation = url
+        ? supabase.from("social_links").upsert({ profile_id: user.id, platform, url }, { onConflict: "profile_id,platform" })
+        : supabase.from("social_links").delete().eq("profile_id", user.id).eq("platform", platform);
+      const { error: socialError } = await mutation;
+      if (socialError) throw socialError;
+    }
+
+    const { data: socialLinks, error: socialError } = await supabase
+      .from("social_links")
+      .select("platform, url")
+      .eq("profile_id", user.id)
+      .order("platform");
+    if (socialError) throw socialError;
+
+    return Response.json({ data: { ...data, social_links: socialLinks ?? [] } });
   });
 }
 
