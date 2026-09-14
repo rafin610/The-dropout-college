@@ -75,7 +75,7 @@ export async function getProjects(ownerId?: string): Promise<Project[]> {
       return { id: project.id, name: project.name, description: project.description, status: project.status, color: colorFor(index, category?.color), team, metric: `${members.length} contributor${members.length === 1 ? "" : "s"}` };
     });
   } catch {
-    return fallbackProjects;
+    return ownerId ? [] : fallbackProjects;
   }
 }
 
