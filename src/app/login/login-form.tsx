@@ -78,6 +78,12 @@ export function LoginForm({
 
   async function continueWithGoogle() {
     if (loading) return;
+
+    if (window.location.origin !== OAUTH_SITE_URL) {
+      router.push(`${OAUTH_SITE_URL}/login?next=${encodeURIComponent(nextUrl)}`);
+      return;
+    }
+
     setLoading(true);
     setErrorMessage(null);
 
