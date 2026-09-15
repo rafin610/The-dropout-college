@@ -25,6 +25,10 @@ export const eventSchema = z.object({
   endsAt: z.string().datetime(),
   capacity: z.number().int().positive().nullable().optional(),
   location: z.string().trim().max(300).nullable().optional(),
+  categoryId: z.string().uuid().nullable().optional(),
+  eventUrl: z.string().url().nullable().optional(),
+  coverImageUrl: z.string().url().nullable().optional(),
+  status: z.enum(["draft", "published", "cancelled", "completed"]).optional(),
 }).refine((value) => new Date(value.endsAt).getTime() > new Date(value.startsAt).getTime(), {
   message: "Event end time must be after its start time.",
   path: ["endsAt"],

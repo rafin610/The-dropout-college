@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getOptionalUser, ensureUserProfile } from "@/server/auth/current-user";
 import { createSupabaseServerClient } from "@/server/supabase/server";
-import { getProjects } from "@/lib/supabase-data";
+import { getCategories, getProjects } from "@/lib/supabase-data";
 import { ProfileClient, type ProfileData } from "@/app/profile/profile-client";
 
 export const dynamic = "force-dynamic";
@@ -43,7 +43,7 @@ export default async function ProfilePage({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, username, display_name, avatar_url, bio, created_at, profile_categories(categories(name)), profile_skills(skills(name))")
+    .select("id, username, display_name, avatar_url, bio, created_at, profile_categories(category_id, categories(id, name)), profile_skills(skills(name)), user_roles(role)")
     .or(`id.eq.${targetUserId},username.eq.${targetUserId}`)
     .maybeSingle();
 
@@ -62,9 +62,10 @@ export default async function ProfilePage({
     );
   }
 
-  const [{ data: links }, projects] = await Promise.all([
+  const [{ data: links }, projects, availableCategories] = await Promise.all([
     supabase.from("social_links").select("platform, url").eq("profile_id", profile.id),
     getProjects(profile.id),
+    getCategories(),
   ]);
 
   const rawSkills = profile.profile_skills ?? [];
@@ -74,6 +75,13 @@ export default async function ProfilePage({
       ? skill.flatMap((entry) => (entry.name ? [entry.name] : []))
       : skill?.name ? [skill.name] : [];
   });
+  const selectedCategories = (profile.profile_categories ?? []).flatMap((item: { category_id?: string; categories?: unknown }) => {
+    const category = Array.isArray(item.categories) ? item.categories[0] : item.categories;
+    return category && typeof category === "object" && "id" in category && "name" in category
+      ? [{ id: String(category.id), name: String(category.name) }]
+      : [];
+  });
+  const roles = (profile.user_roles ?? []).map((entry: { role?: string }) => entry.role).filter(Boolean) as string[];
 
   const profileData: ProfileData = {
     id: profile.id,
@@ -83,11 +91,13 @@ export default async function ProfilePage({
     bio: profile.bio,
     createdAt: profile.created_at,
     skills,
+    categories: selectedCategories,
+    role: roles[0] ?? "member",
     links: (links ?? []).map((l) => ({ platform: l.platform, url: l.url })),
     projects,
   };
 
   const isOwner = currentUser?.id === profile.id;
 
-  return <ProfileClient profile={profileData} isOwner={isOwner} />;
+  return <ProfileClient profile={profileData} categories={availableCategories} isOwner={isOwner} />;
 }

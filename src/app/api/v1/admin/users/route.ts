@@ -55,7 +55,7 @@ export async function GET(request: Request) {
 
     const { data, error, count } = await query.order("created_at", { ascending: false }).range((page - 1) * pageSize, page * pageSize - 1);
     if (error) throw error;
-    const actorPermissions = await getUserPermissions(actor.id, actor.email);
+    const actorPermissions = await getUserPermissions(actor.id);
 
     return Response.json({
       data: (data ?? []).map((row) => {
@@ -106,7 +106,7 @@ export async function PUT(request: Request) {
     const normalizedStatus = status as (typeof validStatuses)[number] | undefined;
     const normalizedRole = role as (typeof assignableRoles)[number] | undefined;
 
-    const actorPermissions = await getUserPermissions(actor.id, actor.email);
+    const actorPermissions = await getUserPermissions(actor.id);
     if (normalizedRole !== undefined && !actorPermissions.has("*") && !actorPermissions.has("roles.manage")) {
       throw new ApiError("FORBIDDEN", "You do not have permission to change member roles.", 403);
     }

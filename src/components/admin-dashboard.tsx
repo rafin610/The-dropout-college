@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { AdminEvents } from "@/components/admin-events";
 
 type Metric = { label: string; value: number; tone: string };
 
@@ -233,6 +234,7 @@ export function AdminDashboard() {
           {[
             ["overview", "Overview"],
             ["users", "Users"],
+            ["events", "Events"],
             ["website", "Website CMS"],
             ["settings", "Settings"],
           ].map(([id, label]) => (
@@ -412,6 +414,8 @@ export function AdminDashboard() {
                   </div>
                 </div>
               )}
+
+              {tab === "events" && <AdminEvents />}
 
               {tab === "website" && (
                 <div className="admin-panel">

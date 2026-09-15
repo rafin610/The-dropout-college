@@ -26,7 +26,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   // Notifications state
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [notifications, setNotifications] = useState<Array<{ id: string; title: string; body: string; created_at: string; read_at: string | null }>>([]);
+  const [notifications, setNotifications] = useState<Array<{ id: string; title: string; body: string; created_at: string; read_at: string | null; resource_type: string | null; resource_id: string | null }>>([]);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
 
   useEffect(() => {
@@ -34,12 +34,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     if (!supabase) return;
 
     void supabase.auth.getUser().then(({ data }) => {
-      const email = data.user?.email ?? null;
       setUserId(data.user?.id ?? null);
       setAccountName((data.user?.user_metadata?.full_name as string | undefined) || (data.user?.user_metadata?.name as string | undefined) || null);
-      if (email && email.toLowerCase() === "ahmedrafin014@gmail.com") {
-        setIsAdmin(true);
-      } else if (data.user) {
+      if (data.user) {
         // Quick permission check
         fetch("/api/v1/admin/overview")
           .then((res) => { if (res.ok) setIsAdmin(true); })
@@ -48,13 +45,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     });
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      const email = session?.user?.email ?? null;
       setUserId(session?.user?.id ?? null);
       setAccountName((session?.user?.user_metadata?.full_name as string | undefined) || (session?.user?.user_metadata?.name as string | undefined) || null);
-      if (email && email.toLowerCase() === "ahmedrafin014@gmail.com") {
-        setIsAdmin(true);
-      } else if (!session?.user) {
+      if (!session?.user) {
         setIsAdmin(false);
+      } else {
+        fetch("/api/v1/admin/overview")
+          .then((res) => setIsAdmin(res.ok))
+          .catch(() => setIsAdmin(false));
       }
     });
 
@@ -220,11 +218,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   ) : (
                     <div style={{ display: "grid", gap: 8, maxHeight: 260, overflowY: "auto" }}>
                       {notifications.map((n) => (
-                        <div key={n.id} style={{ padding: "8px 10px", background: n.read_at ? "transparent" : "rgba(216,255,98,0.06)", border: "1px solid var(--line)", borderRadius: 4 }}>
+                        <Link key={n.id} href={n.resource_type === "event" && n.resource_id ? `/events/${n.resource_id}` : "/dashboard"} onClick={() => { if (!n.read_at) void fetch("/api/v1/notifications", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: n.id }) }); setNotificationsOpen(false); }} style={{ display: "block", padding: "8px 10px", background: n.read_at ? "transparent" : "rgba(216,255,98,0.06)", border: "1px solid var(--line)", borderRadius: 4 }}>
                           <strong style={{ display: "block", fontSize: 12, color: "#fff" }}>{n.title}</strong>
                           <span style={{ display: "block", fontSize: 11, color: "var(--muted)", marginTop: 2 }}>{n.body}</span>
                           <small style={{ color: "var(--muted)", fontSize: 9 }}>{new Date(n.created_at).toLocaleDateString()}</small>
-                        </div>
+                        </Link>
                       ))}
                     </div>
                   )}

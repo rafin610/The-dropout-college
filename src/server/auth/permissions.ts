@@ -2,25 +2,9 @@ import { getCurrentUser } from "@/server/auth/current-user";
 import { ApiError } from "@/server/errors";
 import { createSupabaseServerClient } from "@/server/supabase/server";
 
-export async function getUserPermissions(userId: string, email?: string | null): Promise<Set<string>> {
+export async function getUserPermissions(userId: string): Promise<Set<string>> {
   const permissions = new Set<string>();
   const supabase = await createSupabaseServerClient();
-
-  // If primary project super-admin email
-  if (email && email.toLowerCase() === "ahmedrafin014@gmail.com") {
-    permissions.add("*");
-    permissions.add("dashboard.read");
-    permissions.add("users.manage");
-    permissions.add("categories.manage");
-    permissions.add("projects.moderate");
-    permissions.add("events.manage");
-    permissions.add("badges.manage");
-    permissions.add("reports.manage");
-    permissions.add("discord.manage");
-    permissions.add("roles.manage");
-    permissions.add("audit_logs.read");
-    return permissions;
-  }
 
   // 1. Check user_roles table
   try {
@@ -60,6 +44,10 @@ export async function getUserPermissions(userId: string, email?: string | null):
       permissions.add("dashboard.read");
       permissions.add("projects.moderate");
       permissions.add("reports.manage");
+    }
+    if (roles.includes("event_organizer")) {
+      permissions.add("dashboard.read");
+      permissions.add("events.manage");
     }
   } catch {
     // Non-fatal if table check fails
@@ -114,7 +102,7 @@ export async function getUserPermissions(userId: string, email?: string | null):
 export async function hasPermission(permission: string): Promise<boolean> {
   try {
     const user = await getCurrentUser();
-    const permissions = await getUserPermissions(user.id, user.email);
+    const permissions = await getUserPermissions(user.id);
     return permissions.has("*") || permissions.has(permission);
   } catch {
     return false;
@@ -123,7 +111,7 @@ export async function hasPermission(permission: string): Promise<boolean> {
 
 export async function requirePermission(permission: string) {
   const user = await getCurrentUser();
-  const permissions = await getUserPermissions(user.id, user.email);
+  const permissions = await getUserPermissions(user.id);
 
   if (!permissions.has("*") && !permissions.has(permission)) {
     throw new ApiError("FORBIDDEN", "You do not have permission to perform this action.", 403);

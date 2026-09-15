@@ -64,6 +64,21 @@ export async function PATCH(request: Request) {
       if (socialError) throw socialError;
     }
 
+    if (payload.data.categoryIds !== undefined) {
+      const { error: categoryDeleteError } = await supabase
+        .from("profile_categories")
+        .delete()
+        .eq("profile_id", user.id);
+      if (categoryDeleteError) throw categoryDeleteError;
+
+      if (payload.data.categoryIds.length > 0) {
+        const { error: categoryInsertError } = await supabase
+          .from("profile_categories")
+          .insert(payload.data.categoryIds.map((category_id) => ({ profile_id: user.id, category_id })));
+        if (categoryInsertError) throw categoryInsertError;
+      }
+    }
+
     const { data: socialLinks, error: socialError } = await supabase
       .from("social_links")
       .select("platform, url")
@@ -71,7 +86,13 @@ export async function PATCH(request: Request) {
       .order("platform");
     if (socialError) throw socialError;
 
-    return Response.json({ data: { ...data, social_links: socialLinks ?? [] } });
+    const { data: categories, error: categoryError } = await supabase
+      .from("profile_categories")
+      .select("category_id, categories(id, name)")
+      .eq("profile_id", user.id);
+    if (categoryError) throw categoryError;
+
+    return Response.json({ data: { ...data, social_links: socialLinks ?? [], profile_categories: categories ?? [] } });
   });
 }
 

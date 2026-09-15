@@ -1,8 +1,8 @@
 import { createSupabaseServerClient } from "@/server/supabase/server";
 
 export type Category = { id: string; name: string; description: string | null; icon: string | null; color: string | null };
-export type Member = { id: string; name: string; handle: string; bio: string; category: string; initials: string; color: string; online: boolean; avatarUrl?: string | null };
-export type Project = { id: string; name: string; description: string; status: string; color: string; team: string[]; metric: string };
+export type Member = { id: string; name: string; handle: string; bio: string; category: string; skills: string[]; role: string; initials: string; color: string; online: boolean; avatarUrl?: string | null };
+export type Project = { id: string; ownerId?: string; name: string; description: string; status: string; color: string; team: string[]; metric: string };
 export type Event = { id: string; date: string; month: string; title: string; type: string; meta: string; accent: string };
 
 const colors = ["#d8ff62", "#77e7e1", "#ff836d", "#c4a4ff"];
@@ -14,10 +14,10 @@ const fallbackCategories: Category[] = [
 ];
 
 const fallbackMembers: Member[] = [
-  { id: "m-1", name: "Ari Hsu", handle: "@ari", bio: "I build learning systems and help people turn curiosity into momentum.", category: "Learn", initials: "AH", color: "#d8ff62", online: true },
-  { id: "m-2", name: "Noah Kim", handle: "@noah", bio: "Shipping projects, finding patterns, and helping teams move with clarity.", category: "Build", initials: "NK", color: "#77e7e1", online: true },
-  { id: "m-3", name: "Sara Dela", handle: "@sara", bio: "Designing better learning experiences and stronger community loops.", category: "Connect", initials: "SD", color: "#c4a4ff", online: false },
-  { id: "m-4", name: "Leo Hart", handle: "@leo", bio: "Turning ideas into systems, products, and habits that last.", category: "Build", initials: "LH", color: "#ff836d", online: true },
+  { id: "m-1", name: "Ari Hsu", handle: "@ari", bio: "I build learning systems and help people turn curiosity into momentum.", category: "Learn", skills: ["Learning"], role: "member", initials: "AH", color: "#d8ff62", online: true },
+  { id: "m-2", name: "Noah Kim", handle: "@noah", bio: "Shipping projects, finding patterns, and helping teams move with clarity.", category: "Build", skills: ["JavaScript"], role: "member", initials: "NK", color: "#77e7e1", online: true },
+  { id: "m-3", name: "Sara Dela", handle: "@sara", bio: "Designing better learning experiences and stronger community loops.", category: "Connect", skills: ["Community Building"], role: "member", initials: "SD", color: "#c4a4ff", online: false },
+  { id: "m-4", name: "Leo Hart", handle: "@leo", bio: "Turning ideas into systems, products, and habits that last.", category: "Build", skills: ["Product Thinking"], role: "member", initials: "LH", color: "#ff836d", online: true },
 ];
 
 const fallbackProjects: Project[] = [
@@ -49,17 +49,25 @@ export async function getCategories(): Promise<Category[]> {
 export async function getMembers(): Promise<Member[]> {
   try {
     const supabase = await createSupabaseServerClient();
-    const { data, error } = await supabase.from("profiles").select("id, username, display_name, avatar_url, bio, last_active_at, profile_categories(categories(name, color))").eq("status", "active").order("display_name");
+    const { data, error } = await supabase.from("profiles").select("id, username, display_name, avatar_url, bio, last_active_at, profile_categories(categories(name, color)), profile_skills(skills(name)), user_roles(role)").eq("status", "active").order("display_name");
     if (error) throw error;
     return (data ?? []).map((profile, index) => {
       const categoryValue = Array.isArray(profile.profile_categories) ? profile.profile_categories[0]?.categories : null;
       const category = Array.isArray(categoryValue) ? categoryValue[0] : categoryValue;
+      const rawSkills = Array.isArray(profile.profile_skills) ? profile.profile_skills : [];
+      const skills = rawSkills.flatMap((item) => {
+        const skill = Array.isArray(item.skills) ? item.skills[0] : item.skills;
+        return skill?.name ? [skill.name] : [];
+      });
+      const roles = Array.isArray(profile.user_roles) ? profile.user_roles.map((entry) => entry.role).filter(Boolean) : [];
       return {
         id: profile.id,
         name: profile.display_name,
         handle: `@${profile.username}`,
         bio: profile.bio || "",
         category: category?.name || "Member",
+        skills,
+        role: roles[0] || "member",
         initials: initials(profile.display_name),
         color: colorFor(index, category?.color),
         online: profile.last_active_at ? Date.now() - new Date(profile.last_active_at).getTime() < 15 * 60 * 1000 : false,
@@ -74,7 +82,7 @@ export async function getMembers(): Promise<Member[]> {
 export async function getProjects(ownerId?: string): Promise<Project[]> {
   try {
     const supabase = await createSupabaseServerClient();
-    let query = supabase.from("projects").select("id, name, description, status, categories(name, color), project_members(profile_id, profiles(display_name)), project_technologies(technology)").is("deleted_at", null).order("created_at", { ascending: false });
+    let query = supabase.from("projects").select("id, owner_id, name, description, status, categories(name, color), project_members(profile_id, profiles(display_name)), project_technologies(technology)").is("deleted_at", null).order("created_at", { ascending: false });
     if (ownerId) query = query.eq("owner_id", ownerId);
     const { data, error } = await query;
     if (error) throw error;
@@ -82,7 +90,7 @@ export async function getProjects(ownerId?: string): Promise<Project[]> {
       const category = Array.isArray(project.categories) ? project.categories[0] : project.categories;
       const members = Array.isArray(project.project_members) ? project.project_members : [];
       const team = members.map((member) => { const profile = Array.isArray(member.profiles) ? member.profiles[0] : member.profiles; return profile?.display_name ? initials(profile.display_name) : "?"; });
-      return { id: project.id, name: project.name, description: project.description, status: project.status, color: colorFor(index, category?.color), team, metric: `${members.length} contributor${members.length === 1 ? "" : "s"}` };
+      return { id: project.id, ownerId: project.owner_id, name: project.name, description: project.description, status: project.status, color: colorFor(index, category?.color), team, metric: `${members.length} contributor${members.length === 1 ? "" : "s"}` };
     });
   } catch {
     return ownerId ? [] : fallbackProjects;

@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export default async function ProjectsPage() {
   let projects: Awaited<ReturnType<typeof getProjects>> = [];
   let categories: Awaited<ReturnType<typeof getCategories>> = [];
-  let userEmail: string | null = null;
+  let userId: string | null = null;
   let loadError = false;
 
   try {
@@ -18,7 +18,7 @@ export default async function ProjectsPage() {
     ]);
     projects = fetchedProjects;
     categories = fetchedCategories;
-    userEmail = user?.email ?? null;
+    userId = user?.id ?? null;
   } catch {
     loadError = true;
   }
@@ -46,7 +46,7 @@ export default async function ProjectsPage() {
       <ProjectsClient
         initialProjects={projects}
         categories={categories}
-        userEmail={userEmail}
+        userId={userId}
       />
     </>
   );

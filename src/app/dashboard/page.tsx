@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowRight, Bell, Plus, Compass } from "lucide-react";
+import { ArrowRight, Bell, Plus, Compass, CalendarDays, CheckCircle2 } from "lucide-react";
 import { getOptionalUser, ensureUserProfile } from "@/server/auth/current-user";
 import { createSupabaseServerClient } from "@/server/supabase/server";
 import { getProjects } from "@/lib/supabase-data";
@@ -18,22 +18,26 @@ export default async function DashboardPage() {
   await ensureUserProfile(user);
   const supabase = await createSupabaseServerClient();
 
-  type Profile = { display_name: string | null; bio: string | null } | null;
+  type Profile = { display_name: string | null; bio: string | null; avatar_url: string | null; user_roles: Array<{ role: string }>; profile_categories: Array<{ categories: { name: string } | Array<{ name: string }> | null }>; profile_skills: Array<{ skills: { name: string } | Array<{ name: string }> | null }> } | null;
   type Notification = { id: string; title: string; body: string | null; created_at: string };
+  type UpcomingEvent = { id: string; title: string; event_type: string; starts_at: string; location: string | null };
 
   let profile: Profile = null;
   let notifications: Notification[] | null = null;
   let projects: Awaited<ReturnType<typeof getProjects>> = [];
+  let upcomingEvents: UpcomingEvent[] = [];
 
   try {
-    const [profileRes, notifRes, fetchedProjects] = await Promise.all([
-      supabase.from("profiles").select("display_name, bio").eq("id", user.id).maybeSingle(),
+    const [profileRes, notifRes, fetchedProjects, eventRes] = await Promise.all([
+      supabase.from("profiles").select("display_name, bio, avatar_url, user_roles(role), profile_categories(categories(name)), profile_skills(skills(name))").eq("id", user.id).maybeSingle(),
       supabase.from("notifications").select("id, title, body, created_at").eq("profile_id", user.id).order("created_at", { ascending: false }).limit(5),
       getProjects(user.id),
+      supabase.from("events").select("id, title, event_type, starts_at, location").eq("status", "published").gte("starts_at", new Date().toISOString()).order("starts_at").limit(3),
     ]);
     profile = profileRes.data;
     notifications = notifRes.data;
     projects = fetchedProjects;
+    upcomingEvents = eventRes.data ?? [];
   } catch {
     return (
       <section className="panel">
@@ -46,6 +50,18 @@ export default async function DashboardPage() {
     );
   }
 
+  const role = profile?.user_roles?.[0]?.role ?? "member";
+  const categoryNames = (profile?.profile_categories ?? []).flatMap((entry) => {
+    const category = Array.isArray(entry.categories) ? entry.categories[0] : entry.categories;
+    return category?.name ? [category.name] : [];
+  });
+  const skillNames = (profile?.profile_skills ?? []).flatMap((entry) => {
+    const skill = Array.isArray(entry.skills) ? entry.skills[0] : entry.skills;
+    return skill?.name ? [skill.name] : [];
+  });
+  const completionItems = [profile?.display_name, profile?.bio, profile?.avatar_url, categoryNames.length > 0, projects.length > 0];
+  const completion = Math.round((completionItems.filter(Boolean).length / completionItems.length) * 100);
+
   return (
     <>
       <div className="page-title">
@@ -56,6 +72,26 @@ export default async function DashboardPage() {
         </h1>
         <p>{profile?.bio || "Complete your profile so the right people can find you."}</p>
       </div>
+
+      <div className="stats-grid">
+        <div className="stat"><strong>{completion}%</strong><span>Profile complete</span></div>
+        <div className="stat"><strong>{projects.length}</strong><span>Your projects</span></div>
+        <div className="stat"><strong>{upcomingEvents.length}</strong><span>Upcoming events</span></div>
+        <div className="stat"><strong>{role.replaceAll("_", " ")}</strong><span>Current role</span></div>
+      </div>
+
+      <section className="content-grid section" style={{ marginTop: 28 }}>
+        <div className="panel">
+          <div className="eyebrow">Your profile signal</div>
+          <h3 style={{ marginTop: 8 }}>{categoryNames.length ? categoryNames.join(" · ") : "Choose your focus areas"}</h3>
+          <p className="member-bio">{skillNames.length ? `${skillNames.slice(0, 5).join(", ")} are part of your public profile.` : "Add categories and skills so relevant collaborators can find you."}</p>
+          <Link href="/profile" className="section-link">Manage profile <ArrowRight size={12} /></Link>
+        </div>
+        <div className="panel">
+          <div className="eyebrow"><CalendarDays size={13} style={{ verticalAlign: "middle", marginRight: 6 }} />Next on the calendar</div>
+          {upcomingEvents.length ? upcomingEvents.map((event) => <div className="activity" key={event.id}><div className="activity-icon"><CheckCircle2 size={14} /></div><div>{event.title}<span>{new Date(event.starts_at).toLocaleString()} {event.location ? `· ${event.location}` : ""}</span></div></div>) : <p className="member-bio">No upcoming events are scheduled.</p>}
+        </div>
+      </section>
 
       <div className="panel">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>

@@ -32,7 +32,10 @@ export function MemberCard({ member }: { member: Member }) {
       <h3>{member.name}</h3>
       <span className="member-handle">{member.handle}</span>
       <p className="member-bio">{member.bio || "No bio added yet."}</p>
-      <Pill tone="lime">{member.category}</Pill>
+      <div className="skill-cloud" style={{ marginTop: 10 }}>
+        <Pill tone={member.role === "admin" || member.role === "super_admin" ? "coral" : "neutral"}>{member.role.replaceAll("_", " ")}</Pill>
+        {member.skills.slice(0, 3).map((skill) => <Pill key={skill} tone="lime">{skill}</Pill>)}
+      </div>
     </Link>
   );
 }

@@ -9,11 +9,11 @@ import type { Category, Project } from "@/lib/supabase-data";
 export function ProjectsClient({
   initialProjects,
   categories,
-  userEmail,
+  userId,
 }: {
   initialProjects: Project[];
   categories: Category[];
-  userEmail: string | null;
+  userId: string | null;
 }) {
   const [projects, setProjects] = useState<Project[]>(initialProjects);
   const [search, setSearch] = useState("");
@@ -21,6 +21,7 @@ export function ProjectsClient({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   // Form fields
   const [name, setName] = useState("");
@@ -61,8 +62,8 @@ export function ProjectsClient({
     setSuccess("");
 
     try {
-      const res = await fetch("/api/v1/projects", {
-        method: "POST",
+      const res = await fetch(editingId ? `/api/v1/projects/${editingId}` : "/api/v1/projects", {
+        method: editingId ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: name.trim(),
@@ -92,11 +93,12 @@ export function ProjectsClient({
         metric: "1 contributor",
       };
 
-      setProjects((prev) => [newCard, ...prev]);
-      setSuccess("Project created successfully!");
+      setProjects((prev) => editingId ? prev.map((project) => project.id === editingId ? { ...project, name: newCard.name, description: newCard.description, status: newCard.status, color: newCard.color } : project) : [newCard, ...prev]);
+      setSuccess(editingId ? "Project updated successfully!" : "Project created successfully!");
       setName("");
       setSlug("");
       setDescription("");
+      setEditingId(null);
       setTimeout(() => {
         setModalOpen(false);
         setSuccess("");
@@ -106,6 +108,21 @@ export function ProjectsClient({
     } finally {
       setLoading(false);
     }
+  }
+
+  function startEditing(project: Project) {
+    setEditingId(project.id);
+    setName(project.name);
+    setSlug(project.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""));
+    setDescription(project.description);
+    setStatus((project.status === "Live" ? "launched" : project.status === "Active" ? "in_progress" : project.status) as "idea" | "recruiting" | "in_progress" | "launched");
+    setModalOpen(true);
+  }
+
+  async function deleteProject(id: string) {
+    const response = await fetch(`/api/v1/projects/${id}`, { method: "DELETE" });
+    if (response.ok) setProjects((current) => current.filter((project) => project.id !== id));
+    else setError("The project could not be deleted.");
   }
 
   return (
@@ -148,7 +165,10 @@ export function ProjectsClient({
       {filteredProjects.length ? (
         <div className="project-grid">
           {filteredProjects.map((project) => (
-            <ProjectCard key={project.id} project={project} />
+            <div key={project.id}>
+              <ProjectCard project={project} />
+              {userId && project.ownerId === userId && <div className="inline-actions" style={{ marginTop: 8 }}><button type="button" onClick={() => startEditing(project)}>Edit</button><button type="button" className="danger" onClick={() => void deleteProject(project.id)}>Delete</button></div>}
+            </div>
           ))}
         </div>
       ) : (
@@ -206,9 +226,9 @@ export function ProjectsClient({
             </button>
 
             <div className="eyebrow" style={{ color: "var(--lime)" }}>Community Directory</div>
-            <h2 style={{ fontSize: 24, margin: "8px 0 20px" }}>Submit a project</h2>
+            <h2 style={{ fontSize: 24, margin: "8px 0 20px" }}>{editingId ? "Edit project" : "Submit a project"}</h2>
 
-            {!userEmail ? (
+            {!userId ? (
               <div style={{ textAlign: "center", padding: "20px 0" }}>
                 <p style={{ color: "var(--muted)", margin: "0 0 16px" }}>You must be signed in to submit a project to the community.</p>
                 <Link href="/login?next=/projects" className="button button-primary">

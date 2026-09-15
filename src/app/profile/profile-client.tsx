@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Code2 as Github, Globe, AtSign as Linkedin, LoaderCircle, MessageCircle, X } from "lucide-react";
 import { Pill, SectionHeading } from "@/components/app-shell";
 import { ProjectCard } from "@/components/cards";
-import type { Project } from "@/lib/supabase-data";
+import type { Category, Project } from "@/lib/supabase-data";
 
 export type ProfileData = {
   id: string;
@@ -16,15 +16,19 @@ export type ProfileData = {
   bio: string | null;
   createdAt: string;
   skills: string[];
+  categories: Array<{ id: string; name: string }>;
+  role: string;
   links: Array<{ platform: string; url: string }>;
   projects: Project[];
 };
 
 export function ProfileClient({
   profile,
+  categories,
   isOwner,
 }: {
   profile: ProfileData;
+  categories: Category[];
   isOwner: boolean;
 }) {
   const router = useRouter();
@@ -41,6 +45,8 @@ export function ProfileClient({
   const [avatarUrl, setAvatarUrl] = useState(profile.avatarUrl || "");
   const [facebookUrl, setFacebookUrl] = useState(profile.links.find((link) => link.platform.toLowerCase() === "facebook")?.url || "");
   const [youtubeUrl, setYoutubeUrl] = useState(profile.links.find((link) => link.platform.toLowerCase() === "youtube")?.url || "");
+  const [categoryIds, setCategoryIds] = useState(profile.categories.map((category) => category.id));
+  const [categorySearch, setCategorySearch] = useState("");
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -68,6 +74,7 @@ export function ProfileClient({
           avatarUrl: avatarUrl.trim() || null,
           facebookUrl: facebookUrl.trim() || null,
           youtubeUrl: youtubeUrl.trim() || null,
+          categoryIds,
         }),
       });
 
@@ -86,6 +93,7 @@ export function ProfileClient({
         bio: bio.trim() || null,
         avatarUrl: avatarUrl.trim() || null,
         links: savedLinks,
+        categories: categories.filter((category) => categoryIds.includes(category.id)).map((category) => ({ id: category.id, name: category.name })),
       }));
 
       setSuccess("Profile updated successfully!");
@@ -125,6 +133,9 @@ export function ProfileClient({
           <div className="eyebrow">Member since {new Date(currentProfile.createdAt).getFullYear()}</div>
           <h1>{currentProfile.displayName}</h1>
           <p>@{currentProfile.username}</p>
+          <div className="skill-cloud" style={{ marginTop: 10 }}>
+            <Pill tone={currentProfile.role === "admin" || currentProfile.role === "super_admin" ? "coral" : "neutral"}>{currentProfile.role.replaceAll("_", " ")}</Pill>
+          </div>
         </div>
         {isOwner ? (
           <button
@@ -157,8 +168,8 @@ export function ProfileClient({
             </p>
 
             <div className="skill-cloud">
-              {currentProfile.skills.length ? (
-                currentProfile.skills.map((skill) => <Pill key={skill} tone="lime">{skill}</Pill>)
+              {currentProfile.categories.length || currentProfile.skills.length ? (
+                [...currentProfile.categories.map((category) => category.name), ...currentProfile.skills].map((skill) => <Pill key={skill} tone="lime">{skill}</Pill>)
               ) : (
                 <span className="muted-text">No skills listed yet.</span>
               )}
@@ -298,6 +309,32 @@ export function ProfileClient({
                   placeholder="Tell the community what you're working on, learning, or looking for..."
                   rows={4}
                 />
+              </div>
+
+              <div className="field">
+                <label>Skills and categories</label>
+                <input
+                  value={categorySearch}
+                  onChange={(event) => setCategorySearch(event.target.value)}
+                  placeholder="Search categories"
+                />
+                <div className="filter-row" style={{ marginTop: 4 }}>
+                  {categories
+                    .filter((category) => category.name.toLowerCase().includes(categorySearch.toLowerCase()))
+                    .map((category) => {
+                      const selected = categoryIds.includes(category.id);
+                      return (
+                        <button
+                          key={category.id}
+                          type="button"
+                          className={`filter ${selected ? "active" : ""}`}
+                          onClick={() => setCategoryIds((current) => selected ? current.filter((id) => id !== category.id) : [...current, category.id])}
+                        >
+                          {category.name}
+                        </button>
+                      );
+                    })}
+                </div>
               </div>
 
               <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 12 }}>
