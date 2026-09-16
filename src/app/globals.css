@@ -138,6 +138,12 @@ kbd { margin-left: auto; font: 10px 'DM Mono'; border: 1px solid var(--line); pa
 .skill-option { min-height: 40px; border: 1px solid var(--line); background: rgba(255,255,255,.025); color: #cdd4cb; padding: 9px 12px; border-radius: 3px; font-size: 11px; text-align: left; transition: border-color .2s ease, color .2s ease, background .2s ease; }
 .skill-option:hover { border-color: rgba(216,255,98,.55); color: #f4f6ee; background: rgba(216,255,98,.06); }
 .skill-option.selected { border-color: var(--lime); color: var(--ink); background: var(--lime); }
+.profile-header { display: flex; align-items: center; gap: 18px; }
+.profile-large { width: 88px; height: 88px; flex: 0 0 88px; display: grid; place-items: center; border: 1px solid rgba(216,255,98,.35); border-radius: 50%; background: rgba(216,255,98,.1); color: var(--lime); font: 500 20px 'DM Mono'; }
+.profile-header h1 { margin: 7px 0 2px; font-size: clamp(28px, 4vw, 46px); line-height: 1; letter-spacing: -.07em; }
+.profile-header p { margin: 0; color: var(--muted); font: 11px 'DM Mono'; }
+.skill-cloud { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.muted-text { color: var(--muted); font-size: 12px; }
 .profile-layout, .dashboard-grid { display: grid; grid-template-columns: 1.4fr .6fr; gap: 12px; margin-top: 28px; }
 .panel { padding: 22px; }
 .panel h3 { margin: 0; font-size: 15px; }
