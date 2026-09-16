@@ -1,6 +1,7 @@
 import { createSupabaseServerClient } from "@/server/supabase/server";
 
 export type Category = { id: string; name: string; description: string | null; icon: string | null; color: string | null };
+export type Skill = { id: string; name: string };
 export type Member = { id: string; name: string; handle: string; bio: string; category: string; skills: string[]; role: string; initials: string; color: string; online: boolean; avatarUrl?: string | null };
 export type Project = { id: string; ownerId?: string; name: string; description: string; status: string; color: string; team: string[]; metric: string };
 export type Event = { id: string; date: string; month: string; title: string; type: string; meta: string; accent: string };
@@ -122,5 +123,16 @@ export async function getCounts() {
     return { members: members.count ?? 0, projects: projects.count ?? 0, events: events.count ?? 0, teams: teams.count ?? 0 };
   } catch {
     return { members: fallbackMembers.length, projects: fallbackProjects.length, events: fallbackEvents.length, teams: 12 };
+  }
+}
+
+export async function getSkills(): Promise<Skill[]> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase.from("skills").select("id, name").eq("is_active", true).order("sort_order").order("name");
+    if (error) throw error;
+    return data ?? [];
+  } catch {
+    return [];
   }
 }

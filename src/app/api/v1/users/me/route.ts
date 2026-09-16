@@ -79,6 +79,29 @@ export async function PATCH(request: Request) {
       }
     }
 
+    if (payload.data.skillIds !== undefined) {
+      const uniqueSkillIds = [...new Set(payload.data.skillIds)];
+      const { data: validSkills, error: skillValidationError } = await supabase
+        .from("skills")
+        .select("id")
+        .in("id", uniqueSkillIds)
+        .eq("is_active", true);
+      if (skillValidationError) throw skillValidationError;
+      if ((validSkills ?? []).length !== uniqueSkillIds.length) {
+        throw new ApiError("VALIDATION_ERROR", "One or more selected skills are unavailable.", 400);
+      }
+
+      const { error: skillDeleteError } = await supabase.from("profile_skills").delete().eq("profile_id", user.id);
+      if (skillDeleteError) throw skillDeleteError;
+
+      if (uniqueSkillIds.length > 0) {
+        const { error: skillInsertError } = await supabase
+          .from("profile_skills")
+          .insert(uniqueSkillIds.map((skill_id) => ({ profile_id: user.id, skill_id })));
+        if (skillInsertError) throw skillInsertError;
+      }
+    }
+
     const { data: socialLinks, error: socialError } = await supabase
       .from("social_links")
       .select("platform, url")
@@ -92,7 +115,13 @@ export async function PATCH(request: Request) {
       .eq("profile_id", user.id);
     if (categoryError) throw categoryError;
 
-    return Response.json({ data: { ...data, social_links: socialLinks ?? [], profile_categories: categories ?? [] } });
+    const { data: skills, error: skillError } = await supabase
+      .from("profile_skills")
+      .select("skill_id, skills(id, name)")
+      .eq("profile_id", user.id);
+    if (skillError) throw skillError;
+
+    return Response.json({ data: { ...data, social_links: socialLinks ?? [], profile_categories: categories ?? [], profile_skills: skills ?? [] } });
   });
 }
 

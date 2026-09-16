@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Code2 as Github, Globe, AtSign as Linkedin, LoaderCircle, MessageCircle, X } from "lucide-react";
 import { Pill, SectionHeading } from "@/components/app-shell";
 import { ProjectCard } from "@/components/cards";
-import type { Category, Project } from "@/lib/supabase-data";
+import type { Category, Project, Skill } from "@/lib/supabase-data";
 
 export type ProfileData = {
   id: string;
@@ -15,7 +15,7 @@ export type ProfileData = {
   avatarUrl: string | null;
   bio: string | null;
   createdAt: string;
-  skills: string[];
+  skills: Skill[];
   categories: Array<{ id: string; name: string }>;
   role: string;
   links: Array<{ platform: string; url: string }>;
@@ -25,10 +25,12 @@ export type ProfileData = {
 export function ProfileClient({
   profile,
   categories,
+  skills,
   isOwner,
 }: {
   profile: ProfileData;
   categories: Category[];
+  skills: Skill[];
   isOwner: boolean;
 }) {
   const router = useRouter();
@@ -46,6 +48,7 @@ export function ProfileClient({
   const [facebookUrl, setFacebookUrl] = useState(profile.links.find((link) => link.platform.toLowerCase() === "facebook")?.url || "");
   const [youtubeUrl, setYoutubeUrl] = useState(profile.links.find((link) => link.platform.toLowerCase() === "youtube")?.url || "");
   const [categoryIds, setCategoryIds] = useState(profile.categories.map((category) => category.id));
+  const [skillIds, setSkillIds] = useState(profile.skills.map((skill) => skill.id));
   const [categorySearch, setCategorySearch] = useState("");
 
   async function handleSave(e: React.FormEvent) {
@@ -75,6 +78,7 @@ export function ProfileClient({
           facebookUrl: facebookUrl.trim() || null,
           youtubeUrl: youtubeUrl.trim() || null,
           categoryIds,
+          skillIds,
         }),
       });
 
@@ -94,6 +98,7 @@ export function ProfileClient({
         avatarUrl: avatarUrl.trim() || null,
         links: savedLinks,
         categories: categories.filter((category) => categoryIds.includes(category.id)).map((category) => ({ id: category.id, name: category.name })),
+        skills: skills.filter((skill) => skillIds.includes(skill.id)),
       }));
 
       setSuccess("Profile updated successfully!");
@@ -167,11 +172,12 @@ export function ProfileClient({
               {currentProfile.bio || (isOwner ? "Add a short introduction to help members get to know you." : "This member has not added a bio yet.")}
             </p>
 
-            <div className="skill-cloud">
+            <div className="eyebrow" style={{ marginTop: 28 }}>Skills</div>
+            <div className="skill-cloud" style={{ marginTop: 10 }}>
               {currentProfile.categories.length || currentProfile.skills.length ? (
-                [...currentProfile.categories.map((category) => category.name), ...currentProfile.skills].map((skill) => <Pill key={skill} tone="lime">{skill}</Pill>)
+                [...currentProfile.categories.map((category) => category.name), ...currentProfile.skills.map((skill) => skill.name)].map((skill) => <Pill key={skill} tone="lime">{skill}</Pill>)
               ) : (
-                <span className="muted-text">No skills listed yet.</span>
+                <span className="muted-text">{isOwner ? "Add your skills" : "No skills listed yet."}</span>
               )}
             </div>
 
@@ -312,7 +318,28 @@ export function ProfileClient({
               </div>
 
               <div className="field">
-                <label>Skills and categories</label>
+                <label>Skills</label>
+                <div className="skill-selector" role="group" aria-label="Select your skills">
+                  {skills.map((skill) => {
+                    const selected = skillIds.includes(skill.id);
+                    return (
+                      <button
+                        key={skill.id}
+                        type="button"
+                        className={`skill-option${selected ? " selected" : ""}`}
+                        aria-pressed={selected}
+                        onClick={() => setSkillIds((current) => selected ? current.filter((id) => id !== skill.id) : [...current, skill.id])}
+                      >
+                        {skill.name}{selected ? "  ✓" : ""}
+                      </button>
+                    );
+                  })}
+                </div>
+                {!skillIds.length && <span className="muted-text">Add your skills</span>}
+              </div>
+
+              <div className="field">
+                <label>Focus areas</label>
                 <input
                   value={categorySearch}
                   onChange={(event) => setCategorySearch(event.target.value)}

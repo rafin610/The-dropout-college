@@ -16,6 +16,7 @@ export const updateProfileSchema = z.object({
   avatarUrl: optionalUrl,
   bio: z.string().trim().max(500).nullable().optional(),
   categoryIds: z.array(z.string().uuid()).max(12).optional(),
+  skillIds: z.array(z.string().uuid()).max(30).optional(),
   facebookUrl: optionalUrl,
   youtubeUrl: optionalUrl,
   socialLinks: z

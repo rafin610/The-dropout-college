@@ -134,6 +134,10 @@ kbd { margin-left: auto; font: 10px 'DM Mono'; border: 1px solid var(--line); pa
 .filter-row { display: flex; gap: 7px; flex-wrap: wrap; }
 .filter { background: transparent; border: 1px solid var(--line); color: var(--muted); padding: 9px 11px; font-size: 11px; }
 .filter.active { border-color: var(--lime); color: var(--lime); }
+.skill-selector { display: flex; flex-wrap: wrap; gap: 8px; }
+.skill-option { min-height: 40px; border: 1px solid var(--line); background: rgba(255,255,255,.025); color: #cdd4cb; padding: 9px 12px; border-radius: 3px; font-size: 11px; text-align: left; transition: border-color .2s ease, color .2s ease, background .2s ease; }
+.skill-option:hover { border-color: rgba(216,255,98,.55); color: #f4f6ee; background: rgba(216,255,98,.06); }
+.skill-option.selected { border-color: var(--lime); color: var(--ink); background: var(--lime); }
 .profile-layout, .dashboard-grid { display: grid; grid-template-columns: 1.4fr .6fr; gap: 12px; margin-top: 28px; }
 .panel { padding: 22px; }
 .panel h3 { margin: 0; font-size: 15px; }

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getOptionalUser, ensureUserProfile } from "@/server/auth/current-user";
 import { createSupabaseServerClient } from "@/server/supabase/server";
-import { getCategories, getProjects } from "@/lib/supabase-data";
+import { getCategories, getProjects, getSkills } from "@/lib/supabase-data";
 import { ProfileClient, type ProfileData } from "@/app/profile/profile-client";
 
 export const dynamic = "force-dynamic";
@@ -62,18 +62,19 @@ export default async function ProfilePage({
     );
   }
 
-  const [{ data: links }, projects, availableCategories] = await Promise.all([
+  const [{ data: links }, projects, availableCategories, availableSkills] = await Promise.all([
     supabase.from("social_links").select("platform, url").eq("profile_id", profile.id),
     getProjects(profile.id),
     getCategories(),
+    getSkills(),
   ]);
 
   const rawSkills = profile.profile_skills ?? [];
-  const skills = (rawSkills as Array<{ skills?: unknown }>).flatMap((item) => {
+  const skills = (rawSkills as Array<{ skill_id?: string; skills?: unknown }>).flatMap((item) => {
     const skill = item.skills as { name?: string } | Array<{ name?: string }> | null;
     return Array.isArray(skill)
-      ? skill.flatMap((entry) => (entry.name ? [entry.name] : []))
-      : skill?.name ? [skill.name] : [];
+      ? skill.flatMap((entry) => (entry.name ? [{ id: item.skill_id ?? "", name: entry.name }] : []))
+      : skill?.name ? [{ id: item.skill_id ?? "", name: skill.name }] : [];
   });
   const selectedCategories = (profile.profile_categories ?? []).flatMap((item: { category_id?: string; categories?: unknown }) => {
     const category = Array.isArray(item.categories) ? item.categories[0] : item.categories;
@@ -99,5 +100,5 @@ export default async function ProfilePage({
 
   const isOwner = currentUser?.id === profile.id;
 
-  return <ProfileClient profile={profileData} categories={availableCategories} isOwner={isOwner} />;
+  return <ProfileClient profile={profileData} categories={availableCategories} skills={availableSkills} isOwner={isOwner} />;
 }
