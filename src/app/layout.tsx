@@ -42,6 +42,9 @@ export const metadata: Metadata = {
     title: "The DropOut College",
     description: "A learning-focused community built around curiosity, knowledge sharing, guidance, and personal growth.",
   },
+  icons: {
+    icon: "/logo.svg",
+  },
   robots: {
     index: true,
     follow: true,

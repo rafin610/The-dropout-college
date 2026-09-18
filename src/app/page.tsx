@@ -3,7 +3,7 @@ import { ArrowRight, MessageCircle } from "lucide-react";
 import { getCategories, getCounts, getEvents, getMembers, getProjects } from "@/lib/supabase-data";
 import { SectionHeading } from "@/components/app-shell";
 import { EventCard, MemberCard, ProjectCard } from "@/components/cards";
-import { getSiteSections, getSiteSettings, getSiteSocialLinks } from "@/server/site-content";
+import { getSiteSections, getSiteSettings } from "@/server/site-content";
 
 export const dynamic = "force-dynamic";
 
@@ -15,11 +15,10 @@ export default async function Home() {
   let counts: Awaited<ReturnType<typeof getCounts>> = { members: 0, projects: 0, events: 0, teams: 0 };
   let settings: Awaited<ReturnType<typeof getSiteSettings>> = {};
   let sections: Awaited<ReturnType<typeof getSiteSections>> = [];
-  let socialLinks: Awaited<ReturnType<typeof getSiteSocialLinks>> = [];
   let loadError = false;
 
   try {
-    [categories, members, projects, events, counts, settings, sections, socialLinks] = await Promise.all([
+    [categories, members, projects, events, counts, settings, sections] = await Promise.all([
       getCategories(),
       getMembers(),
       getProjects(),
@@ -27,7 +26,6 @@ export default async function Home() {
       getCounts(),
       getSiteSettings(),
       getSiteSections(),
-      getSiteSocialLinks(),
     ]);
   } catch {
     loadError = true;
@@ -55,9 +53,18 @@ export default async function Home() {
   const ourAim = sections.find((section) => section.slug === "our-aim");
   const ourGoal = sections.find((section) => section.slug === "our-goal");
   const whyJoin = sections.find((section) => section.slug === "why-join");
-  const primaryLinks = socialLinks.filter((link) => link.url).slice(0, 3);
   const heroCtaHref = settings.hero_cta_href || "https://discord.gg/3xfu5TMgF";
   const inviteLink = settings.community_invite_link || heroCtaHref;
+  const featuredMembers = members.filter((member) => {
+    const bio = member.bio.trim().replace(/[.]$/, "");
+    return bio.length > 0 && bio !== "No bio added yet";
+  });
+  const stats: Array<[number, string]> = [
+    [counts.members, counts.members === 1 ? "member" : "members"],
+    [counts.projects, counts.projects === 1 ? "project" : "projects"],
+    ...(counts.events > 0 ? [[counts.events, counts.events === 1 ? "event" : "events"] as [number, string]] : []),
+    ...(counts.teams > 0 ? [[counts.teams, counts.teams === 1 ? "team" : "teams"] as [number, string]] : []),
+  ];
 
   return (
     <>
@@ -71,9 +78,6 @@ export default async function Home() {
             {settings.hero_description || "The DropOut College is a learning-focused community built around curiosity, knowledge sharing, guidance, collaboration, and personal growth."}
           </p>
           <div className="hero-actions">
-            <Link href={heroCtaHref} className="button button-primary" target={heroCtaHref.startsWith("http") ? "_blank" : undefined} rel={heroCtaHref.startsWith("http") ? "noreferrer" : undefined}>
-              {settings.hero_cta_text || "Join The DropOut College"} <ArrowRight size={15} />
-            </Link>
             <Link href={inviteLink} className="button button-ghost" target={inviteLink.startsWith("http") ? "_blank" : undefined} rel={inviteLink.startsWith("http") ? "noreferrer" : undefined}>
               <MessageCircle size={15} /> Join Discord
             </Link>
@@ -87,7 +91,7 @@ export default async function Home() {
       </section>
 
       <section className="stats-grid" aria-label="Community statistics">
-        {[[counts.members, "members"], [counts.projects, "projects"], [counts.events, "events"], [counts.teams, "teams"]].map(([value, label]) => (
+        {stats.map(([value, label]) => (
           <div className="stat" key={String(label)}>
             <strong>{String(value)}</strong>
             <span>{String(label)}</span>
@@ -112,11 +116,6 @@ export default async function Home() {
         <SectionHeading
           eyebrow="Learning-first culture"
           title={ourGoal?.title || "Our Goal"}
-          action={
-            <Link href={inviteLink} className="section-link" target={inviteLink.startsWith("http") ? "_blank" : undefined} rel={inviteLink.startsWith("http") ? "noreferrer" : undefined}>
-              Join us <ArrowRight size={13} />
-            </Link>
-          }
         />
         <div className="feature-grid">
           {["Guidance", "Resources", "People to learn with", "People to ask questions", "Opportunities to share knowledge", "Opportunities to collaborate"].map((item) => (
@@ -173,7 +172,7 @@ export default async function Home() {
 
       <section className="section">
         <SectionHeading eyebrow="People in motion" title="People building, sharing, growing." action={<Link href="/explore" className="section-link">Browse people <ArrowRight size={13} /></Link>} />
-        <div className="member-grid">{members.map((member) => <MemberCard key={member.id} member={member} />)}</div>
+        <div className="member-grid">{featuredMembers.map((member) => <MemberCard key={member.id} member={member} />)}</div>
       </section>
 
       <section className="section">
@@ -196,13 +195,8 @@ export default async function Home() {
             <p>{whyJoin?.description || "Have something you want to learn? Have something you want to share? Want to grow with like-minded people?"}</p>
             <div className="hero-actions compact-actions">
               <Link href={inviteLink} className="button button-primary" target={inviteLink.startsWith("http") ? "_blank" : undefined} rel={inviteLink.startsWith("http") ? "noreferrer" : undefined}>
-                {whyJoin?.cta_label || "Join The DropOut College"} <ArrowRight size={15} />
+                <MessageCircle size={15} /> Join Discord
               </Link>
-              {primaryLinks.length > 0 && (
-                <Link href={primaryLinks[0].url} className="button button-ghost" target="_blank" rel="noreferrer">
-                  {primaryLinks[0].label}
-                </Link>
-              )}
             </div>
           </div>
         </div>
