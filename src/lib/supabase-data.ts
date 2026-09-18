@@ -121,14 +121,13 @@ export async function getProjects(ownerId?: string, limit?: number): Promise<Pro
 }
 
 export async function getEvents(): Promise<Event[]> {
-  try {
-    const supabase = await createSupabaseServerClient();
-    const { data, error } = await supabase.from("events").select("id, title, event_type, starts_at, location, capacity, event_participants(profile_id)").eq("status", "published").order("starts_at");
-    if (error) throw error;
-    return (data ?? []).map((event, index) => { const date = new Date(event.starts_at); const participants = Array.isArray(event.event_participants) ? event.event_participants.length : 0; return { id: event.id, date: date.toLocaleDateString("en-US", { day: "2-digit" }), month: date.toLocaleDateString("en-US", { month: "short" }).toUpperCase(), title: event.title, type: event.event_type, meta: `${date.toLocaleDateString("en-US", { weekday: "long" })} · ${date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" })} UTC${event.location ? ` · ${event.location}` : ""}${event.capacity ? ` · ${participants}/${event.capacity}` : ""}`, accent: index % 3 === 0 ? "lime" : index % 3 === 1 ? "coral" : "cyan" }; });
-  } catch {
-    return fallbackEvents;
-  }
+  // Returns ONLY real database rows. No mock/fallback events: when the query
+  // fails or the table is empty, the Events page renders its empty state so
+  // a broken query can never be masked by demo data.
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.from("events").select("id, title, event_type, starts_at, location, capacity, event_participants(profile_id)").eq("status", "published").order("starts_at");
+  if (error) throw error;
+  return (data ?? []).map((event, index) => { const date = new Date(event.starts_at); const participants = Array.isArray(event.event_participants) ? event.event_participants.length : 0; return { id: event.id, date: date.toLocaleDateString("en-US", { day: "2-digit" }), month: date.toLocaleDateString("en-US", { month: "short" }).toUpperCase(), title: event.title, type: event.event_type, meta: `${date.toLocaleDateString("en-US", { weekday: "long" })} · ${date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" })} UTC${event.location ? ` · ${event.location}` : ""}${event.capacity ? ` · ${participants}/${event.capacity}` : ""}`, accent: index % 3 === 0 ? "lime" : index % 3 === 1 ? "coral" : "cyan" }; });
 }
 
 export async function getCounts() {

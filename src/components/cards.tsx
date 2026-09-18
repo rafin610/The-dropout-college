@@ -236,7 +236,10 @@ export function EventCard({ event }: { event: Event }) {
             <div className="eyebrow" style={{ color: "var(--lime)" }}>{event.month} {event.date} · {event.type}</div>
             <h2 style={{ fontSize: 24, margin: "10px 0" }}>{event.title}</h2>
             <p style={{ color: "var(--muted)", fontSize: 12, margin: "0 0 20px" }}>{event.meta}</p>
-            <div style={{ borderTop: "1px solid var(--line)", paddingTop: 20, display: "flex", justifyContent: "flex-end", gap: 10 }}>
+            <div style={{ borderTop: "1px solid var(--line)", paddingTop: 20, display: "flex", justifyContent: "flex-end", gap: 10, flexWrap: "wrap" }}>
+              <Link href={`/events/${event.id}`} className="button button-ghost" style={{ fontSize: 11 }} onClick={() => setModalOpen(false)}>
+                View details
+              </Link>
               <button onClick={downloadIcs} className="button button-ghost" style={{ fontSize: 11 }}>
                 <CalendarDays size={14} /> Add to calendar (.ics)
               </button>

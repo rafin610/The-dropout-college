@@ -1,15 +1,23 @@
 import { requirePermission } from "@/server/auth/permissions";
 import { ApiError, toErrorResponse } from "@/server/errors";
-import { createSupabaseServerClient } from "@/server/supabase/server";
+import { fanOutEventPublished } from "@/server/events/notify";
+import { createSupabaseAdminClient, createSupabaseServerClient } from "@/server/supabase/server";
 import { eventSchema } from "@/server/validation/resources";
 
 export const runtime = "nodejs";
+
+async function getPrivilegedClient() {
+  // Prefer the service-role client so admin reads/writes are not subject to
+  // end-user RLS restrictions. Every route here is already guarded by
+  // requirePermission("events.manage"), which remains the authorization gate.
+  return createSupabaseAdminClient() ?? (await createSupabaseServerClient());
+}
 
 export async function GET(request: Request) {
   const requestId = request.headers.get("x-request-id") ?? crypto.randomUUID();
   try {
     await requirePermission("events.manage");
-    const supabase = await createSupabaseServerClient();
+    const supabase = await getPrivilegedClient();
     const { data, error } = await supabase.from("events").select("id, title, slug, description, event_type, starts_at, ends_at, capacity, location, event_url, category_id, cover_image_url, status, created_at, updated_at").order("starts_at", { ascending: true });
     if (error) throw error;
     return Response.json({ data: data ?? [], requestId });
@@ -25,7 +33,7 @@ export async function POST(request: Request) {
     const parsed = eventSchema.safeParse(await request.json());
     if (!parsed.success) throw new ApiError("VALIDATION_ERROR", "Event data is invalid.", 400);
     const value = parsed.data;
-    const supabase = await createSupabaseServerClient();
+    const supabase = await getPrivilegedClient();
     const { data, error } = await supabase.from("events").insert({
       created_by: user.id,
       title: value.title,
@@ -42,6 +50,10 @@ export async function POST(request: Request) {
       status: value.status ?? "draft",
     }).select().single();
     if (error) throw error;
+    // Notify members only when the event is actually published (and stored).
+    if (data?.status === "published") {
+      await fanOutEventPublished(data.id, data.title);
+    }
     return Response.json({ data, requestId }, { status: 201 });
   } catch (error) {
     return toErrorResponse(error, requestId);
