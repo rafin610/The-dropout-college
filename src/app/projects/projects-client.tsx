@@ -91,6 +91,7 @@ export function ProjectsClient({
         color: cat?.color || "#d8ff62",
         team: ["YOU"],
         metric: "1 contributor",
+        technologies: [],
       };
 
       setProjects((prev) => editingId ? prev.map((project) => project.id === editingId ? { ...project, name: newCard.name, description: newCard.description, status: newCard.status, color: newCard.color } : project) : [newCard, ...prev]);

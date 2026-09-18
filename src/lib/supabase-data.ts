@@ -3,7 +3,19 @@ import { createSupabaseServerClient } from "@/server/supabase/server";
 export type Category = { id: string; name: string; description: string | null; icon: string | null; color: string | null };
 export type Skill = { id: string; name: string };
 export type Member = { id: string; name: string; handle: string; bio: string; category: string; skills: string[]; role: string; initials: string; color: string; online: boolean; avatarUrl?: string | null };
-export type Project = { id: string; ownerId?: string; name: string; description: string; status: string; color: string; team: string[]; metric: string };
+export type Project = {
+  id: string;
+  ownerId?: string;
+  name: string;
+  description: string;
+  status: string;
+  color: string;
+  team: string[];
+  metric: string;
+  coverImageUrl?: string | null;
+  technologies: string[];
+  links?: Array<{ label: string; url: string }>;
+};
 export type Event = { id: string; date: string; month: string; title: string; type: string; meta: string; accent: string };
 
 const colors = ["#d8ff62", "#77e7e1", "#ff836d", "#c4a4ff"];
@@ -22,9 +34,9 @@ const fallbackMembers: Member[] = [
 ];
 
 const fallbackProjects: Project[] = [
-  { id: "p-1", name: "Mentor Match", description: "An early-stage platform for matching learners with the right people to guide them.", status: "Active", color: "#d8ff62", team: ["AH", "NK"], metric: "2 contributors" },
-  { id: "p-2", name: "Study Rooms", description: "A collaborative learning space where small groups can share resources and weekly goals.", status: "Researching", color: "#77e7e1", team: ["SD", "LH"], metric: "2 contributors" },
-  { id: "p-3", name: "Creator Circles", description: "A lightweight community for creators who want feedback, accountability, and momentum.", status: "Growing", color: "#c4a4ff", team: ["AH", "SD", "LH"], metric: "3 contributors" },
+  { id: "p-1", name: "Mentor Match", description: "An early-stage platform for matching learners with the right people to guide them.", status: "Active", color: "#d8ff62", team: ["AH", "NK"], metric: "2 contributors", technologies: [] },
+  { id: "p-2", name: "Study Rooms", description: "A collaborative learning space where small groups can share resources and weekly goals.", status: "Researching", color: "#77e7e1", team: ["SD", "LH"], metric: "2 contributors", technologies: [] },
+  { id: "p-3", name: "Creator Circles", description: "A lightweight community for creators who want feedback, accountability, and momentum.", status: "Growing", color: "#c4a4ff", team: ["AH", "SD", "LH"], metric: "3 contributors", technologies: [] },
 ];
 
 const fallbackEvents: Event[] = [
@@ -47,10 +59,13 @@ export async function getCategories(): Promise<Category[]> {
   }
 }
 
-export async function getMembers(): Promise<Member[]> {
+export async function getMembers(limit?: number, completeOnly = false): Promise<Member[]> {
   try {
     const supabase = await createSupabaseServerClient();
-    const { data, error } = await supabase.from("profiles").select("id, username, display_name, avatar_url, bio, last_active_at, profile_categories(categories(name, color)), profile_skills(skills(name)), user_roles(role)").eq("status", "active").order("display_name");
+    let query = supabase.from("profiles").select("id, username, display_name, avatar_url, bio, last_active_at, profile_categories(categories(name, color)), profile_skills(skills(name)), user_roles(role)").eq("status", "active").order("display_name");
+    if (completeOnly) query = query.not("bio", "is", null).neq("bio", "").neq("bio", "No bio added yet").neq("bio", "No bio added yet.");
+    if (limit) query = query.limit(limit);
+    const { data, error } = await query;
     if (error) throw error;
     return (data ?? []).map((profile, index) => {
       const categoryValue = Array.isArray(profile.profile_categories) ? profile.profile_categories[0]?.categories : null;
@@ -80,18 +95,25 @@ export async function getMembers(): Promise<Member[]> {
   }
 }
 
-export async function getProjects(ownerId?: string): Promise<Project[]> {
+export async function getProjects(ownerId?: string, limit?: number): Promise<Project[]> {
   try {
     const supabase = await createSupabaseServerClient();
-    let query = supabase.from("projects").select("id, owner_id, name, description, status, categories(name, color), project_members(profile_id, profiles(display_name)), project_technologies(technology)").is("deleted_at", null).order("created_at", { ascending: false });
+    let query = supabase.from("projects").select("id, owner_id, name, description, cover_image_url, status, categories(name, color), project_members(profile_id, profiles(display_name)), project_technologies(technology), project_links(label, url)").is("deleted_at", null).order("created_at", { ascending: false });
     if (ownerId) query = query.eq("owner_id", ownerId);
+    if (limit) query = query.limit(limit);
     const { data, error } = await query;
     if (error) throw error;
     return (data ?? []).map((project, index) => {
       const category = Array.isArray(project.categories) ? project.categories[0] : project.categories;
       const members = Array.isArray(project.project_members) ? project.project_members : [];
       const team = members.map((member) => { const profile = Array.isArray(member.profiles) ? member.profiles[0] : member.profiles; return profile?.display_name ? initials(profile.display_name) : "?"; });
-      return { id: project.id, ownerId: project.owner_id, name: project.name, description: project.description, status: project.status, color: colorFor(index, category?.color), team, metric: `${members.length} contributor${members.length === 1 ? "" : "s"}` };
+      const technologies = Array.isArray(project.project_technologies)
+        ? project.project_technologies.map((entry) => entry.technology).filter((technology): technology is string => Boolean(technology))
+        : [];
+      const links = Array.isArray(project.project_links)
+        ? project.project_links.filter((link): link is { label: string; url: string } => Boolean(link.label && link.url))
+        : [];
+      return { id: project.id, ownerId: project.owner_id, name: project.name, description: project.description, status: project.status, color: colorFor(index, category?.color), team, metric: `${members.length} contributor${members.length === 1 ? "" : "s"}`, coverImageUrl: project.cover_image_url, technologies, links };
     });
   } catch {
     return ownerId ? [] : fallbackProjects;

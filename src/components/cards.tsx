@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ArrowUpRight, CalendarDays, MessageCircle, X } from "lucide-react";
+import { ArrowUpRight, CalendarDays, ExternalLink, MessageCircle, X } from "lucide-react";
 import { Pill } from "@/components/app-shell";
 import type { Event, Member, Project } from "@/lib/supabase-data";
 
 export function MemberCard({ member }: { member: Member }) {
   const [avatarError, setAvatarError] = useState(false);
+  const visibleSkills = member.skills.slice(0, 3);
+  const remainingSkills = Math.max(0, member.skills.length - visibleSkills.length);
 
   return (
     <Link href={`/profile?member=${encodeURIComponent(member.id)}`} className="member-card">
@@ -34,7 +36,8 @@ export function MemberCard({ member }: { member: Member }) {
       <p className="member-bio">{member.bio || "No bio added yet."}</p>
       <div className="skill-cloud" style={{ marginTop: 10 }}>
         <Pill tone={member.role === "admin" || member.role === "super_admin" ? "coral" : "neutral"}>{member.role.replaceAll("_", " ")}</Pill>
-        {member.skills.slice(0, 3).map((skill) => <Pill key={skill} tone="lime">{skill}</Pill>)}
+        {visibleSkills.map((skill) => <Pill key={skill} tone="lime">{skill}</Pill>)}
+        {remainingSkills > 0 && <Pill tone="neutral">+{remainingSkills} more</Pill>}
       </div>
     </Link>
   );
@@ -49,10 +52,14 @@ export function ProjectCard({ project }: { project: Project }) {
         className="project-card"
         style={{ "--project-color": project.color, cursor: "pointer" } as React.CSSProperties}
         onClick={() => setModalOpen(true)}
+        aria-label={`View details for ${project.name}`}
         role="button"
         tabIndex={0}
-        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") setModalOpen(true); }}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setModalOpen(true); } }}
       >
+        <div className="project-visual" style={project.coverImageUrl ? { backgroundImage: `url(${project.coverImageUrl})` } : undefined} aria-hidden="true">
+          {!project.coverImageUrl && <span style={{ color: project.color }}>D/PROJECT</span>}
+        </div>
         <div className="project-top">
           <Pill tone={project.status === "Live" || project.status === "launched" ? "lime" : "neutral"}>
             {project.status}
@@ -60,7 +67,8 @@ export function ProjectCard({ project }: { project: Project }) {
           <span style={{ color: project.color }}><ArrowUpRight size={16} /></span>
         </div>
         <h3>{project.name}</h3>
-        <p>{project.description}</p>
+        <p className="project-description-preview">{project.description}</p>
+        {project.technologies.length > 0 && <div className="project-technologies">{project.technologies.slice(0, 3).map((technology) => <Pill key={technology} tone="cyan">{technology}</Pill>)}{project.technologies.length > 3 && <Pill tone="neutral">+{project.technologies.length - 3} more</Pill>}</div>}
         <div className="project-footer">
           <div className="team-stack">
             {project.team.map((person, index) => (
@@ -70,6 +78,7 @@ export function ProjectCard({ project }: { project: Project }) {
             ))}
           </div>
           <span className="member-handle">{project.metric}</span>
+          <span className="project-card-link">See more <ArrowUpRight size={12} /></span>
         </div>
       </div>
 
@@ -88,6 +97,9 @@ export function ProjectCard({ project }: { project: Project }) {
           onClick={(e) => { if (e.target === e.currentTarget) setModalOpen(false); }}
         >
           <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={`project-title-${project.id}`}
             style={{
               width: "min(560px, 94vw)",
               background: "rgba(22,26,24,0.98)",
@@ -96,6 +108,8 @@ export function ProjectCard({ project }: { project: Project }) {
               padding: 28,
               boxShadow: "0 24px 60px rgba(0,0,0,0.8)",
               position: "relative",
+              maxHeight: "90vh",
+              overflowY: "auto",
             }}
           >
             <button
@@ -106,12 +120,14 @@ export function ProjectCard({ project }: { project: Project }) {
               <X size={20} />
             </button>
             <div className="eyebrow" style={{ color: "var(--lime)" }}>Project Details</div>
-            <h2 style={{ fontSize: 24, margin: "10px 0" }}>{project.name}</h2>
+            <h2 id={`project-title-${project.id}`} style={{ fontSize: 24, margin: "10px 0" }}>{project.name}</h2>
             <div style={{ display: "flex", gap: 8, margin: "12px 0 20px" }}>
               <Pill tone={project.status === "Live" || project.status === "launched" ? "lime" : "neutral"}>{project.status}</Pill>
               <Pill tone="cyan">{project.metric}</Pill>
             </div>
             <p style={{ color: "#d6ddd4", lineHeight: 1.7, fontSize: 13, margin: "0 0 24px" }}>{project.description}</p>
+            {project.technologies.length > 0 && <div className="project-technologies project-modal-technologies">{project.technologies.map((technology) => <Pill key={technology} tone="cyan">{technology}</Pill>)}</div>}
+            {project.links?.map((link) => <Link key={link.url} href={link.url} target="_blank" rel="noreferrer" className="project-external-link"><ExternalLink size={13} /> {link.label}</Link>)}
             <div style={{ borderTop: "1px solid var(--line)", paddingTop: 20, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <span style={{ fontSize: 11, color: "var(--muted)" }}>Team:</span>

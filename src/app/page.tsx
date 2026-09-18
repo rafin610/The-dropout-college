@@ -20,8 +20,8 @@ export default async function Home() {
   try {
     [categories, members, projects, events, counts, settings, sections] = await Promise.all([
       getCategories(),
-      getMembers(),
-      getProjects(),
+      getMembers(8, true),
+      getProjects(undefined, 6),
       getEvents(),
       getCounts(),
       getSiteSettings(),
