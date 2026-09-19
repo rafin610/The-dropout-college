@@ -3,6 +3,7 @@ import { ArrowRight, MessageCircle } from "lucide-react";
 import { getCategories, getCounts, getEvents, getMembers, getProjects } from "@/lib/supabase-data";
 import { SectionHeading } from "@/components/app-shell";
 import { EventCard, MemberCard, ProjectCard } from "@/components/cards";
+import { StayConnected } from "@/components/social";
 import { getSiteSections, getSiteSettings } from "@/server/site-content";
 
 export const dynamic = "force-dynamic";
@@ -184,6 +185,8 @@ export default async function Home() {
         <SectionHeading eyebrow="Live sessions" title="Events to join." action={<Link href="/events" className="section-link">View calendar <ArrowRight size={13} /></Link>} />
         <div className="event-grid">{events.map((event) => <EventCard key={event.id} event={event} />)}</div>
       </section>
+
+      <StayConnected />
 
       <section className="section">
         <div className="discord-banner">

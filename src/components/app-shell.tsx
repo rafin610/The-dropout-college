@@ -3,9 +3,10 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { Bell, Compass, FolderKanban, Home, LayoutDashboard, Menu, Search, Sparkles, Users, X } from "lucide-react";
+import { Bell, BookOpen, Compass, FolderKanban, Home, LayoutDashboard, Menu, Search, Sparkles, Users, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { EXTERNAL_LINKS, SiteFooter } from "@/components/social";
 
 const nav = [
   { label: "Home", href: "/", icon: Home },
@@ -139,6 +140,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Icon size={17} strokeWidth={1.8} />{label}
             </Link>
           ))}
+          <a
+            href={EXTERNAL_LINKS.odhyay}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="nav-item nav-external"
+            title="Visit ODHYAY — Digital Reading Platform"
+            aria-label="Visit ODHYAY, our digital reading platform (opens in a new tab)"
+          >
+            <BookOpen size={17} strokeWidth={1.8} />ODHYAY
+            <span className="nav-external-mark" aria-hidden="true">↗</span>
+          </a>
         </nav>
         <div className="sidebar-group-label">Your space</div>
         <Link href="/dashboard" className={`nav-item ${pathname === "/dashboard" ? "active" : ""}`}><LayoutDashboard size={17} strokeWidth={1.8} />Dashboard</Link>
@@ -250,6 +262,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             ))}
             <Link href="/dashboard" className={pathname === "/dashboard" ? "active" : ""} onClick={() => setMobileMenuOpen(false)}><LayoutDashboard size={18} /><span>Dashboard</span></Link>
             <Link href="/profile" className={pathname === "/profile" ? "active" : ""} onClick={() => setMobileMenuOpen(false)}><Users size={18} /><span>My profile</span></Link>
+            <a href={EXTERNAL_LINKS.odhyay} target="_blank" rel="noopener noreferrer" onClick={() => setMobileMenuOpen(false)} title="Visit ODHYAY — Digital Reading Platform" aria-label="Visit ODHYAY, our digital reading platform (opens in a new tab)"><BookOpen size={18} /><span>ODHYAY ↗</span></a>
             {isAdmin && (
               <Link href="/control-room" className={pathname.startsWith("/control-room") ? "active" : ""} onClick={() => setMobileMenuOpen(false)} style={{ color: "var(--lime)" }}>
                 <Sparkles size={18} /><span>Control Room</span>
@@ -305,6 +318,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         )}
 
         <div className="page-wrap">{children}</div>
+        <SiteFooter />
       </main>
       <nav className="mobile-nav">
         {nav.map(({ label, href, icon: Icon }) => (

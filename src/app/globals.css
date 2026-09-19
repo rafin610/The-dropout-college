@@ -34,6 +34,9 @@ img { max-width: 100%; display: block; }
 .nav-item { display: flex; align-items: center; gap: 11px; color: #e8eee5; padding: 10px 12px; border-radius: 4px; transition: color .2s ease, background .2s ease; font-weight: 700; }
 .nav-item:hover { color: #f8fbf2; background: rgba(255,255,255,.09); }
 .nav-item.active { color: var(--lime); box-shadow: inset 2px 0 var(--lime); background: rgba(216,255,98,.1); }
+.nav-item.nav-external { border: 1px dashed rgba(216,255,98,.35); margin-top: 4px; color: #e8eee5; }
+.nav-item.nav-external:hover { border-color: var(--lime); color: var(--lime); background: rgba(216,255,98,.06); }
+.nav-external-mark { margin-left: auto; font-size: 11px; color: var(--lime); }
 .sidebar-spacer { flex: 1; }
 .sidebar-status { border-top: 1px solid var(--line); padding: 15px 7px; display: flex; gap: 10px; align-items: center; }
 .sidebar-status strong, .sidebar-status span { display: block; font-size: 11px; }
@@ -133,6 +136,44 @@ kbd { margin-left: auto; font: 10px 'DM Mono'; border: 1px solid var(--line); pa
 .discord-banner h2 { max-width: 520px; }
 .discord-banner p { color: var(--muted); line-height: 1.6; max-width: 490px; margin-bottom: 0; }
 .compact-actions { margin-top: 16px; }
+
+/* ==========================================================================
+   Stay Connected — community social section
+   ========================================================================== */
+.social-panel { border: 1px solid var(--line); background: var(--panel); padding: clamp(24px, 4vw, 40px); }
+.social-intro { max-width: 640px; }
+.social-intro h2 { margin: 7px 0 0; font-size: clamp(24px, 3vw, 32px); letter-spacing: -.055em; }
+.social-intro p { margin: 14px 0 0; color: var(--muted); line-height: 1.7; }
+.social-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 26px; }
+.social-card { border: 1px solid var(--line); background: rgba(255,255,255,.02); padding: 20px 18px; display: flex; flex-direction: column; gap: 14px; min-height: 210px; min-width: 0; transition: transform .2s ease, border-color .2s ease, background .2s ease; }
+.social-card:hover { transform: translateY(-3px); background: rgba(255,255,255,.04); }
+.social-card.tone-coral:hover { border-color: rgba(255,131,109,.5); }
+.social-card.tone-cyan:hover { border-color: rgba(119,231,225,.5); }
+.social-card.tone-violet:hover { border-color: rgba(196,164,255,.5); }
+.social-card.tone-lime:hover { border-color: rgba(216,255,98,.5); }
+.social-icon { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; background: rgba(255,255,255,.05); color: #edf0e8; }
+.social-card.tone-coral .social-icon { color: var(--coral); background: rgba(255,131,109,.1); }
+.social-card.tone-cyan .social-icon { color: var(--cyan); background: rgba(119,231,225,.1); }
+.social-card.tone-violet .social-icon { color: var(--violet); background: rgba(196,164,255,.1); }
+.social-card.tone-lime .social-icon { color: var(--lime); background: rgba(216,255,98,.1); }
+.social-text { display: grid; gap: 6px; min-width: 0; }
+.social-text strong { font-size: 16px; letter-spacing: -.02em; }
+.social-text small { color: var(--muted); font-size: 11px; line-height: 1.6; overflow-wrap: anywhere; }
+.social-cta { margin-top: auto; display: inline-flex; align-items: center; gap: 6px; color: var(--lime); font-size: 12px; font-weight: 800; min-height: 44px; }
+
+/* ==========================================================================
+   Site footer — compact secondary navigation
+   ========================================================================== */
+.site-footer { border-top: 1px solid var(--line); margin-top: 74px; padding: 40px clamp(20px, 5vw, 70px) 48px; }
+.site-footer-inner { max-width: 1320px; margin: 0 auto; display: grid; grid-template-columns: 1.6fr 1fr 1fr; gap: 28px; }
+.site-footer-brand strong { font-size: 15px; font-weight: 800; letter-spacing: -.02em; }
+.site-footer-brand p { color: var(--muted); font-size: 12px; line-height: 1.7; max-width: 380px; margin: 10px 0 0; overflow-wrap: anywhere; }
+.site-footer-col { display: grid; gap: 10px; align-content: start; }
+.site-footer-label { text-transform: uppercase; letter-spacing: .14em; font: 500 10px 'DM Mono', monospace; color: var(--muted); margin-bottom: 2px; }
+.site-footer-col a { color: #cdd4cb; font-size: 12px; font-weight: 600; width: fit-content; max-width: 100%; overflow-wrap: anywhere; }
+.site-footer-col a:hover { color: var(--lime); }
+.site-footer-base { max-width: 1320px; margin: 32px auto 0; padding-top: 20px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; color: var(--muted); font: 10px 'DM Mono'; }
+.site-footer-base a { color: var(--lime); font-weight: 700; }
 .page-title { max-width: 680px; margin-bottom: 42px; }
 .page-title h1 { font-size: clamp(38px, 5vw, 64px); line-height: .98; letter-spacing: -.08em; margin: 15px 0; }
 .page-title p { color: var(--muted); line-height: 1.7; max-width: 520px; }
@@ -245,6 +286,9 @@ kbd { margin-left: auto; font: 10px 'DM Mono'; border: 1px solid var(--line); pa
   .stats-grid { border: 0; }
   .stat { margin: 0; border: 1px solid var(--line); padding: 18px; }
   .member-grid, .project-grid, .event-grid, .category-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .social-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .site-footer-inner { grid-template-columns: 1fr 1fr; }
+  .site-footer { padding-bottom: 110px; }
   .discord-banner { flex-direction: column; align-items: flex-start; }
   .admin-header { align-items: start; flex-direction: column; }
   .admin-header-actions { width: 100%; justify-content: space-between; }
@@ -260,6 +304,9 @@ kbd { margin-left: auto; font: 10px 'DM Mono'; border: 1px solid var(--line); pa
   .hero-actions { flex-direction: column; align-items: stretch; }
   .button { width: 100%; }
   .stats-grid, .member-grid, .project-grid, .event-grid, .category-grid, .value-grid { grid-template-columns: 1fr; }
+  .social-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .social-card { min-height: 0; padding: 16px 14px; }
+  .site-footer-inner { grid-template-columns: 1fr; }
   .project-card { height: 326px; }
   .project-description-preview { -webkit-line-clamp: 3; min-height: 53px; }
   .section { margin-top: 54px; }
