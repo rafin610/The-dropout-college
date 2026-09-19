@@ -72,7 +72,7 @@ export function ProjectCard({ project }: { project: Project }) {
         <div className="project-footer">
           <div className="team-stack">
             {project.team.map((person, index) => (
-              <span key={`${person}-${index}`} style={{ background: ["#d8ff62", "#77e7e1", "#ff836d"][index % 3] }}>
+              <span key={`${person}-${index}`} style={{ background: ["var(--accent)", "var(--teal)", "var(--clay)"][index % 3] }}>
                 {person}
               </span>
             ))}
@@ -87,7 +87,7 @@ export function ProjectCard({ project }: { project: Project }) {
           style={{
             position: "fixed",
             inset: 0,
-            background: "rgba(10,12,11,0.85)",
+            background: "var(--overlay)",
             backdropFilter: "blur(8px)",
             zIndex: 100,
             display: "grid",
@@ -102,11 +102,11 @@ export function ProjectCard({ project }: { project: Project }) {
             aria-labelledby={`project-title-${project.id}`}
             style={{
               width: "min(560px, 94vw)",
-              background: "rgba(22,26,24,0.98)",
+              background: "var(--popover)",
               border: "1px solid var(--line)",
               borderRadius: 8,
               padding: 28,
-              boxShadow: "0 24px 60px rgba(0,0,0,0.8)",
+              boxShadow: "var(--shadow-lg)",
               position: "relative",
               maxHeight: "90vh",
               overflowY: "auto",
@@ -125,7 +125,7 @@ export function ProjectCard({ project }: { project: Project }) {
               <Pill tone={project.status === "Live" || project.status === "launched" ? "lime" : "neutral"}>{project.status}</Pill>
               <Pill tone="cyan">{project.metric}</Pill>
             </div>
-            <p style={{ color: "#d6ddd4", lineHeight: 1.7, fontSize: 13, margin: "0 0 24px" }}>{project.description}</p>
+            <p style={{ color: "var(--text)", lineHeight: 1.7, fontSize: 13, margin: "0 0 24px" }}>{project.description}</p>
             {project.technologies.length > 0 && <div className="project-technologies project-modal-technologies">{project.technologies.map((technology) => <Pill key={technology} tone="cyan">{technology}</Pill>)}</div>}
             {project.links?.map((link) => <Link key={link.url} href={link.url} target="_blank" rel="noreferrer" className="project-external-link"><ExternalLink size={13} /> {link.label}</Link>)}
             <div style={{ borderTop: "1px solid var(--line)", paddingTop: 20, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
@@ -133,7 +133,7 @@ export function ProjectCard({ project }: { project: Project }) {
                 <span style={{ fontSize: 11, color: "var(--muted)" }}>Team:</span>
                 <div className="team-stack">
                   {project.team.map((person, index) => (
-                    <span key={person} style={{ background: ["#d8ff62", "#77e7e1", "#ff836d"][index % 3] }}>
+                    <span key={person} style={{ background: ["var(--accent)", "var(--teal)", "var(--clay)"][index % 3] }}>
                       {person}
                     </span>
                   ))}
@@ -206,7 +206,7 @@ export function EventCard({ event }: { event: Event }) {
           style={{
             position: "fixed",
             inset: 0,
-            background: "rgba(10,12,11,0.85)",
+            background: "var(--overlay)",
             backdropFilter: "blur(8px)",
             zIndex: 100,
             display: "grid",
@@ -218,11 +218,11 @@ export function EventCard({ event }: { event: Event }) {
           <div
             style={{
               width: "min(540px, 94vw)",
-              background: "rgba(22,26,24,0.98)",
+              background: "var(--popover)",
               border: "1px solid var(--line)",
               borderRadius: 8,
               padding: 28,
-              boxShadow: "0 24px 60px rgba(0,0,0,0.8)",
+              boxShadow: "var(--shadow-lg)",
               position: "relative",
             }}
           >

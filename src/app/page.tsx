@@ -3,6 +3,7 @@ import { ArrowRight, MessageCircle } from "lucide-react";
 import { getCategories, getCounts, getEvents, getMembers, getProjects } from "@/lib/supabase-data";
 import { SectionHeading } from "@/components/app-shell";
 import { EventCard, MemberCard, ProjectCard } from "@/components/cards";
+import { LearningNetwork } from "@/components/learning-network";
 import { StayConnected } from "@/components/social";
 import { getSiteSections, getSiteSettings } from "@/server/site-content";
 
@@ -84,11 +85,7 @@ export default async function Home() {
             </Link>
           </div>
         </div>
-        <div className="hero-art" aria-label="Abstract network visualization">
-          <span className="hero-orbit" />
-          <div style={{ position: "absolute", left: 20, top: 18, color: "var(--muted)", font: "10px DM Mono" }}>LIVE / {counts.members}</div>
-          <div style={{ position: "absolute", right: 20, top: 18, color: "var(--muted)", font: "10px DM Mono" }}>NETWORK</div>
-        </div>
+        <LearningNetwork />
       </section>
 
       <section className="stats-grid" aria-label="Community statistics">

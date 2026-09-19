@@ -134,7 +134,7 @@ export default async function DashboardPage() {
             style={{ justifyContent: "center", alignItems: "center", color: "var(--muted)", minHeight: 220 }}
           >
             <Plus size={24} color="var(--lime)" />
-            <span style={{ marginTop: 10, fontSize: 12, fontWeight: 700, color: "#fff" }}>Submit a new project</span>
+            <span style={{ marginTop: 10, fontSize: 12, fontWeight: 700, color: "var(--text)" }}>Submit a new project</span>
           </Link>
         </div>
       </section>

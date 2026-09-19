@@ -3,8 +3,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { Bell, BookOpen, Compass, FolderKanban, Home, LayoutDashboard, Menu, Search, Sparkles, Users, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Bell, BookOpen, Compass, FolderKanban, Home, LayoutDashboard, Menu, Moon, Search, Sparkles, Sun, Users, X } from "lucide-react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { EXTERNAL_LINKS, SiteFooter } from "@/components/social";
 
@@ -15,6 +15,15 @@ const nav = [
   { label: "Events", href: "/events", icon: Sparkles },
 ];
 
+function subscribeTheme(change: () => void) {
+  window.addEventListener("tdc-theme-change", change);
+  return () => window.removeEventListener("tdc-theme-change", change);
+}
+
+function readTheme(): "light" | "dark" {
+  return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+}
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -24,6 +33,25 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [userId, setUserId] = useState<string | null>(null);
   const [accountName, setAccountName] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  // Theme lives on <html data-theme>; the pre-paint script in layout sets it
+  // from storage / OS preference, and this subscribes to changes so the
+  // toggle icon always reflects the real theme without hydration mismatch.
+  const theme = useSyncExternalStore(subscribeTheme, readTheme, () => "light" as const);
+
+  function toggleTheme() {
+    const next = theme === "dark" ? "light" : "dark";
+    try {
+      if (next === "dark") {
+        document.documentElement.setAttribute("data-theme", "dark");
+      } else {
+        document.documentElement.removeAttribute("data-theme");
+      }
+      window.localStorage.setItem("tdc-theme", next);
+    } catch {
+      // Theme simply won't persist.
+    }
+    window.dispatchEvent(new Event("tdc-theme-change"));
+  }
 
   // Notifications state
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -185,6 +213,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <kbd>⌘ K</kbd>
           </button>
           <div className="topbar-actions">
+            <button
+              className="icon-button"
+              type="button"
+              onClick={toggleTheme}
+              aria-label={theme === "dark" ? "Switch to daylight theme" : "Switch to dark theme"}
+              title={theme === "dark" ? "Switch to daylight theme" : "Switch to dark theme"}
+            >
+              {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
             <button className="icon-button search-mobile" aria-label="Open search" onClick={() => setSearchOpen(true)}><Search size={18} /></button>
             <div style={{ position: "relative" }}>
               <button className="icon-button" aria-label="Notifications" onClick={toggleNotifications}>
@@ -199,17 +236,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     right: 0,
                     top: 36,
                     width: 320,
-                    background: "rgba(20,24,22,0.96)",
+                    background: "var(--popover)",
                     border: "1px solid var(--line)",
                     backdropFilter: "blur(20px)",
                     borderRadius: 6,
                     padding: 16,
                     zIndex: 100,
-                    boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
+                    boxShadow: "var(--shadow-md)",
                   }}
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                    <strong style={{ fontSize: 13, color: "#f4f6ee" }}>Notifications</strong>
+                    <strong style={{ fontSize: 13, color: "var(--text)" }}>Notifications</strong>
                     {notifications.length > 0 && (
                       <button onClick={markAllNotificationsRead} style={{ background: "transparent", border: 0, color: "var(--lime)", fontSize: 11, cursor: "pointer" }}>
                         Mark all read
@@ -230,8 +267,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   ) : (
                     <div style={{ display: "grid", gap: 8, maxHeight: 260, overflowY: "auto" }}>
                       {notifications.map((n) => (
-                        <Link key={n.id} href={n.resource_type === "event" && n.resource_id ? `/events/${n.resource_id}` : "/dashboard"} onClick={() => { if (!n.read_at) void fetch("/api/v1/notifications", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: n.id }) }); setNotificationsOpen(false); }} style={{ display: "block", padding: "8px 10px", background: n.read_at ? "transparent" : "rgba(216,255,98,0.06)", border: "1px solid var(--line)", borderRadius: 4 }}>
-                          <strong style={{ display: "block", fontSize: 12, color: "#fff" }}>{n.title}</strong>
+                        <Link key={n.id} href={n.resource_type === "event" && n.resource_id ? `/events/${n.resource_id}` : "/dashboard"} onClick={() => { if (!n.read_at) void fetch("/api/v1/notifications", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: n.id }) }); setNotificationsOpen(false); }} style={{ display: "block", padding: "8px 10px", background: n.read_at ? "transparent" : "var(--accent-soft)", border: "1px solid var(--line)", borderRadius: 4 }}>
+                          <strong style={{ display: "block", fontSize: 12, color: "var(--text)" }}>{n.title}</strong>
                           <span style={{ display: "block", fontSize: 11, color: "var(--muted)", marginTop: 2 }}>{n.body}</span>
                           <small style={{ color: "var(--muted)", fontSize: 9 }}>{new Date(n.created_at).toLocaleDateString()}</small>
                         </Link>
@@ -277,7 +314,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             style={{
               position: "fixed",
               inset: 0,
-              background: "rgba(10,12,11,0.85)",
+              background: "var(--overlay)",
               backdropFilter: "blur(8px)",
               zIndex: 100,
               display: "grid",
@@ -289,10 +326,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <div
               style={{
                 width: "min(600px, 92vw)",
-                background: "rgba(22,26,24,0.98)",
+                background: "var(--popover)",
                 border: "1px solid var(--line)",
                 borderRadius: 8,
-                boxShadow: "0 24px 60px rgba(0,0,0,0.8)",
+                boxShadow: "var(--shadow-lg)",
                 overflow: "hidden",
               }}
             >
@@ -303,7 +340,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search members, skills, projects, events..."
-                  style={{ flex: 1, background: "transparent", border: 0, outline: 0, color: "#fff", fontSize: 14 }}
+                  style={{ flex: 1, background: "transparent", border: 0, outline: 0, color: "var(--text)", fontSize: 14 }}
                 />
                 <button type="button" onClick={() => setSearchOpen(false)} style={{ background: "transparent", border: 0, color: "var(--muted)", cursor: "pointer" }}>
                   <X size={18} />

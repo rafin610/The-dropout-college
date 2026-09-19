@@ -295,7 +295,7 @@ export function AdminDashboard() {
                                 style={{
                                   background: user.status === "active" ? "rgba(255, 107, 107, 0.1)" : "rgba(34, 197, 94, 0.1)",
                                   border: `1px solid ${user.status === "active" ? "rgba(255, 107, 107, 0.3)" : "rgba(34, 197, 94, 0.3)"}`,
-                                  color: user.status === "active" ? "#ff6b6b" : "var(--lime)",
+                                  color: user.status === "active" ? "var(--coral)" : "var(--lime)",
                                   borderRadius: "6px",
                                   padding: "4px 10px",
                                   fontSize: "0.8rem",

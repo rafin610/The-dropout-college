@@ -132,7 +132,7 @@ export function LoginForm({
         <span>The DropOut College</span>
       </div>
 
-      <div className="eyebrow">THE TALENT NETWORK</div>
+      <div className="eyebrow">THE LEARNING COMMUNITY</div>
 
       <h1>
         Continue with<br />

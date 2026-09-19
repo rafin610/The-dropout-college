@@ -222,7 +222,7 @@ export function ProfileClient({
           style={{
             position: "fixed",
             inset: 0,
-            background: "rgba(10,12,11,0.85)",
+            background: "var(--overlay)",
             backdropFilter: "blur(8px)",
             zIndex: 100,
             display: "grid",
@@ -234,11 +234,11 @@ export function ProfileClient({
           <div
             style={{
               width: "min(520px, 94vw)",
-              background: "rgba(22,26,24,0.98)",
+              background: "var(--popover)",
               border: "1px solid var(--line)",
               borderRadius: 8,
               padding: 28,
-              boxShadow: "0 24px 60px rgba(0,0,0,0.8)",
+              boxShadow: "var(--shadow-lg)",
               position: "relative",
               maxHeight: "90vh",
               overflowY: "auto",

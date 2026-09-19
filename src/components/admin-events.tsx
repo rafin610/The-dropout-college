@@ -200,7 +200,7 @@ export function AdminEvents() {
             borderRadius: 6,
             fontSize: "0.85rem",
             border: `1px solid ${toast.tone === "success" ? "rgba(34, 197, 94, 0.4)" : toast.tone === "error" ? "rgba(255, 107, 107, 0.4)" : "var(--line)"}`,
-            background: toast.tone === "success" ? "rgba(34, 197, 94, 0.08)" : toast.tone === "error" ? "rgba(255, 107, 107, 0.08)" : "rgba(255,255,255,0.03)",
+            background: toast.tone === "success" ? "rgba(34, 197, 94, 0.08)" : toast.tone === "error" ? "rgba(255, 107, 107, 0.08)" : "var(--surface-2)",
             color: toast.tone === "success" ? "var(--lime)" : toast.tone === "error" ? "#ff6b6b" : "var(--muted)",
           }}
         >

@@ -85,7 +85,7 @@ export function ExploreClient({
 
       {showFilters && (
         <div style={{ marginBottom: 16, padding: "12px 16px", background: "var(--panel)", border: "1px solid var(--line)", borderRadius: 4, display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
-          <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 12, color: "#d6ddd4" }}>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: 12, color: "var(--text)" }}>
             <input
               type="checkbox"
               checked={onlineOnly}
