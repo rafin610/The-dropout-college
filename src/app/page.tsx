@@ -80,7 +80,7 @@ export default async function Home() {
             {settings.hero_description || "The DropOut College is a learning-focused community built around curiosity, knowledge sharing, guidance, collaboration, and personal growth."}
           </p>
           <div className="hero-actions">
-            <Link href={inviteLink} className="button button-ghost" target={inviteLink.startsWith("http") ? "_blank" : undefined} rel={inviteLink.startsWith("http") ? "noreferrer" : undefined}>
+            <Link href={inviteLink} className="button button-primary" target={inviteLink.startsWith("http") ? "_blank" : undefined} rel={inviteLink.startsWith("http") ? "noreferrer" : undefined}>
               <MessageCircle size={15} /> Join Discord
             </Link>
           </div>
@@ -192,7 +192,7 @@ export default async function Home() {
             <h2>{whyJoin?.title || "Have something you want to learn?"}</h2>
           </div>
           <div>
-            <p>{whyJoin?.description || "Have something you want to learn? Have something you want to share? Want to grow with like-minded people?"}</p>
+            <p>{whyJoin?.description || "Bring your question, project, or idea and learn with people who care about growth."}</p>
             <div className="hero-actions compact-actions">
               <Link href={inviteLink} className="button button-primary" target={inviteLink.startsWith("http") ? "_blank" : undefined} rel={inviteLink.startsWith("http") ? "noreferrer" : undefined}>
                 <MessageCircle size={15} /> Join Discord
