@@ -5,8 +5,11 @@ export const projectSchema = z.object({
   slug: z.string().trim().min(2).max(120).regex(/^[a-z0-9-]+$/),
   description: z.string().trim().min(10).max(3000),
   categoryId: z.string().uuid().nullable().optional(),
-  status: z.enum(["idea", "recruiting", "in_progress", "launched", "archived"]).optional(),
+  status: z.enum(["idea", "recruiting", "in_progress", "launched", "archived", "building"]).optional(),
   visibility: z.enum(["public", "members", "private"]).optional(),
+  coverImageUrl: z.string().url().nullable().optional(),
+  demoUrl: z.string().url().nullable().optional().or(z.literal("").transform(() => null)),
+  githubUrl: z.string().url().nullable().optional().or(z.literal("").transform(() => null)),
 });
 
 export const teamSchema = z.object({

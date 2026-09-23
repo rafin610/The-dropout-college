@@ -30,6 +30,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarReady, setSidebarReady] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [accountName, setAccountName] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -57,6 +60,41 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Array<{ id: string; title: string; body: string; created_at: string; read_at: string | null; resource_type: string | null; resource_id: string | null }>>([]);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
+
+  useEffect(() => {
+    try {
+      setSidebarCollapsed(window.localStorage.getItem("tdc-sidebar-collapsed") === "1");
+    } catch {
+      // Collapse preference simply won't persist.
+    }
+    setSidebarReady(true);
+  }, []);
+
+  function toggleSidebar() {
+    setSidebarCollapsed((value) => {
+      const next = !value;
+      try {
+        window.localStorage.setItem("tdc-sidebar-collapsed", next ? "1" : "0");
+      } catch {
+        // Ignore persistence errors.
+      }
+      return next;
+    });
+  }
+
+  useEffect(() => {
+    const updateViewport = () => {
+      const mobile = window.innerWidth < 900;
+      setIsMobile(mobile);
+      if (mobile) {
+        // Mobile uses the overlay drawer, never the desktop icon-only mode.
+        setMobileMenuOpen(false);
+      }
+    };
+    updateViewport();
+    window.addEventListener("resize", updateViewport);
+    return () => window.removeEventListener("resize", updateViewport);
+  }, []);
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
@@ -98,11 +136,57 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       if (e.key === "Escape") {
         setSearchOpen(false);
         setNotificationsOpen(false);
+        setMobileMenuOpen(false);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
+
+  // Lock body scroll while the mobile drawer is open.
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [mobileMenuOpen]);
+
+  // Realtime notification inserts + initial unread fetch for the badge.
+  useEffect(() => {
+    if (!userId) {
+      setNotifications([]);
+      return;
+    }
+    const supabase = createSupabaseBrowserClient();
+    if (!supabase) return;
+    let cancelled = false;
+    void fetch("/api/v1/notifications")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json) => {
+        if (!cancelled && json) setNotifications(json.data ?? []);
+      })
+      .catch(() => {});
+    const channel = supabase
+      .channel(`notifications-${userId}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "notifications", filter: `profile_id=eq.${userId}` },
+        (payload) => {
+          const row = payload.new as { id: string; title: string; body: string; created_at: string; read_at: string | null; resource_type: string | null; resource_id: string | null };
+          setNotifications((prev) => {
+            if (prev.some((n) => n.id === row.id)) return prev;
+            return [{ ...row }, ...prev].slice(0, 50);
+          });
+        }
+      )
+      .subscribe();
+    return () => {
+      cancelled = true;
+      void supabase.removeChannel(channel);
+    };
+  }, [userId]);
 
   async function loadNotifications() {
     if (!userId) return;
@@ -156,46 +240,117 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   const unreadCount = notifications.filter((n) => !n.read_at).length;
+  const collapsed = !isMobile && sidebarCollapsed;
+  const showSidebarLabels = !collapsed;
+  const shellClass = `app-shell${collapsed ? " sidebar-collapsed" : ""}${sidebarReady ? " sidebar-ready" : ""}`;
+
+  function closeMobileDrawer() {
+    setMobileMenuOpen(false);
+  }
 
   return (
-    <div className="app-shell">
-      <aside className="sidebar">
-        <Link href="/" className="brand"><Image src="/logo.svg" alt="The DropOut College" width={30} height={30} className="brand-logo" /><span>The DropOut College</span></Link>
-        <div className="eyebrow sidebar-eyebrow">The talent network</div>
+    <div className={shellClass}>
+      <aside className={`sidebar${collapsed ? " collapsed" : ""}`} aria-label="Sidebar navigation">
+        <Link href="/" className={`brand${collapsed ? " compact" : ""}`} title={collapsed ? "The DropOut College — expand sidebar" : "The DropOut College"}>
+          <Image src="/logo.svg" alt="The DropOut College" width={30} height={30} className="brand-logo" />
+          {showSidebarLabels && <span>The DropOut College</span>}
+        </Link>
+        {!isMobile && <div className="eyebrow sidebar-eyebrow">{showSidebarLabels ? "The talent network" : "· · ·"}</div>}
         <nav className="nav-list" aria-label="Primary navigation">
           {nav.map(({ label, href, icon: Icon }) => (
-            <Link key={href} href={href} className={`nav-item ${pathname === href ? "active" : ""}`}>
-              <Icon size={17} strokeWidth={1.8} />{label}
+            <Link
+              key={href}
+              href={href}
+              className={`nav-item ${pathname === href ? "active" : ""}${collapsed ? " collapsed" : ""}`}
+              title={collapsed ? label : undefined}
+              aria-label={label}
+              aria-current={pathname === href ? "page" : undefined}
+            >
+              <Icon size={17} strokeWidth={1.8} />
+              {showSidebarLabels && <span className="nav-label">{label}</span>}
             </Link>
           ))}
           <a
             href={EXTERNAL_LINKS.odhyay}
             target="_blank"
             rel="noopener noreferrer"
-            className="nav-item nav-external"
-            title="Visit ODHYAY — Digital Reading Platform"
+            className={`nav-item nav-external${collapsed ? " collapsed" : ""}`}
+            title={collapsed ? "ODHYAY" : "Visit ODHYAY — Digital Reading Platform"}
             aria-label="Visit ODHYAY, our digital reading platform (opens in a new tab)"
           >
-            <BookOpen size={17} strokeWidth={1.8} />ODHYAY
-            <span className="nav-external-mark" aria-hidden="true">↗</span>
+            <BookOpen size={17} strokeWidth={1.8} />
+            {showSidebarLabels && <span className="nav-label">ODHYAY</span>}
+            {showSidebarLabels && <span className="nav-external-mark" aria-hidden="true">↗</span>}
           </a>
         </nav>
-        <div className="sidebar-group-label">Your space</div>
-        <Link href="/dashboard" className={`nav-item ${pathname === "/dashboard" ? "active" : ""}`}><LayoutDashboard size={17} strokeWidth={1.8} />Dashboard</Link>
-        <Link href="/profile" className={`nav-item ${pathname === "/profile" ? "active" : ""}`}><Users size={17} strokeWidth={1.8} />My profile</Link>
+        {showSidebarLabels && <div className="sidebar-group-label">Your space</div>}
+        <Link href="/dashboard" className={`nav-item ${pathname === "/dashboard" ? "active" : ""}${collapsed ? " collapsed" : ""}`} title={collapsed ? "Dashboard" : undefined} aria-label="Dashboard">
+          <LayoutDashboard size={17} strokeWidth={1.8} />
+          {showSidebarLabels && <span className="nav-label">Dashboard</span>}
+        </Link>
+        <Link href="/profile" className={`nav-item ${pathname === "/profile" ? "active" : ""}${collapsed ? " collapsed" : ""}`} title={collapsed ? "My profile" : undefined} aria-label="My profile">
+          <Users size={17} strokeWidth={1.8} />
+          {showSidebarLabels && <span className="nav-label">My profile</span>}
+        </Link>
         {isAdmin && (
-          <Link href="/control-room" className={`nav-item ${pathname.startsWith("/control-room") || pathname.startsWith("/admin") ? "active" : ""}`} style={{ color: "var(--lime)" }}>
-            <Sparkles size={17} strokeWidth={1.8} />Control Room
+          <Link href="/control-room" className={`nav-item ${pathname.startsWith("/control-room") || pathname.startsWith("/admin") ? "active" : ""}${collapsed ? " collapsed" : ""}`} style={{ color: "var(--lime)" }} title={collapsed ? "Control Room" : undefined} aria-label="Control Room">
+            <Sparkles size={17} strokeWidth={1.8} />
+            {showSidebarLabels && <span className="nav-label">Control Room</span>}
           </Link>
         )}
         <div className="sidebar-spacer" />
-        <div className="sidebar-status"><span className="status-pulse" /><div><strong>Community online</strong><span>Live network</span></div></div>
-        <Link href="https://discord.gg/3xfu5TMgF" target="_blank" rel="noreferrer" className="discord-mini"><span>Join Discord</span><span>↗</span></Link>
+        <div className="sidebar-status" title={collapsed ? "Community online" : undefined}><span className="status-pulse" />{showSidebarLabels && <div><strong>Community online</strong><span>Live network</span></div>}</div>
+        <Link href="https://discord.gg/3xfu5TMgF" target="_blank" rel="noreferrer" className={`discord-mini${collapsed ? " compact" : ""}`} title={collapsed ? "Join Discord" : undefined}><span>{showSidebarLabels ? "Join Discord" : "◎"}</span>{showSidebarLabels && <span>↗</span>}</Link>
       </aside>
+
+      {/* Mobile overlay drawer — icon-only collapse is desktop-only */}
+      {mobileMenuOpen && (
+        <div className="mobile-drawer-root" role="dialog" aria-modal="true" aria-label="Navigation menu">
+          <div className="mobile-drawer-overlay" onClick={closeMobileDrawer} aria-hidden="true" />
+          <aside className="mobile-drawer">
+            <div className="mobile-drawer-head">
+              <Link href="/" className="mobile-brand" onClick={closeMobileDrawer}>
+                <Image src="/logo.svg" alt="The DropOut College" width={30} height={30} className="brand-logo" /><span>The DropOut College</span>
+              </Link>
+              <button className="icon-button" aria-label="Close menu" onClick={closeMobileDrawer}>
+                <X size={18} />
+              </button>
+            </div>
+            <nav className="mobile-drawer-nav" aria-label="Mobile navigation">
+              {nav.map(({ label, href, icon: Icon }) => (
+                <Link key={href} href={href} className={pathname === href ? "active" : ""} onClick={closeMobileDrawer}>
+                  <Icon size={18} />
+                  <span>{label}</span>
+                </Link>
+              ))}
+              <Link href="/dashboard" className={pathname === "/dashboard" ? "active" : ""} onClick={closeMobileDrawer}><LayoutDashboard size={18} /><span>Dashboard</span></Link>
+              <Link href="/profile" className={pathname === "/profile" ? "active" : ""} onClick={closeMobileDrawer}><Users size={18} /><span>My profile</span></Link>
+              <a href={EXTERNAL_LINKS.odhyay} target="_blank" rel="noopener noreferrer" onClick={closeMobileDrawer} title="Visit ODHYAY — Digital Reading Platform" aria-label="Visit ODHYAY, our digital reading platform (opens in a new tab)"><BookOpen size={18} /><span>ODHYAY ↗</span></a>
+              {isAdmin && (
+                <Link href="/control-room" className={pathname.startsWith("/control-room") ? "active" : ""} onClick={closeMobileDrawer} style={{ color: "var(--lime)" }}>
+                  <Sparkles size={18} /><span>Control Room</span>
+                </Link>
+              )}
+            </nav>
+          </aside>
+        </div>
+      )}
 
       <main className="main-content">
         <header className="topbar">
-          <button className="mobile-menu-toggle" aria-label="Open menu" onClick={() => setMobileMenuOpen((value) => !value)}>
+          {!isMobile && (
+            <button
+              className="icon-button desktop-menu-toggle"
+              type="button"
+              aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+              aria-expanded={!collapsed}
+              title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+              onClick={toggleSidebar}
+            >
+              <Menu size={18} />
+            </button>
+          )}
+          <button className="mobile-menu-toggle" aria-label={mobileMenuOpen ? "Close menu" : "Open menu"} aria-expanded={mobileMenuOpen} onClick={() => setMobileMenuOpen((value) => !value)}>
             {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
           </button>
           <Link href="/" className="mobile-brand" onClick={() => { setSearchOpen(false); setMobileMenuOpen(false); }}>
@@ -224,58 +379,61 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </button>
             <button className="icon-button search-mobile" aria-label="Open search" onClick={() => setSearchOpen(true)}><Search size={18} /></button>
             <div style={{ position: "relative" }}>
-              <button className="icon-button" aria-label="Notifications" onClick={toggleNotifications}>
+              <button className="icon-button notification-bell" aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"} aria-expanded={notificationsOpen} onClick={toggleNotifications}>
                 <Bell size={18} />
-                {unreadCount > 0 && <span style={{ position: "absolute", top: 0, right: 0, width: 7, height: 7, borderRadius: "50%", background: "var(--lime)" }} />}
+                {unreadCount > 0 && <span className="notification-badge">{unreadCount > 9 ? "9+" : unreadCount}</span>}
               </button>
 
               {notificationsOpen && (
-                <div
-                  style={{
-                    position: "absolute",
-                    right: 0,
-                    top: 36,
-                    width: 320,
-                    background: "var(--popover)",
-                    border: "1px solid var(--line)",
-                    backdropFilter: "blur(20px)",
-                    borderRadius: 6,
-                    padding: 16,
-                    zIndex: 100,
-                    boxShadow: "var(--shadow-md)",
-                  }}
-                >
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                    <strong style={{ fontSize: 13, color: "var(--text)" }}>Notifications</strong>
-                    {notifications.length > 0 && (
-                      <button onClick={markAllNotificationsRead} style={{ background: "transparent", border: 0, color: "var(--lime)", fontSize: 11, cursor: "pointer" }}>
-                        Mark all read
-                      </button>
+                <>
+                  <div className="notification-scrim" onClick={() => setNotificationsOpen(false)} aria-hidden="true" />
+                  <div className="notification-panel" role="dialog" aria-label="Notifications">
+                    <div className="notification-panel-head">
+                      <strong>Notifications</strong>
+                      {notifications.length > 0 && (
+                        <button onClick={markAllNotificationsRead} className="notification-mark-all">
+                          Mark all read
+                        </button>
+                      )}
+                    </div>
+                    {notificationsLoading ? (
+                      <p className="notification-state">Loading notifications…</p>
+                    ) : !userId ? (
+                      <div className="notification-state">
+                        <p>Sign in to view notifications</p>
+                        <Link href="/login" className="button button-primary" style={{ padding: "6px 12px", fontSize: 11 }} onClick={() => setNotificationsOpen(false)}>
+                          Sign in
+                        </Link>
+                      </div>
+                    ) : notifications.length === 0 ? (
+                      <p className="notification-state">No notifications yet</p>
+                    ) : (
+                      <div className="notification-list">
+                        {notifications.map((n) => (
+                          <Link
+                            key={n.id}
+                            href={n.resource_type === "event" && n.resource_id ? `/events/${n.resource_id}` : n.resource_type === "project" && n.resource_id ? `/projects/${n.resource_id}` : "/dashboard"}
+                            onClick={() => {
+                              if (!n.read_at) {
+                                void fetch("/api/v1/notifications", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: n.id }) });
+                                setNotifications((prev) => prev.map((item) => (item.id === n.id ? { ...item, read_at: new Date().toISOString() } : item)));
+                              }
+                              setNotificationsOpen(false);
+                            }}
+                            className={`notification-item${n.read_at ? "" : " unread"}`}
+                          >
+                            <span className="notification-dot" aria-hidden="true" />
+                            <span className="notification-text">
+                              <strong>{n.title}</strong>
+                              <span>{n.body}</span>
+                              <small>{timeAgo(n.created_at)}</small>
+                            </span>
+                          </Link>
+                        ))}
+                      </div>
                     )}
                   </div>
-                  {notificationsLoading ? (
-                    <p style={{ color: "var(--muted)", fontSize: 12, margin: "12px 0" }}>Loading...</p>
-                  ) : !userId ? (
-                    <div style={{ textAlign: "center", padding: "12px 0" }}>
-                      <p style={{ color: "var(--muted)", fontSize: 11, margin: "0 0 10px" }}>Sign in to view notifications</p>
-                      <Link href="/login" className="button button-primary" style={{ padding: "6px 12px", fontSize: 11 }} onClick={() => setNotificationsOpen(false)}>
-                        Sign in
-                      </Link>
-                    </div>
-                  ) : notifications.length === 0 ? (
-                    <p style={{ color: "var(--muted)", fontSize: 11, margin: "14px 0", textAlign: "center" }}>No notifications yet</p>
-                  ) : (
-                    <div style={{ display: "grid", gap: 8, maxHeight: 260, overflowY: "auto" }}>
-                      {notifications.map((n) => (
-                        <Link key={n.id} href={n.resource_type === "event" && n.resource_id ? `/events/${n.resource_id}` : "/dashboard"} onClick={() => { if (!n.read_at) void fetch("/api/v1/notifications", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: n.id }) }); setNotificationsOpen(false); }} style={{ display: "block", padding: "8px 10px", background: n.read_at ? "transparent" : "var(--accent-soft)", border: "1px solid var(--line)", borderRadius: 4 }}>
-                          <strong style={{ display: "block", fontSize: 12, color: "var(--text)" }}>{n.title}</strong>
-                          <span style={{ display: "block", fontSize: 11, color: "var(--muted)", marginTop: 2 }}>{n.body}</span>
-                          <small style={{ color: "var(--muted)", fontSize: 9 }}>{new Date(n.created_at).toLocaleDateString()}</small>
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                </>
               )}
             </div>
             {userId ? (
@@ -288,25 +446,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             )}
           </div>
         </header>
-
-        {mobileMenuOpen && (
-          <div className="mobile-menu-panel" aria-label="Mobile navigation">
-            {nav.map(({ label, href, icon: Icon }) => (
-              <Link key={href} href={href} className={pathname === href ? "active" : ""} onClick={() => setMobileMenuOpen(false)}>
-                <Icon size={18} />
-                <span>{label}</span>
-              </Link>
-            ))}
-            <Link href="/dashboard" className={pathname === "/dashboard" ? "active" : ""} onClick={() => setMobileMenuOpen(false)}><LayoutDashboard size={18} /><span>Dashboard</span></Link>
-            <Link href="/profile" className={pathname === "/profile" ? "active" : ""} onClick={() => setMobileMenuOpen(false)}><Users size={18} /><span>My profile</span></Link>
-            <a href={EXTERNAL_LINKS.odhyay} target="_blank" rel="noopener noreferrer" onClick={() => setMobileMenuOpen(false)} title="Visit ODHYAY — Digital Reading Platform" aria-label="Visit ODHYAY, our digital reading platform (opens in a new tab)"><BookOpen size={18} /><span>ODHYAY ↗</span></a>
-            {isAdmin && (
-              <Link href="/control-room" className={pathname.startsWith("/control-room") ? "active" : ""} onClick={() => setMobileMenuOpen(false)} style={{ color: "var(--lime)" }}>
-                <Sparkles size={18} /><span>Control Room</span>
-              </Link>
-            )}
-          </div>
-        )}
 
         {/* Global Search Modal */}
         {searchOpen && (
@@ -382,3 +521,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
 export function SectionHeading({ eyebrow, title, action }: { eyebrow?: string; title: string; action?: React.ReactNode }) { return <div className="section-heading"><div>{eyebrow && <div className="eyebrow">{eyebrow}</div>}<h2>{title}</h2></div>{action}</div>; }
 export function Pill({ children, tone = "neutral" }: { children: React.ReactNode; tone?: string }) { return <span className={`pill pill-${tone}`}>{children}</span>; }
+
+export function timeAgo(iso: string): string {
+  const ms = Date.now() - new Date(iso).getTime();
+  if (Number.isNaN(ms)) return "";
+  const minutes = Math.floor(ms / 60000);
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes} minute${minutes === 1 ? "" : "s"} ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"} ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days} day${days === 1 ? "" : "s"} ago`;
+  return new Date(iso).toLocaleDateString();
+}

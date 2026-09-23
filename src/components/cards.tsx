@@ -2,9 +2,18 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ArrowUpRight, CalendarDays, ExternalLink, MessageCircle, X } from "lucide-react";
+import { ArrowUp, ArrowUpRight, CalendarDays, ExternalLink, MessageCircle, X } from "lucide-react";
 import { Pill } from "@/components/app-shell";
 import type { Event, Member, Project } from "@/lib/supabase-data";
+import { useUpvote } from "@/lib/social-client";
+
+function displayStatus(status?: string | null): string {
+  if (status === "in_progress" || status === "Building" || status === "Active") return "Building";
+  if (status === "launched" || status === "Live" || status === "Launched") return "Launched";
+  if (status === "recruiting" || status === "Recruiting") return "Recruiting";
+  if (status === "archived" || status === "Archived") return "Archived";
+  return "Idea";
+}
 
 export function MemberCard({ member }: { member: Member }) {
   const [avatarError, setAvatarError] = useState(false);
@@ -43,44 +52,69 @@ export function MemberCard({ member }: { member: Member }) {
   );
 }
 
-export function ProjectCard({ project }: { project: Project }) {
+export function ProjectCard({ project, userId }: { project: Project; userId?: string | null }) {
   const [modalOpen, setModalOpen] = useState(false);
+  const [coverError, setCoverError] = useState(false);
+  const showCover = Boolean(project.coverImageUrl) && !coverError;
+  const status = displayStatus(project.status);
+  const { count: upvotes, upvoted, loading: upvoting, toggle } = useUpvote(project.id, project.upvoteCount ?? 0, userId ?? null);
+  const comments = project.commentCount ?? 0;
+  const creatorInitials = (project.creatorName ?? "M").split(/\s+/).map((p) => p[0]).join("").slice(0, 2).toUpperCase();
 
   return (
     <>
-      <div
-        className="project-card"
-        style={{ "--project-color": project.color, cursor: "pointer" } as React.CSSProperties}
-        onClick={() => setModalOpen(true)}
-        aria-label={`View details for ${project.name}`}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setModalOpen(true); } }}
+      <article
+        className="project-card project-card-social"
+        style={{ "--project-color": project.color } as React.CSSProperties}
+        aria-label={project.name}
       >
-        <div className="project-visual" style={project.coverImageUrl ? { backgroundImage: `url(${project.coverImageUrl})` } : undefined} aria-hidden="true">
-          {!project.coverImageUrl && <span style={{ color: project.color }}>D/PROJECT</span>}
+        <div className="project-cover" aria-hidden="true">
+          {showCover ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={project.coverImageUrl as string} alt="" loading="lazy" onError={() => setCoverError(true)} />
+          ) : (
+            <span className="project-cover-fallback">D/PROJECT</span>
+          )}
         </div>
         <div className="project-top">
-          <Pill tone={project.status === "Live" || project.status === "launched" ? "lime" : "neutral"}>
-            {project.status}
+          <Pill tone={status === "Launched" ? "lime" : "neutral"}>
+            {status}
           </Pill>
-          <span style={{ color: project.color }}><ArrowUpRight size={16} /></span>
+          {project.categoryName && <span className="member-handle">{project.categoryName}</span>}
         </div>
-        <h3>{project.name}</h3>
+        <h3 style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{project.name}</h3>
         <p className="project-description-preview">{project.description}</p>
-        {project.technologies.length > 0 && <div className="project-technologies">{project.technologies.slice(0, 3).map((technology) => <Pill key={technology} tone="cyan">{technology}</Pill>)}{project.technologies.length > 3 && <Pill tone="neutral">+{project.technologies.length - 3} more</Pill>}</div>}
-        <div className="project-footer">
-          <div className="team-stack">
-            {project.team.map((person, index) => (
-              <span key={`${person}-${index}`} style={{ background: ["var(--accent)", "var(--teal)", "var(--clay)"][index % 3] }}>
-                {person}
-              </span>
-            ))}
-          </div>
-          <span className="member-handle">{project.metric}</span>
-          <span className="project-card-link">See more <ArrowUpRight size={12} /></span>
+        <div className="project-creator">
+          <span className="project-creator-avatar" aria-hidden="true">
+            {project.creatorAvatar ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={project.creatorAvatar} alt="" loading="lazy" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+            ) : (
+              creatorInitials
+            )}
+          </span>
+          <span className="project-creator-name">{project.creatorName ?? "Community member"}</span>
         </div>
-      </div>
+        <div className="project-social-row">
+          <button
+            type="button"
+            className={`upvote-button${upvoted ? " active" : ""}`}
+            onClick={(e) => { e.stopPropagation(); void toggle(); }}
+            disabled={upvoting}
+            aria-pressed={upvoted}
+            aria-label={upvoted ? `Remove upvote (${upvotes})` : `Upvote (${upvotes})`}
+            title={userId ? (upvoted ? "Remove upvote" : "Upvote") : "Sign in to upvote"}
+          >
+            <ArrowUp size={14} /> {upvotes}
+          </button>
+          <Link href={`/projects/${project.id}#comments`} className="comment-button" aria-label={`Comments (${comments})`}>
+            <MessageCircle size={14} /> {comments}
+          </Link>
+          <Link href={`/projects/${project.id}`} className="project-card-link" style={{ marginLeft: "auto" }} onClick={() => setModalOpen(false)}>
+            See more <ArrowUpRight size={12} />
+          </Link>
+        </div>
+      </article>
 
       {modalOpen && (
         <div
@@ -122,7 +156,7 @@ export function ProjectCard({ project }: { project: Project }) {
             <div className="eyebrow" style={{ color: "var(--lime)" }}>Project Details</div>
             <h2 id={`project-title-${project.id}`} style={{ fontSize: 24, margin: "10px 0" }}>{project.name}</h2>
             <div style={{ display: "flex", gap: 8, margin: "12px 0 20px" }}>
-              <Pill tone={project.status === "Live" || project.status === "launched" ? "lime" : "neutral"}>{project.status}</Pill>
+              <Pill tone={status === "Launched" ? "lime" : "neutral"}>{status}</Pill>
               <Pill tone="cyan">{project.metric}</Pill>
             </div>
             <p style={{ color: "var(--text)", lineHeight: 1.7, fontSize: 13, margin: "0 0 24px" }}>{project.description}</p>
@@ -140,13 +174,11 @@ export function ProjectCard({ project }: { project: Project }) {
                 </div>
               </div>
               <Link
-                href="https://discord.gg/3xfu5TMgF"
-                target="_blank"
-                rel="noreferrer"
+                href={`/projects/${project.id}`}
                 className="button button-primary"
                 style={{ fontSize: 11, padding: "8px 14px" }}
               >
-                Discuss in Discord <MessageCircle size={13} />
+                Open project <MessageCircle size={13} />
               </Link>
             </div>
           </div>

@@ -15,6 +15,14 @@ export type Project = {
   coverImageUrl?: string | null;
   technologies: string[];
   links?: Array<{ label: string; url: string }>;
+  categoryName?: string | null;
+  creatorName?: string | null;
+  creatorAvatar?: string | null;
+  creatorUsername?: string | null;
+  upvoteCount?: number;
+  commentCount?: number;
+  demoUrl?: string | null;
+  githubUrl?: string | null;
 };
 export type Event = { id: string; date: string; month: string; title: string; type: string; meta: string; accent: string };
 
@@ -95,28 +103,92 @@ export async function getMembers(limit?: number, completeOnly = false): Promise<
   }
 }
 
+function mapProjectRow(project: {
+  id: string;
+  owner_id?: string;
+  name: string;
+  description: string;
+  status: string;
+  cover_image_url?: string | null;
+  demo_url?: string | null;
+  github_url?: string | null;
+  upvote_count?: number | null;
+  comment_count?: number | null;
+  categories?: { name?: string; color?: string | null } | Array<{ name?: string; color?: string | null }> | null;
+  owner?: { display_name?: string; username?: string; avatar_url?: string | null } | Array<{ display_name?: string; username?: string; avatar_url?: string | null }> | null;
+  project_members?: Array<{ profile_id?: string; profiles?: { display_name?: string } | Array<{ display_name?: string }> | null }>;
+  project_technologies?: Array<{ technology?: string }>;
+  project_links?: Array<{ label?: string; url?: string }>;
+}, index: number): Project {
+  const category = Array.isArray(project.categories) ? project.categories[0] : project.categories;
+  const owner = Array.isArray(project.owner) ? project.owner[0] : project.owner;
+  const members = Array.isArray(project.project_members) ? project.project_members : [];
+  const team = members.map((member) => { const profile = Array.isArray(member.profiles) ? member.profiles[0] : member.profiles; return profile?.display_name ? initials(profile.display_name) : "?"; });
+  const technologies = Array.isArray(project.project_technologies)
+    ? project.project_technologies.map((entry) => entry.technology).filter((technology): technology is string => Boolean(technology))
+    : [];
+  const links = Array.isArray(project.project_links)
+    ? project.project_links.filter((link): link is { label: string; url: string } => Boolean(link.label && link.url))
+    : [];
+  return {
+    id: project.id,
+    ownerId: project.owner_id,
+    name: project.name,
+    description: project.description,
+    status: project.status,
+    color: colorFor(index, category?.color),
+    team,
+    metric: `${members.length} contributor${members.length === 1 ? "" : "s"}`,
+    coverImageUrl: project.cover_image_url ?? null,
+    technologies,
+    links,
+    categoryName: category?.name ?? null,
+    creatorName: owner?.display_name ?? null,
+    creatorUsername: owner?.username ?? null,
+    creatorAvatar: owner?.avatar_url ?? null,
+    upvoteCount: typeof project.upvote_count === "number" ? project.upvote_count : 0,
+    commentCount: typeof project.comment_count === "number" ? project.comment_count : 0,
+    demoUrl: project.demo_url ?? null,
+    githubUrl: project.github_url ?? null,
+  };
+}
+
+const LEGACY_PROJECT_SELECT = "id, owner_id, name, description, cover_image_url, status, categories(name, color), project_members(profile_id, profiles(display_name)), project_technologies(technology), project_links(label, url)";
+const FULL_PROJECT_SELECT = "id, owner_id, name, description, cover_image_url, demo_url, github_url, status, upvote_count, comment_count, categories(name, color), owner:profiles!projects_owner_id_fkey(display_name, username, avatar_url), project_members(profile_id, profiles(display_name)), project_technologies(technology), project_links(label, url)";
+
 export async function getProjects(ownerId?: string, limit?: number): Promise<Project[]> {
   try {
     const supabase = await createSupabaseServerClient();
-    let query = supabase.from("projects").select("id, owner_id, name, description, cover_image_url, status, categories(name, color), project_members(profile_id, profiles(display_name)), project_technologies(technology), project_links(label, url)").is("deleted_at", null).order("created_at", { ascending: false });
+    // Full select first (needs migration 0010). Falls back to the legacy
+    // select when the social columns are not deployed yet — never mock data.
+    let query = supabase.from("projects").select(FULL_PROJECT_SELECT).is("deleted_at", null).order("created_at", { ascending: false });
     if (ownerId) query = query.eq("owner_id", ownerId);
     if (limit) query = query.limit(limit);
-    const { data, error } = await query;
-    if (error) throw error;
-    return (data ?? []).map((project, index) => {
-      const category = Array.isArray(project.categories) ? project.categories[0] : project.categories;
-      const members = Array.isArray(project.project_members) ? project.project_members : [];
-      const team = members.map((member) => { const profile = Array.isArray(member.profiles) ? member.profiles[0] : member.profiles; return profile?.display_name ? initials(profile.display_name) : "?"; });
-      const technologies = Array.isArray(project.project_technologies)
-        ? project.project_technologies.map((entry) => entry.technology).filter((technology): technology is string => Boolean(technology))
-        : [];
-      const links = Array.isArray(project.project_links)
-        ? project.project_links.filter((link): link is { label: string; url: string } => Boolean(link.label && link.url))
-        : [];
-      return { id: project.id, ownerId: project.owner_id, name: project.name, description: project.description, status: project.status, color: colorFor(index, category?.color), team, metric: `${members.length} contributor${members.length === 1 ? "" : "s"}`, coverImageUrl: project.cover_image_url, technologies, links };
-    });
+    let { data, error } = await query;
+    if (error) {
+      let legacy = supabase.from("projects").select(LEGACY_PROJECT_SELECT).is("deleted_at", null).order("created_at", { ascending: false });
+      if (ownerId) legacy = legacy.eq("owner_id", ownerId);
+      if (limit) legacy = legacy.limit(limit);
+      const retry = await legacy;
+      if (retry.error) throw retry.error;
+      data = retry.data as typeof data;
+    }
+    return ((data ?? []) as Array<Parameters<typeof mapProjectRow>[0]>).map((project, index) => mapProjectRow(project, index));
   } catch {
     return ownerId ? [] : fallbackProjects;
+  }
+}
+
+export async function getProjectById(id: string): Promise<Project | null> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase.from("projects").select(`${FULL_PROJECT_SELECT}, created_at`).eq("id", id).is("deleted_at", null).single();
+    if (!error && data) return mapProjectRow(data as Parameters<typeof mapProjectRow>[0], 0);
+    const retry = await supabase.from("projects").select(LEGACY_PROJECT_SELECT).eq("id", id).is("deleted_at", null).single();
+    if (retry.error || !retry.data) return null;
+    return mapProjectRow(retry.data as Parameters<typeof mapProjectRow>[0], 0);
+  } catch {
+    return null;
   }
 }
 

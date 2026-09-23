@@ -100,5 +100,5 @@ export default async function ProfilePage({
 
   const isOwner = currentUser?.id === profile.id;
 
-  return <ProfileClient profile={profileData} categories={availableCategories} skills={availableSkills} isOwner={isOwner} />;
+  return <ProfileClient profile={profileData} categories={availableCategories} skills={availableSkills} isOwner={isOwner} viewerId={currentUser?.id ?? null} />;
 }

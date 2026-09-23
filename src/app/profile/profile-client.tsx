@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Code2 as Github, Globe, AtSign as Linkedin, LoaderCircle, MessageCircle, X } from "lucide-react";
 import { Pill, SectionHeading } from "@/components/app-shell";
 import { ProjectCard } from "@/components/cards";
+import { useFollow } from "@/lib/social-client";
 import type { Category, Project, Skill } from "@/lib/supabase-data";
 
 export type ProfileData = {
@@ -27,11 +28,13 @@ export function ProfileClient({
   categories,
   skills,
   isOwner,
+  viewerId,
 }: {
   profile: ProfileData;
   categories: Category[];
   skills: Skill[];
   isOwner: boolean;
+  viewerId: string | null;
 }) {
   const router = useRouter();
   const [currentProfile, setCurrentProfile] = useState(profile);
@@ -50,6 +53,30 @@ export function ProfileClient({
   const [categoryIds, setCategoryIds] = useState(profile.categories.map((category) => category.id));
   const [skillIds, setSkillIds] = useState(profile.skills.map((skill) => skill.id));
   const [categorySearch, setCategorySearch] = useState("");
+  const follow = useFollow(isOwner ? null : profile.id, viewerId);
+  const [followListTab, setFollowListTab] = useState<"followers" | "following" | null>(null);
+  const [followLists, setFollowLists] = useState<{ followers: Array<{ follower_id: string; profiles: unknown }>; following: Array<{ following_id: string; profiles: unknown }> }>({ followers: [], following: [] });
+  const [followListsLoading, setFollowListsLoading] = useState(false);
+
+  async function loadFollowLists(tab: "followers" | "following") {
+    setFollowListTab(tab);
+    setFollowListsLoading(true);
+    try {
+      const res = await fetch(`/api/v1/follows?userId=${encodeURIComponent(profile.id)}`);
+      const json = await res.json().catch(() => null);
+      if (res.ok && json?.data) {
+        setFollowLists({ followers: json.data.followers ?? [], following: json.data.following ?? [] });
+      }
+    } catch {
+      // Keep empty state.
+    } finally {
+      setFollowListsLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    setFollowListTab(null);
+  }, [profile.id]);
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -151,18 +178,76 @@ export function ProfileClient({
           >
             Edit profile
           </button>
+        ) : viewerId ? (
+          <button
+            type="button"
+            onClick={() => void follow.toggle()}
+            disabled={follow.loading}
+            className={`button ${follow.isFollowing ? "button-ghost" : "button-primary"}`}
+            style={{ marginLeft: "auto", fontSize: 12 }}
+            aria-pressed={follow.isFollowing}
+          >
+            {follow.loading ? <LoaderCircle size={13} className="spin" /> : null}
+            {follow.isFollowing ? "Following ✓" : "Follow"}
+          </button>
         ) : (
           <Link
-            href="https://discord.gg/3xfu5TMgF"
-            target="_blank"
-            rel="noreferrer"
+            href="/login"
             className="button button-primary"
             style={{ marginLeft: "auto" }}
           >
-            Say hello on Discord <MessageCircle size={14} />
+            Follow
           </Link>
         )}
       </div>
+
+      <div className="follow-stats" aria-label="Follower statistics">
+        <button type="button" onClick={() => void loadFollowLists("followers")} className="follow-stat" style={{ background: "transparent", border: 0, cursor: "pointer", textAlign: "left", color: "inherit" }}>
+          <strong>{follow.initialLoading ? "…" : follow.followersCount}</strong>
+          <span>Followers</span>
+        </button>
+        <button type="button" onClick={() => void loadFollowLists("following")} className="follow-stat" style={{ background: "transparent", border: 0, cursor: "pointer", textAlign: "left", color: "inherit" }}>
+          <strong>{follow.initialLoading ? "…" : follow.followingCount}</strong>
+          <span>Following</span>
+        </button>
+      </div>
+
+      {followListTab && (
+        <section className="panel" aria-label={followListTab === "followers" ? "Followers" : "Following"}>
+          <SectionHeading eyebrow="Community" title={followListTab === "followers" ? "Followers" : "Following"} action={<button type="button" className="button button-ghost" style={{ fontSize: 11 }} onClick={() => setFollowListTab(null)}>Close</button>} />
+          {followListsLoading ? (
+            <p className="muted-text">Loading…</p>
+          ) : (followListTab === "followers" ? followLists.followers : followLists.following).length === 0 ? (
+            <p className="muted-text">{followListTab === "followers" ? "No followers yet." : "Not following anyone yet."}</p>
+          ) : (
+            <div className="follow-list">
+              {(followListTab === "followers" ? followLists.followers : followLists.following).map((entry, i) => {
+                const raw = entry.profiles as { id?: string; display_name?: string; username?: string; avatar_url?: string | null; bio?: string | null } | Array<{ id?: string; display_name?: string; username?: string; avatar_url?: string | null; bio?: string | null }> | null;
+                const p = Array.isArray(raw) ? raw[0] : raw;
+                const pid = followListTab === "followers"
+                  ? (entry as { follower_id?: string }).follower_id ?? p?.id ?? `row-${i}`
+                  : (entry as { following_id?: string }).following_id ?? p?.id ?? `row-${i}`;
+                return (
+                  <Link key={pid} href={`/profile?member=${encodeURIComponent(pid)}`} className="follow-row">
+                    <span className="project-creator-avatar" aria-hidden="true">
+                      {p?.avatar_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={p.avatar_url} alt="" loading="lazy" />
+                      ) : (
+                        (p?.display_name ?? "M").slice(0, 2).toUpperCase()
+                      )}
+                    </span>
+                    <span>
+                      <strong style={{ display: "block", fontSize: 12 }}>{p?.display_name ?? "Member"}</strong>
+                      <span className="member-handle">@{p?.username ?? "member"}</span>
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      )}
 
       <div className="profile-layout">
         <div>
@@ -206,7 +291,7 @@ export function ProfileClient({
             {currentProfile.projects.length ? (
               <div className="project-grid">
                 {currentProfile.projects.map((project) => (
-                  <ProjectCard key={project.id} project={project} />
+                  <ProjectCard key={project.id} project={project} userId={viewerId} />
                 ))}
               </div>
             ) : (

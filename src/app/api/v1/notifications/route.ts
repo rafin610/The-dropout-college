@@ -11,11 +11,21 @@ export async function GET(request: Request) {
     const supabase = await createSupabaseServerClient();
     const { data, error } = await supabase
       .from("notifications")
-      .select("*")
+      .select("id, type, title, body, resource_type, resource_id, actor_id, project_id, comment_id, created_at, read_at, actor:profiles!notifications_actor_id_fkey(id, display_name, username, avatar_url), project:projects!notifications_project_id_fkey(id, name)")
       .eq("profile_id", user.id)
       .order("created_at", { ascending: false })
       .limit(50);
-    if (error) throw error;
+    if (error) {
+      // Pre-migration fallback: legacy columns only.
+      const retry = await supabase
+        .from("notifications")
+        .select("id, type, title, body, resource_type, resource_id, created_at, read_at")
+        .eq("profile_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (retry.error) throw retry.error;
+      return Response.json({ data: retry.data ?? [], requestId });
+    }
     return Response.json({ data: data ?? [], requestId });
   } catch (error) {
     return toErrorResponse(error, requestId);
