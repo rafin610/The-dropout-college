@@ -583,6 +583,220 @@ kbd { margin-left: auto; font: 10px 'DM Mono'; border: 1px solid var(--line); pa
   }
 }
 
+@media (max-width: 480px) {
+  .login-panel {
+    padding: 28px 20px;
+  }
+}
+
+/* ==========================================================================
+   Public community profile — premium, minimal, responsive-first.
+   Scoped tokens: exact brand values in both dark and daylight modes.
+   Base styles are mobile-first (320px+); layout transforms at 640 / 1024.
+   ========================================================================== */
+.pf {
+  --pf-bg: #F7F9F7;
+  --pf-surface: #FFFFFF;
+  --pf-elev: #F1F5F1;
+  --pf-border: #DDE4DD;
+  --pf-text: #172019;
+  --pf-muted: #667168;
+  --pf-accent: #63A82F;
+  --pf-accent-soft: rgba(99, 168, 47, .12);
+  max-width: 1120px;
+  margin: 0 auto;
+  color: var(--pf-text);
+}
+[data-theme="dark"] .pf {
+  --pf-bg: #0B0E0C;
+  --pf-surface: #111612;
+  --pf-elev: #151B17;
+  --pf-border: #263029;
+  --pf-text: #F3F5EF;
+  --pf-muted: #9AA39B;
+  --pf-accent: #C6DA5E;
+  --pf-accent-soft: rgba(198, 218, 94, .1);
+}
+
+/* Hero */
+.pf-hero { background: var(--pf-surface); border: 1px solid var(--pf-border); border-radius: 16px; overflow: hidden; }
+.pf-cover { position: relative; height: 128px; background: linear-gradient(120deg, #0B0E0C 0%, #12211A 55%, #0C130E 100%); overflow: hidden; }
+.pf-cover-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(198, 218, 94, .08) 1px, transparent 1px), linear-gradient(90deg, rgba(198, 218, 94, .08) 1px, transparent 1px); background-size: 28px 28px; mask-image: radial-gradient(ellipse 90% 100% at 20% 0%, #000 30%, transparent 75%); }
+.pf-cover-glow { position: absolute; width: 420px; height: 220px; right: -120px; top: -110px; background: radial-gradient(closest-side, rgba(198, 218, 94, .28), transparent); }
+.pf-cover-grain { position: absolute; inset: 0; opacity: .5; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='.06'/%3E%3C/svg%3E"); }
+.pf-head { padding: 0 16px 20px; }
+.pf-avatar { width: 80px; height: 80px; margin-top: -40px; border-radius: 50%; display: grid; place-items: center; background: var(--pf-elev); color: var(--pf-accent); font-weight: 800; font-size: 22px; border: 2px solid var(--pf-surface); box-shadow: 0 0 0 1px var(--pf-border), 0 0 0 4px var(--pf-accent-soft); position: relative; z-index: 1; }
+.pf-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.pf-identity { margin-top: 12px; min-width: 0; }
+.pf-name { margin: 0; font-size: 24px; line-height: 1.15; letter-spacing: -.02em; font-weight: 800; overflow-wrap: anywhere; }
+.pf-username { margin: 4px 0 0; font-family: 'DM Mono', monospace; font-size: 12px; color: var(--pf-muted); overflow-wrap: anywhere; }
+.pf-status { margin: 8px 0 0; font-size: 12px; color: var(--pf-muted); display: flex; align-items: center; gap: 8px; }
+.pf-status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--pf-accent); flex: 0 0 auto; }
+.pf-bio { margin: 12px 0 0; font-size: 14px; line-height: 1.7; color: var(--pf-text); max-width: 640px; overflow-wrap: anywhere; }
+.pf-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.pf-btn { min-height: 44px; font-size: 12px; padding: 10px 16px; }
+.pf-btn-icon { min-width: 44px; min-height: 44px; padding: 10px; }
+.pf-menu-wrap { position: relative; }
+.pf-menu { position: absolute; right: 0; top: calc(100% + 6px); min-width: 210px; background: var(--pf-surface); border: 1px solid var(--pf-border); border-radius: 8px; box-shadow: 0 16px 40px rgba(0, 0, 0, .25); padding: 6px; z-index: 40; display: grid; }
+.pf-menu button, .pf-menu a { display: flex; align-items: center; gap: 10px; padding: 11px 12px; min-height: 44px; border-radius: 6px; background: transparent; border: 0; color: var(--pf-text); font-size: 13px; font-weight: 600; text-align: left; width: 100%; }
+.pf-menu button:hover, .pf-menu a:hover { background: var(--pf-elev); }
+.pf-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 20px 0 0; padding: 16px 0 0; border-top: 1px solid var(--pf-border); }
+.pf-stat { background: transparent; border: 0; padding: 4px 2px; min-height: 56px; display: grid; gap: 2px; justify-items: center; align-content: center; color: var(--pf-text); border-radius: 8px; }
+.pf-stat:hover { background: var(--pf-elev); }
+.pf-stat strong { font-size: 19px; font-weight: 800; letter-spacing: -.02em; }
+.pf-stat span { font-size: 11px; color: var(--pf-muted); }
+
+/* Tabs */
+.pf-tabs { position: sticky; top: 66px; z-index: 20; margin-top: 12px; background: color-mix(in srgb, var(--pf-bg) 88%, transparent); backdrop-filter: blur(14px); border: 1px solid var(--pf-border); border-radius: 12px; }
+.pf-tabs-inner { display: flex; gap: 2px; overflow-x: auto; padding: 6px; scrollbar-width: none; }
+.pf-tabs-inner::-webkit-scrollbar { display: none; }
+.pf-tab { flex: 0 0 auto; border: 0; background: transparent; color: var(--pf-muted); font-size: 13px; font-weight: 700; padding: 10px 14px; min-height: 44px; border-radius: 8px; white-space: nowrap; position: relative; }
+.pf-tab:hover { color: var(--pf-text); background: var(--pf-elev); }
+.pf-tab.active { color: var(--pf-accent); }
+.pf-tab.active::after { content: ""; position: absolute; left: 14px; right: 14px; bottom: 6px; height: 2px; border-radius: 2px; background: var(--pf-accent); }
+
+/* Content grid */
+.pf-grid { display: grid; gap: 12px; margin-top: 12px; grid-template-columns: minmax(0, 1fr); grid-template-areas: "about" "skills" "interests" "projects" "activity" "achievements" "social"; }
+.pf-about { grid-area: about; }
+.pf-skills { grid-area: skills; }
+.pf-interests { grid-area: interests; }
+.pf-projects { grid-area: projects; }
+.pf-activity { grid-area: activity; }
+.pf-achievements { grid-area: achievements; }
+.pf-social { grid-area: social; }
+.pf-card { background: var(--pf-surface); border: 1px solid var(--pf-border); border-radius: 14px; padding: 20px 16px; min-width: 0; scroll-margin-top: 150px; }
+.pf-card-eyebrow { margin: 0; text-transform: uppercase; letter-spacing: .12em; font-size: 10px; font-weight: 700; color: var(--pf-muted); }
+.pf-card-title { margin: 4px 0 0; font-size: 18px; font-weight: 800; letter-spacing: -.01em; }
+.pf-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.pf-card-link { white-space: nowrap; margin-top: 4px; }
+.pf-about-text { margin: 12px 0 0; font-size: 14px; line-height: 1.75; overflow-wrap: anywhere; }
+.pf-meta { list-style: none; margin: 16px 0 0; padding: 16px 0 0; border-top: 1px solid var(--pf-border); display: grid; gap: 10px; }
+.pf-meta li { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--pf-muted); }
+.pf-meta svg { color: var(--pf-accent); flex: 0 0 auto; }
+
+/* Skills + interests */
+.pf-chips, .pf-pills { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.pf-chip { background: var(--pf-elev); color: var(--pf-text); font-size: 12px; font-weight: 700; padding: 8px 14px; border-radius: 999px; }
+.pf-pill { border: 1px solid var(--pf-border); color: var(--pf-muted); font-size: 12px; font-weight: 600; padding: 7px 13px; border-radius: 999px; }
+
+/* Projects */
+.pf-project-grid { list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
+.pf-project { border: 1px solid var(--pf-border); border-radius: 12px; overflow: hidden; background: var(--pf-surface); display: flex; flex-direction: column; transition: transform .2s ease, border-color .2s ease; }
+.pf-project:hover { border-color: var(--pf-accent); transform: translateY(-2px); }
+.pf-project-thumb { aspect-ratio: 16 / 9; background: var(--pf-elev); display: grid; place-items: center; color: var(--pf-muted); overflow: hidden; }
+.pf-project-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pf-project-thumb-fallback { opacity: .7; }
+.pf-project-body { padding: 14px 14px 16px; display: grid; gap: 8px; align-content: start; }
+.pf-project-title { margin: 0; font-size: 15px; font-weight: 800; letter-spacing: -.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pf-project-desc { margin: 0; font-size: 12px; line-height: 1.6; color: var(--pf-muted); display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; min-height: 38px; }
+.pf-project-tags { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.pf-project-tags li { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--pf-muted); background: var(--pf-elev); padding: 4px 8px; border-radius: 4px; }
+.pf-project-meta { margin: 0; font-size: 11px; color: var(--pf-muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.pf-status-pill { font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 999px; background: var(--pf-elev); color: var(--pf-muted); }
+.pf-status-launched { background: var(--pf-accent-soft); color: var(--pf-accent); }
+.pf-status-building { background: var(--pf-accent-soft); color: var(--pf-accent); }
+.pf-project-cta { display: inline-flex; align-items: center; gap: 6px; color: var(--pf-accent); font-size: 12px; font-weight: 800; min-height: 44px; width: fit-content; }
+.pf-project-cta:hover { text-decoration: underline; }
+
+/* Activity timeline */
+.pf-timeline { list-style: none; margin: 16px 0 0; padding: 0; display: grid; }
+.pf-timeline-item { position: relative; display: flex; gap: 12px; padding: 0 0 18px 2px; }
+.pf-timeline-item:last-child { padding-bottom: 0; }
+.pf-timeline-item::before { content: ""; position: absolute; left: 8px; top: 20px; bottom: -2px; width: 1px; background: var(--pf-border); }
+.pf-timeline-item:last-child::before { display: none; }
+.pf-timeline-dot { width: 15px; height: 15px; border-radius: 50%; border: 2px solid var(--pf-accent); background: var(--pf-surface); flex: 0 0 auto; margin-top: 2px; }
+.pf-timeline-dot-discussion { border-color: var(--pf-muted); }
+.pf-timeline-dot-achievement { background: var(--pf-accent); }
+.pf-timeline-dot-joined { border-color: var(--pf-muted); background: var(--pf-elev); }
+.pf-timeline-body { min-width: 0; display: grid; gap: 2px; }
+.pf-timeline-title { margin: 0; font-size: 13px; font-weight: 800; }
+.pf-timeline-sub { margin: 0; font-size: 12px; color: var(--pf-muted); overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.pf-timeline-link:hover { color: var(--pf-accent); }
+.pf-timeline-time { font-size: 11px; color: var(--pf-muted); }
+
+/* Achievements */
+.pf-badges { list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 10px; }
+.pf-badge { display: flex; gap: 12px; align-items: flex-start; border: 1px solid var(--pf-border); border-radius: 10px; padding: 12px 14px; }
+.pf-badge-icon { width: 34px; height: 34px; flex: 0 0 34px; display: grid; place-items: center; border-radius: 50%; background: var(--pf-accent-soft); color: var(--pf-accent); }
+.pf-badge-text { display: grid; gap: 2px; min-width: 0; }
+.pf-badge-text strong { font-size: 13px; }
+.pf-badge-text small { font-size: 12px; color: var(--pf-muted); line-height: 1.5; }
+.pf-badge-text time { font-size: 11px; color: var(--pf-muted); }
+
+/* Social links */
+.pf-links { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 8px; }
+.pf-link-row { display: flex; align-items: center; gap: 12px; border: 1px solid var(--pf-border); border-radius: 10px; padding: 10px 14px; min-height: 56px; color: var(--pf-text); }
+.pf-link-row:hover { border-color: var(--pf-accent); }
+.pf-link-row svg { color: var(--pf-accent); flex: 0 0 auto; }
+.pf-link-text { display: grid; min-width: 0; flex: 1; }
+.pf-link-text strong { font-size: 13px; }
+.pf-link-text small { font-size: 11px; color: var(--pf-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Empty states */
+.pf-empty { margin-top: 14px; display: grid; gap: 4px; }
+.pf-empty p { margin: 0; font-size: 13px; font-weight: 700; }
+.pf-empty span { font-size: 12px; color: var(--pf-muted); }
+.pf-empty-link { background: transparent; border: 0; padding: 0; color: var(--pf-accent); font-size: 12px; font-weight: 800; cursor: pointer; text-align: left; width: fit-content; min-height: 44px; }
+.pf-empty-cta { margin-top: 14px; font-size: 12px; }
+a.pf-empty-link { display: inline-flex; align-items: center; }
+
+/* Follow dialog + edit modal */
+.pf-dialog-root, .pf-modal-root { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 20px; }
+.pf-dialog-overlay { position: absolute; inset: 0; background: var(--overlay); backdrop-filter: blur(6px); }
+.pf-dialog { position: relative; width: min(420px, 94vw); max-height: 80vh; overflow-y: auto; background: var(--pf-surface); border: 1px solid var(--pf-border); border-radius: 12px; padding: 20px; color: var(--pf-text); }
+.pf-dialog-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.pf-dialog-head h2 { margin: 0; font-size: 18px; }
+.pf-dialog-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.pf-dialog-row { display: flex; align-items: center; gap: 10px; border: 1px solid var(--pf-border); border-radius: 10px; padding: 10px 12px; color: var(--pf-text); }
+.pf-dialog-row:hover { border-color: var(--pf-accent); }
+.pf-dialog-row strong { display: block; font-size: 13px; }
+.pf-dialog-row small { display: block; font-size: 11px; color: var(--pf-muted); }
+.pf-dialog-avatar { width: 34px; height: 34px; flex: 0 0 34px; border-radius: 50%; display: grid; place-items: center; background: var(--pf-elev); color: var(--pf-accent); font-size: 12px; font-weight: 800; overflow: hidden; }
+.pf-dialog-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.pf-modal-root { background: var(--overlay); backdrop-filter: blur(8px); }
+.pf-modal { position: relative; width: min(540px, 94vw); max-height: 90vh; overflow-y: auto; background: var(--popover); border: 1px solid var(--line); border-radius: 8px; padding: 28px 20px; box-shadow: var(--shadow-lg); }
+.pf-modal h2 { font-size: 24px; margin: 8px 0 20px; }
+.pf-modal-close { position: absolute; top: 20px; right: 20px; background: transparent; border: 0; color: var(--muted); cursor: pointer; min-width: 44px; min-height: 44px; display: grid; place-items: center; }
+.pf-form { display: grid; gap: 16px; }
+.pf-form-error { color: var(--coral); font-size: 12px; margin: 0; }
+.pf-form-success { color: var(--lime); font-size: 12px; margin: 0; }
+.pf-field-label { display: block; color: var(--muted); font-size: 10px; font-family: 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .12em; margin-bottom: 8px; }
+.pf-form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+
+/* Tablet: roomier hero, 2-col project cards */
+@media (min-width: 640px) {
+  .pf-cover { height: 160px; }
+  .pf-head { padding: 0 24px 24px; }
+  .pf-avatar { width: 96px; height: 96px; margin-top: -48px; font-size: 26px; }
+  .pf-name { font-size: 28px; }
+  .pf-card { padding: 24px; }
+  .pf-project-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pf-btn { min-height: 0; }
+  .pf-btn-icon { min-width: 0; min-height: 0; }
+  .pf-project-cta, .pf-tab, .pf-empty-link { min-height: 0; }
+}
+
+/* Laptop / desktop: two-column content */
+@media (min-width: 1024px) {
+  .pf-cover { height: 196px; }
+  .pf-head { padding: 0 32px 28px; }
+  .pf-avatar { width: 112px; height: 112px; margin-top: -56px; font-size: 30px; }
+  .pf-name { font-size: 32px; }
+  .pf-bio { font-size: 15px; }
+  .pf-tabs { top: 76px; }
+  .pf-grid { grid-template-columns: minmax(0, 1fr) 300px; grid-template-areas: "about skills" "projects interests" "projects social" "activity achievements"; gap: 16px; margin-top: 16px; }
+  .pf-stat strong { font-size: 22px; }
+}
+
+/* Large desktop: wider rail, capped width */
+@media (min-width: 1440px) {
+  .pf-grid { grid-template-columns: minmax(0, 1fr) 340px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pf-project, .pf-tab, .pf-btn, .pf-link-row, .pf-stat { transition: none !important; }
+}
+
 /* ==========================================================================
    Collapsible sidebar polish + mobile drawer + notifications + social projects
    Keeps the premium minimal dark UI, lime accent, subtle borders.

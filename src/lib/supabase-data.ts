@@ -23,6 +23,7 @@ export type Project = {
   commentCount?: number;
   demoUrl?: string | null;
   githubUrl?: string | null;
+  createdAt?: string | null;
 };
 export type Event = { id: string; date: string; month: string; title: string; type: string; meta: string; accent: string };
 
@@ -112,6 +113,7 @@ function mapProjectRow(project: {
   cover_image_url?: string | null;
   demo_url?: string | null;
   github_url?: string | null;
+  created_at?: string | null;
   upvote_count?: number | null;
   comment_count?: number | null;
   categories?: { name?: string; color?: string | null } | Array<{ name?: string; color?: string | null }> | null;
@@ -150,11 +152,12 @@ function mapProjectRow(project: {
     commentCount: typeof project.comment_count === "number" ? project.comment_count : 0,
     demoUrl: project.demo_url ?? null,
     githubUrl: project.github_url ?? null,
+    createdAt: project.created_at ?? null,
   };
 }
 
-const LEGACY_PROJECT_SELECT = "id, owner_id, name, description, cover_image_url, status, categories(name, color), project_members(profile_id, profiles(display_name)), project_technologies(technology), project_links(label, url)";
-const FULL_PROJECT_SELECT = "id, owner_id, name, description, cover_image_url, demo_url, github_url, status, upvote_count, comment_count, categories(name, color), owner:profiles!projects_owner_id_fkey(display_name, username, avatar_url), project_members(profile_id, profiles(display_name)), project_technologies(technology), project_links(label, url)";
+const LEGACY_PROJECT_SELECT = "id, owner_id, name, description, cover_image_url, status, created_at, categories(name, color), project_members(profile_id, profiles(display_name)), project_technologies(technology), project_links(label, url)";
+const FULL_PROJECT_SELECT = "id, owner_id, name, description, cover_image_url, demo_url, github_url, status, upvote_count, comment_count, created_at, categories(name, color), owner:profiles!projects_owner_id_fkey(display_name, username, avatar_url), project_members(profile_id, profiles(display_name)), project_technologies(technology), project_links(label, url)";
 
 export async function getProjects(ownerId?: string, limit?: number): Promise<Project[]> {
   try {
