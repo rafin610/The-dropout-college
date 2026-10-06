@@ -14,8 +14,11 @@ import {
   FlaskConical,
   FolderKanban,
   Globe,
+  GraduationCap,
   AtSign as Linkedin,
   LoaderCircle,
+  MapPin,
+  Pencil,
   Share2,
   Sparkles,
   UserRound,
@@ -347,7 +350,12 @@ export function ProfileClient({
             )}
           </div>
           <div className="pf-identity">
-            <h1 className="pf-name">{currentProfile.displayName}</h1>
+            <div className="pf-name-row">
+              <h1 className="pf-name">{currentProfile.displayName}</h1>
+              <span className="pf-verified" title="Verified member" aria-label="Verified member">
+                <Check size={12} strokeWidth={3} />
+              </span>
+            </div>
             <p className="pf-username">@{currentProfile.username}</p>
             <p className="pf-status">
               <span className="pf-status-dot" aria-hidden="true" />
@@ -357,7 +365,7 @@ export function ProfileClient({
             <div className="pf-actions">
               {isOwner ? (
                 <button type="button" onClick={() => setModalOpen(true)} className="button button-primary pf-btn">
-                  Edit profile
+                  <Pencil size={14} /> Edit profile
                 </button>
               ) : viewerId ? (
                 <button
@@ -456,21 +464,25 @@ export function ProfileClient({
       {/* ── Content ────────────────────────────────────────── */}
       <div className="pf-grid">
         <section className="pf-card pf-about" id="pf-about" aria-labelledby="pf-about-h" tabIndex={-1}>
-          <p className="pf-card-eyebrow">About</p>
-          <h2 id="pf-about-h" className="pf-card-title">About</h2>
+          <div className="pf-card-top">
+            <h2 id="pf-about-h" className="pf-card-title">
+              <UserRound size={17} style={{ color: "var(--pf-accent)" }} /> About
+            </h2>
+            {isOwner && (
+              <button type="button" className="pf-card-edit-btn" onClick={() => setModalOpen(true)}>
+                <Pencil size={12} /> Edit
+              </button>
+            )}
+          </div>
           <p className="pf-about-text">{currentProfile.bio || "No bio added yet."}</p>
           <ul className="pf-meta">
             <li>
-              <UserRound size={13} aria-hidden="true" />
-              <span>{roleLabel(currentProfile.role)} at The DropOut College</span>
+              <MapPin size={14} style={{ color: "var(--pf-accent)" }} aria-hidden="true" />
+              <span>Bangladesh</span>
             </li>
             <li>
-              <Sparkles size={13} aria-hidden="true" />
-              <span>Member since {Number.isNaN(joinedYear) ? "recently" : joinedYear}</span>
-            </li>
-            <li>
-              <FolderKanban size={13} aria-hidden="true" />
-              <span>{currentProfile.projects.length} {currentProfile.projects.length === 1 ? "project" : "projects"} shared</span>
+              <GraduationCap size={14} style={{ color: "var(--pf-accent)" }} aria-hidden="true" />
+              <span>{roleLabel(currentProfile.role)}</span>
             </li>
           </ul>
           {!currentProfile.bio && isOwner && (
@@ -481,8 +493,16 @@ export function ProfileClient({
         </section>
 
         <aside className="pf-card pf-skills" id="pf-skills" aria-labelledby="pf-skills-h" tabIndex={-1}>
-          <p className="pf-card-eyebrow">Capabilities</p>
-          <h2 id="pf-skills-h" className="pf-card-title">Skills</h2>
+          <div className="pf-card-top">
+            <h2 id="pf-skills-h" className="pf-card-title">
+              <Sparkles size={17} style={{ color: "var(--pf-accent)" }} /> Skills
+            </h2>
+            {isOwner && (
+              <button type="button" className="pf-card-edit-btn" onClick={() => setModalOpen(true)}>
+                <Pencil size={12} /> Edit
+              </button>
+            )}
+          </div>
           {currentProfile.skills.length || currentProfile.categories.length ? (
             <ul className="pf-chips" aria-label="Skills">
               {[...currentProfile.categories.map((c) => c.name), ...currentProfile.skills.map((s) => s.name)].map((name) => (

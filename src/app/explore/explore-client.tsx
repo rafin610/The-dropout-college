@@ -108,7 +108,7 @@ export function ExploreClient({
           className={`filter ${selectedCategory === "all" ? "active" : ""}`}
           onClick={() => setSelectedCategory("all")}
         >
-          All members
+          All
         </button>
         {categories.map((cat) => (
           <button

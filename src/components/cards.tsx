@@ -1,11 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { ArrowUp, ArrowUpRight, CalendarDays, ExternalLink, MessageCircle, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  ArrowUp,
+  ArrowUpRight,
+  CalendarDays,
+  Check,
+  Copy,
+  ExternalLink,
+  MessageCircle,
+  MoreVertical,
+  User,
+  X,
+} from "lucide-react";
 import { Pill } from "@/components/app-shell";
 import type { Event, Member, Project } from "@/lib/supabase-data";
-import { useUpvote } from "@/lib/social-client";
+import { useFollow, useUpvote } from "@/lib/social-client";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 function displayStatus(status?: string | null): string {
   if (status === "in_progress" || status === "Building" || status === "Active") return "Building";
@@ -15,40 +28,154 @@ function displayStatus(status?: string | null): string {
   return "Idea";
 }
 
-export function MemberCard({ member }: { member: Member }) {
+function formatRole(role?: string | null): string {
+  if (!role) return "Member";
+  const clean = role.replaceAll("_", " ").trim();
+  return clean.charAt(0).toUpperCase() + clean.slice(1);
+}
+
+export function MemberCard({ member, viewerId: propViewerId }: { member: Member; viewerId?: string | null }) {
+  const router = useRouter();
   const [avatarError, setAvatarError] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [currentViewerId, setCurrentViewerId] = useState<string | null>(propViewerId ?? null);
+
+  useEffect(() => {
+    if (propViewerId !== undefined) {
+      setCurrentViewerId(propViewerId);
+      return;
+    }
+    const supabase = createSupabaseBrowserClient();
+    if (!supabase) return;
+    void supabase.auth.getUser().then(({ data }) => {
+      setCurrentViewerId(data.user?.id ?? null);
+    });
+  }, [propViewerId]);
+
+  const follow = useFollow(member.id, currentViewerId);
   const visibleSkills = member.skills.slice(0, 3);
   const remainingSkills = Math.max(0, member.skills.length - visibleSkills.length);
+  const isSelf = currentViewerId === member.id;
+
+  async function handleFollowClick(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!currentViewerId) {
+      router.push("/login");
+      return;
+    }
+    if (isSelf) {
+      router.push("/profile");
+      return;
+    }
+    await follow.toggle();
+  }
+
+  async function copyProfileLink(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      const url = `${window.location.origin}/profile?member=${encodeURIComponent(member.id)}`;
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Fallback
+    }
+    setMenuOpen(false);
+  }
 
   return (
-    <Link href={`/profile?member=${encodeURIComponent(member.id)}`} className="member-card">
-      <div className="member-top">
-        <div className="member-avatar" style={{ background: member.color }}>
-          {member.avatarUrl && !avatarError ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={member.avatarUrl}
-              alt={`${member.name} profile`}
-              referrerPolicy="no-referrer"
-              loading="lazy"
-              onError={() => setAvatarError(true)}
-              style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }}
-            />
-          ) : (
-            <span>{member.initials}</span>
+    <article className="member-card">
+      <div className="member-top-row">
+        <Link href={`/profile?member=${encodeURIComponent(member.id)}`} className="member-avatar-wrap">
+          <div className="member-avatar" style={{ background: member.color || "var(--accent)" }}>
+            {member.avatarUrl && !avatarError ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={member.avatarUrl}
+                alt={`${member.name} profile`}
+                referrerPolicy="no-referrer"
+                loading="lazy"
+                onError={() => setAvatarError(true)}
+              />
+            ) : (
+              <span>{member.initials || "M"}</span>
+            )}
+          </div>
+        </Link>
+
+        <div className="member-info">
+          <Link href={`/profile?member=${encodeURIComponent(member.id)}`} className="member-name-link">
+            <h3 className="member-name">{member.name}</h3>
+          </Link>
+          <span className="member-handle">{member.handle}</span>
+          <div className="member-status-badge">
+            <span className="member-status-dot" aria-hidden="true" />
+            <span className="member-status-text">{formatRole(member.role)}</span>
+          </div>
+        </div>
+
+        <div className="member-menu-container">
+          <button
+            type="button"
+            className="member-menu-btn"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setMenuOpen((prev) => !prev);
+            }}
+            aria-label="Member options"
+          >
+            <MoreVertical size={16} />
+          </button>
+          {menuOpen && (
+            <div className="member-dropdown-menu" onClick={(e) => e.stopPropagation()}>
+              <button type="button" onClick={copyProfileLink}>
+                {copied ? <Check size={13} /> : <Copy size={13} />}
+                <span>{copied ? "Link copied!" : "Copy profile link"}</span>
+              </button>
+              <Link href={`/profile?member=${encodeURIComponent(member.id)}`} onClick={() => setMenuOpen(false)}>
+                <User size={13} />
+                <span>View full profile</span>
+              </Link>
+            </div>
           )}
         </div>
-        {member.online && <span className="online-dot" aria-label="Online" />}
       </div>
-      <h3>{member.name}</h3>
-      <span className="member-handle">{member.handle}</span>
+
       <p className="member-bio">{member.bio || "No bio added yet."}</p>
-      <div className="skill-cloud" style={{ marginTop: 10 }}>
-        <Pill tone={member.role === "admin" || member.role === "super_admin" ? "coral" : "neutral"}>{member.role.replaceAll("_", " ")}</Pill>
-        {visibleSkills.map((skill) => <Pill key={skill} tone="lime">{skill}</Pill>)}
-        {remainingSkills > 0 && <Pill tone="neutral">+{remainingSkills} more</Pill>}
+
+      <div className="member-skills-row">
+        {visibleSkills.length > 0 ? (
+          visibleSkills.map((skill) => (
+            <span key={skill} className="member-skill-pill">
+              {skill}
+            </span>
+          ))
+        ) : (
+          <span className="member-skill-pill member-skill-empty">Member</span>
+        )}
+        {remainingSkills > 0 && (
+          <span className="member-skill-pill member-skill-more">+{remainingSkills}</span>
+        )}
       </div>
-    </Link>
+
+      <div className="member-actions-row">
+        <Link href={`/profile?member=${encodeURIComponent(member.id)}`} className="member-btn-view">
+          View Profile
+        </Link>
+        <button
+          type="button"
+          onClick={handleFollowClick}
+          disabled={follow.loading}
+          className={`member-btn-follow ${follow.isFollowing ? "following" : ""}`}
+        >
+          {isSelf ? "You" : follow.isFollowing ? "Following" : "Follow"}
+        </button>
+      </div>
+    </article>
   );
 }
 

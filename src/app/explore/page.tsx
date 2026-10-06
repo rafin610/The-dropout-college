@@ -26,13 +26,9 @@ export default async function ExplorePage() {
 
   return (
     <>
-      <div className="page-title">
-        <div className="eyebrow">Explore the network</div>
-        <h1>
-          Find your next<br />
-          <span style={{ color: "var(--lime)" }}>interesting person.</span>
-        </h1>
-        <p>Search across disciplines, projects, and ambitions. The best collaborators are rarely looking for the same thing you are.</p>
+      <div className="page-title community-page-title">
+        <h1>Community Members</h1>
+        <p>Connect with amazing people, collaborate on projects, and grow together.</p>
       </div>
 
       <Suspense fallback={<div className="panel"><p className="loading">Loading explore...</p></div>}>

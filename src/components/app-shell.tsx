@@ -361,10 +361,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             type="button"
             onClick={() => setSearchOpen(true)}
             aria-label="Open search dialog"
-            style={{ background: "transparent", border: 0, textAlign: "left", cursor: "pointer" }}
+            style={{ textAlign: "left", cursor: "pointer" }}
           >
             <Search size={16} />
-            <span>Search the community</span>
+            <span>Search anything...</span>
             <kbd>⌘ K</kbd>
           </button>
           <div className="topbar-actions">
