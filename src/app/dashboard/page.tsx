@@ -4,6 +4,7 @@ import { ArrowRight, Bell, Plus, Compass, CalendarDays, CheckCircle2 } from "luc
 import { getOptionalUser, ensureUserProfile } from "@/server/auth/current-user";
 import { createSupabaseServerClient } from "@/server/supabase/server";
 import { getProjects } from "@/lib/supabase-data";
+import { notificationHref } from "@/lib/notification-link";
 import { ProjectCard } from "@/components/cards";
 import { SectionHeading } from "@/components/app-shell";
 
@@ -19,7 +20,7 @@ export default async function DashboardPage() {
   const supabase = await createSupabaseServerClient();
 
   type Profile = { display_name: string | null; bio: string | null; avatar_url: string | null; user_roles: Array<{ role: string }>; profile_categories: Array<{ categories: { name: string } | Array<{ name: string }> | null }>; profile_skills: Array<{ skills: { name: string } | Array<{ name: string }> | null }> } | null;
-  type Notification = { id: string; title: string; body: string | null; created_at: string };
+  type Notification = { id: string; type: string | null; title: string; body: string | null; created_at: string; actor_id?: string | null; project_id?: string | null; resource_type?: string | null; resource_id?: string | null };
   type UpcomingEvent = { id: string; title: string; event_type: string; starts_at: string; location: string | null };
 
   let profile: Profile = null;
@@ -30,7 +31,7 @@ export default async function DashboardPage() {
   try {
     const [profileRes, notifRes, fetchedProjects, eventRes] = await Promise.all([
       supabase.from("profiles").select("display_name, bio, avatar_url, user_roles(role), profile_categories(categories(name)), profile_skills(skills(name))").eq("id", user.id).maybeSingle(),
-      supabase.from("notifications").select("id, title, body, created_at").eq("profile_id", user.id).order("created_at", { ascending: false }).limit(5),
+      supabase.from("notifications").select("id, type, title, body, created_at, actor_id, project_id, resource_type, resource_id").eq("profile_id", user.id).order("created_at", { ascending: false }).limit(5),
       getProjects(user.id),
       supabase.from("events").select("id, title, event_type, starts_at, location").eq("status", "published").gte("starts_at", new Date().toISOString()).order("starts_at").limit(3),
     ]);
@@ -104,13 +105,13 @@ export default async function DashboardPage() {
         {notifications?.length ? (
           <div className="activity-list">
             {notifications.map((notification) => (
-              <div className="activity" key={notification.id}>
+              <Link className="activity" key={notification.id} href={notificationHref(notification)}>
                 <div className="activity-icon">!</div>
                 <div>
                   {notification.title}
                   <span>{notification.body}</span>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         ) : (

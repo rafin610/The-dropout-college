@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowUp, ExternalLink, Code2 as Github, Globe, LoaderCircle, MessageCircle, Pencil, Trash2 } from "lucide-react";
 import { Pill, timeAgo } from "@/components/app-shell";
 import { useComments, useFollow, useUpvote, commentAuthor } from "@/lib/social-client";
+import { AuthPrompt } from "@/components/auth-prompt";
 import type { Project } from "@/lib/supabase-data";
 
 function displayStatus(status?: string | null): string {
@@ -19,13 +20,14 @@ export function ProjectDetailsClient({ project, userId, isAdmin }: { project: Pr
   const [coverError, setCoverError] = useState(false);
   const showCover = Boolean(project.coverImageUrl) && !coverError;
   const status = displayStatus(project.status);
-  const { count: upvotes, upvoted, loading: upvoting, toggle: toggleUpvote } = useUpvote(project.id, project.upvoteCount ?? 0, userId);
+  const [authPromptAction, setAuthPromptAction] = useState<string | null>(null);
+  const { count: upvotes, upvoted, loading: upvoting, error: upvoteError, pulse, toggle: toggleUpvote } = useUpvote(project.id, project.upvoteCount ?? 0, userId, { onAuthRequired: () => setAuthPromptAction("upvote") });
   const { comments, loading: commentsLoading, error: commentsError, posting, post, setComments } = useComments(project.id);
   const [draft, setDraft] = useState("");
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState("");
   const [actionError, setActionError] = useState("");
-  const follow = useFollow(project.ownerId ?? null, userId);
+  const follow = useFollow(project.ownerId ?? null, userId, { onAuthRequired: () => setAuthPromptAction("follow") });
   const isOwner = userId != null && userId === project.ownerId;
   const creatorInitials = (project.creatorName ?? "M").split(/\s+/).map((p) => p[0]).join("").slice(0, 2).toUpperCase();
 
@@ -114,7 +116,9 @@ export function ProjectDetailsClient({ project, userId, isAdmin }: { project: Pr
           </button>
         )}
         {!isOwner && project.ownerId && !userId && (
-          <Link href="/login" className="button button-ghost follow-button" style={{ fontSize: 11 }}>Follow</Link>
+          <button type="button" className="button button-ghost follow-button" style={{ fontSize: 11 }} onClick={() => setAuthPromptAction("follow")}>
+            Follow
+          </button>
         )}
       </div>
 
@@ -139,12 +143,17 @@ export function ProjectDetailsClient({ project, userId, isAdmin }: { project: Pr
           aria-pressed={upvoted}
           title={userId ? (upvoted ? "Remove upvote" : "Upvote") : "Sign in to upvote"}
         >
-          <ArrowUp size={14} /> {upvoting ? "…" : upvotes} Upvote
+          <ArrowUp key={pulse} size={14} className={pulse > 0 ? "upvote-pop-icon" : undefined} /> {upvoting ? "…" : upvotes} Upvote
         </button>
         <span className="comment-button" aria-label={`${comments.length} comments`}>
           <MessageCircle size={14} /> {comments.length} Comments
         </span>
       </div>
+
+      {upvoteError && <p role="alert" style={{ color: "var(--coral)", fontSize: 12, margin: 0 }}>{upvoteError}</p>}
+      {follow.error && <p role="alert" style={{ color: "var(--coral)", fontSize: 12, margin: 0 }}>{follow.error}</p>}
+
+      <AuthPrompt open={authPromptAction !== null} action={authPromptAction ?? "continue"} onClose={() => setAuthPromptAction(null)} />
 
       <section id="comments" className="panel">
         <div className="eyebrow">Discussion</div>

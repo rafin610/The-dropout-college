@@ -18,17 +18,21 @@ export async function GET(request: Request) {
     const supabase = await createSupabaseServerClient();
     const viewer = await getOptionalUser();
 
-    const [followers, following] = await Promise.all([
+    const [followers, following, followersCountRes, followingCountRes] = await Promise.all([
       supabase
         .from("follows")
         .select("follower_id, created_at, profiles!follows_follower_id_fkey(id, display_name, username, avatar_url, bio)")
         .eq("following_id", userId)
-        .order("created_at", { ascending: false }),
+        .order("created_at", { ascending: false })
+        .limit(100),
       supabase
         .from("follows")
         .select("following_id, created_at, profiles!follows_following_id_fkey(id, display_name, username, avatar_url, bio)")
         .eq("follower_id", userId)
-        .order("created_at", { ascending: false }),
+        .order("created_at", { ascending: false })
+        .limit(100),
+      supabase.from("follows").select("id", { count: "exact", head: true }).eq("following_id", userId),
+      supabase.from("follows").select("id", { count: "exact", head: true }).eq("follower_id", userId),
     ]);
     // Fallback without profile joins if the FK hint mismatches.
     let followerRows: Array<Record<string, unknown>> = (followers.data ?? []) as Array<Record<string, unknown>>;
@@ -52,8 +56,8 @@ export async function GET(request: Request) {
 
     return Response.json({
       data: {
-        followersCount: followerRows?.length ?? 0,
-        followingCount: followingRows?.length ?? 0,
+        followersCount: followersCountRes.count ?? followerRows.length,
+        followingCount: followingCountRes.count ?? followingRows.length,
         followers: followerRows ?? [],
         following: followingRows ?? [],
         isFollowing,
@@ -82,17 +86,21 @@ export async function POST(request: Request) {
     const supabase = await createSupabaseServerClient();
     const { error } = await supabase.from("follows").insert({ follower_id: user.id, following_id: parsed.data.followingId });
     if (error && error.code !== "23505") throw error;
-    try {
-      const { data: actor } = await supabase.from("profiles").select("display_name").eq("id", user.id).single();
-      await createNotification({
-        recipientId: parsed.data.followingId,
-        actorId: user.id,
-        type: "FOLLOW",
-        title: "New follower",
-        body: `${actor?.display_name ?? "A user"} started following you`,
-      });
-    } catch {
-      // Ignore notification errors.
+    // Only notify on a genuinely new follow — re-following (or a duplicate
+    // click losing the race) must not spam the recipient.
+    if (!error) {
+      try {
+        const { data: actor } = await supabase.from("profiles").select("display_name").eq("id", user.id).single();
+        await createNotification({
+          recipientId: parsed.data.followingId,
+          actorId: user.id,
+          type: "FOLLOW",
+          title: "New follower",
+          body: `${actor?.display_name ?? "A user"} started following you`,
+        });
+      } catch {
+        // Ignore notification errors.
+      }
     }
     return Response.json({ data: { following: true }, requestId }, { status: 201 });
   } catch (error) {

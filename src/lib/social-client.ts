@@ -3,11 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
-export function useUpvote(projectId: string, initialCount: number, userId: string | null) {
+export function useUpvote(projectId: string, initialCount: number, userId: string | null, options?: { onAuthRequired?: () => void }) {
   const [count, setCount] = useState(initialCount);
   const [upvoted, setUpvoted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [pulse, setPulse] = useState(0);
   const pending = useRef(false);
 
   useEffect(() => {
@@ -55,7 +56,11 @@ export function useUpvote(projectId: string, initialCount: number, userId: strin
   }, [projectId]);
 
   const toggle = useCallback(async () => {
-    if (!userId || loading || pending.current) return;
+    if (!userId) {
+      options?.onAuthRequired?.();
+      return;
+    }
+    if (loading || pending.current) return;
     pending.current = true;
     setLoading(true);
     setError("");
@@ -64,6 +69,7 @@ export function useUpvote(projectId: string, initialCount: number, userId: strin
     const prevCount = count;
     setUpvoted(!prevUpvoted);
     setCount(prevCount + (prevUpvoted ? -1 : 1));
+    setPulse((p) => p + 1);
     try {
       const res = await fetch(`/api/v1/projects/${projectId}/upvote`, { method: "POST" });
       const json = await res.json().catch(() => null);
@@ -78,9 +84,10 @@ export function useUpvote(projectId: string, initialCount: number, userId: strin
       setLoading(false);
       pending.current = false;
     }
-  }, [userId, loading, upvoted, count, projectId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, loading, upvoted, count, projectId, options?.onAuthRequired]);
 
-  return { count, upvoted, loading, error, toggle };
+  return { count, upvoted, loading, error, pulse, toggle };
 }
 
 export type SocialComment = {
@@ -154,12 +161,13 @@ export function useComments(projectId: string) {
   return { comments, loading, error, posting, load, post, setComments, setError };
 }
 
-export function useFollow(targetUserId: string | null, viewerId: string | null) {
+export function useFollow(targetUserId: string | null, viewerId: string | null, options?: { onAuthRequired?: () => void }) {
   const [isFollowing, setIsFollowing] = useState(false);
   const [followersCount, setFollowersCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const load = useCallback(async () => {
     if (!targetUserId) {
@@ -186,15 +194,22 @@ export function useFollow(targetUserId: string | null, viewerId: string | null) 
   }, [load]);
 
   const toggle = useCallback(async () => {
-    if (!targetUserId || !viewerId || loading || targetUserId === viewerId) return;
+    if (!targetUserId) return;
+    if (!viewerId) {
+      options?.onAuthRequired?.();
+      return;
+    }
+    if (loading || targetUserId === viewerId) return;
     setLoading(true);
+    setError("");
     const prev = isFollowing;
     setIsFollowing(!prev);
-    setFollowersCount((c) => c + (prev ? -1 : 1));
+    setFollowersCount((c) => Math.max(0, c + (prev ? -1 : 1)));
     try {
       if (prev) {
         const res = await fetch(`/api/v1/follows?followingId=${encodeURIComponent(targetUserId)}`, { method: "DELETE" });
-        if (!res.ok) throw new Error("Could not unfollow.");
+        const json = await res.json().catch(() => null);
+        if (!res.ok) throw new Error(json?.error?.message || "Could not unfollow.");
       } else {
         const res = await fetch("/api/v1/follows", {
           method: "POST",
@@ -204,15 +219,17 @@ export function useFollow(targetUserId: string | null, viewerId: string | null) 
         const json = await res.json().catch(() => null);
         if (!res.ok) throw new Error(json?.error?.message || "Could not follow.");
       }
-    } catch {
+    } catch (err) {
       setIsFollowing(prev);
-      setFollowersCount((c) => c + (prev ? 1 : -1));
+      setFollowersCount((c) => Math.max(0, c + (prev ? 1 : -1)));
+      setError(err instanceof Error ? err.message : "Could not update follow. Please try again.");
     } finally {
       setLoading(false);
     }
-  }, [targetUserId, viewerId, loading, isFollowing]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [targetUserId, viewerId, loading, isFollowing, options?.onAuthRequired]);
 
-  return { isFollowing, followersCount, followingCount, loading, initialLoading, toggle, reload: load };
+  return { isFollowing, followersCount, followingCount, loading, initialLoading, error, toggle, reload: load };
 }
 
 export function commentAuthor(comment: SocialComment): { name: string; username: string; avatar: string | null } {

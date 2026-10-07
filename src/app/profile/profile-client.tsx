@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { timeAgo } from "@/components/app-shell";
 import { useFollow } from "@/lib/social-client";
+import { AuthPrompt } from "@/components/auth-prompt";
 import type { Category, Project, Skill } from "@/lib/supabase-data";
 
 export type ProfileBadge = {
@@ -144,7 +145,8 @@ export function ProfileClient({
   const [skillIds, setSkillIds] = useState(profile.skills.map((skill) => skill.id));
   const [categorySearch, setCategorySearch] = useState("");
 
-  const follow = useFollow(isOwner ? null : profile.id, viewerId);
+  const [authPrompt, setAuthPrompt] = useState(false);
+  const follow = useFollow(profile.id, viewerId, { onAuthRequired: () => setAuthPrompt(true) });
   const [followListTab, setFollowListTab] = useState<"followers" | "following" | null>(null);
   const [followLists, setFollowLists] = useState<{ followers: Array<{ follower_id?: string; profiles: unknown }>; following: Array<{ following_id?: string; profiles: unknown }> }>({ followers: [], following: [] });
   const [followListsLoading, setFollowListsLoading] = useState(false);
@@ -379,9 +381,9 @@ export function ProfileClient({
                   {follow.isFollowing ? "Following" : "Follow"}
                 </button>
               ) : (
-                <Link href="/login" className="button button-primary pf-btn">
+                <button type="button" onClick={() => setAuthPrompt(true)} className="button button-primary pf-btn">
                   Follow
-                </Link>
+                </button>
               )}
               <button type="button" onClick={() => void handleShare()} className="button button-ghost pf-btn" aria-live="polite">
                 {shareState === "copied" ? <Check size={14} aria-hidden="true" /> : <Share2 size={14} aria-hidden="true" />}
@@ -422,6 +424,7 @@ export function ProfileClient({
               </div>
             </div>
             <div className="pf-stats" aria-label="Profile statistics">
+              {follow.error && <p role="alert" style={{ color: "var(--coral)", fontSize: 12, gridColumn: "1 / -1", margin: 0 }}>{follow.error}</p>}
               <button type="button" className="pf-stat" onClick={() => void loadFollowLists("followers")} aria-label={`View followers, ${follow.followersCount}`}>
                 <strong>{follow.initialLoading ? "…" : follow.followersCount}</strong>
                 <span>Followers</span>
@@ -655,6 +658,8 @@ export function ProfileClient({
           </aside>
         )}
       </div>
+
+      <AuthPrompt open={authPrompt} action="follow" onClose={() => setAuthPrompt(false)} />
 
       {/* ── Followers / Following dialog ───────────────────── */}
       {followListTab && (

@@ -19,6 +19,7 @@ import { Pill } from "@/components/app-shell";
 import type { Event, Member, Project } from "@/lib/supabase-data";
 import { useFollow, useUpvote } from "@/lib/social-client";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { AuthPrompt } from "@/components/auth-prompt";
 
 function displayStatus(status?: string | null): string {
   if (status === "in_progress" || status === "Building" || status === "Active") return "Building";
@@ -40,6 +41,7 @@ export function MemberCard({ member, viewerId: propViewerId }: { member: Member;
   const [menuOpen, setMenuOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [currentViewerId, setCurrentViewerId] = useState<string | null>(propViewerId ?? null);
+  const [authPrompt, setAuthPrompt] = useState(false);
 
   useEffect(() => {
     if (propViewerId !== undefined) {
@@ -53,7 +55,7 @@ export function MemberCard({ member, viewerId: propViewerId }: { member: Member;
     });
   }, [propViewerId]);
 
-  const follow = useFollow(member.id, currentViewerId);
+  const follow = useFollow(member.id, currentViewerId, { onAuthRequired: () => setAuthPrompt(true) });
   const visibleSkills = member.skills.slice(0, 3);
   const remainingSkills = Math.max(0, member.skills.length - visibleSkills.length);
   const isSelf = currentViewerId === member.id;
@@ -62,7 +64,7 @@ export function MemberCard({ member, viewerId: propViewerId }: { member: Member;
     e.preventDefault();
     e.stopPropagation();
     if (!currentViewerId) {
-      router.push("/login");
+      setAuthPrompt(true);
       return;
     }
     if (isSelf) {
@@ -175,6 +177,8 @@ export function MemberCard({ member, viewerId: propViewerId }: { member: Member;
           {isSelf ? "You" : follow.isFollowing ? "Following" : "Follow"}
         </button>
       </div>
+      {follow.error && <p role="alert" style={{ color: "var(--coral)", fontSize: 11, margin: "6px 0 0" }}>{follow.error}</p>}
+      <AuthPrompt open={authPrompt} action="follow" onClose={() => setAuthPrompt(false)} />
     </article>
   );
 }
@@ -184,7 +188,8 @@ export function ProjectCard({ project, userId }: { project: Project; userId?: st
   const [coverError, setCoverError] = useState(false);
   const showCover = Boolean(project.coverImageUrl) && !coverError;
   const status = displayStatus(project.status);
-  const { count: upvotes, upvoted, loading: upvoting, toggle } = useUpvote(project.id, project.upvoteCount ?? 0, userId ?? null);
+  const [authPrompt, setAuthPrompt] = useState(false);
+  const { count: upvotes, upvoted, loading: upvoting, error: upvoteError, pulse, toggle } = useUpvote(project.id, project.upvoteCount ?? 0, userId ?? null, { onAuthRequired: () => setAuthPrompt(true) });
   const comments = project.commentCount ?? 0;
   const creatorInitials = (project.creatorName ?? "M").split(/\s+/).map((p) => p[0]).join("").slice(0, 2).toUpperCase();
 
@@ -232,7 +237,7 @@ export function ProjectCard({ project, userId }: { project: Project; userId?: st
             aria-label={upvoted ? `Remove upvote (${upvotes})` : `Upvote (${upvotes})`}
             title={userId ? (upvoted ? "Remove upvote" : "Upvote") : "Sign in to upvote"}
           >
-            <ArrowUp size={14} /> {upvotes}
+            <ArrowUp key={pulse} size={14} className={pulse > 0 ? "upvote-pop-icon" : undefined} /> {upvotes}
           </button>
           <Link href={`/projects/${project.id}#comments`} className="comment-button" aria-label={`Comments (${comments})`}>
             <MessageCircle size={14} /> {comments}
@@ -241,7 +246,9 @@ export function ProjectCard({ project, userId }: { project: Project; userId?: st
             See more <ArrowUpRight size={12} />
           </Link>
         </div>
+        {upvoteError && <p role="alert" style={{ color: "var(--coral)", fontSize: 11, margin: "6px 0 0" }}>{upvoteError}</p>}
       </article>
+      <AuthPrompt open={authPrompt} action="upvote" onClose={() => setAuthPrompt(false)} />
 
       {modalOpen && (
         <div

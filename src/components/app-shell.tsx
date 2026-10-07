@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Bell, BookOpen, Compass, FolderKanban, Home, LayoutDashboard, Menu, Moon, Search, Sparkles, Sun, Users, X } from "lucide-react";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { notificationHref } from "@/lib/notification-link";
 import { EXTERNAL_LINKS, SiteFooter } from "@/components/social";
 
 const nav = [
@@ -58,7 +59,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   // Notifications state
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [notifications, setNotifications] = useState<Array<{ id: string; title: string; body: string; created_at: string; read_at: string | null; resource_type: string | null; resource_id: string | null }>>([]);
+  const [notifications, setNotifications] = useState<Array<{ id: string; type?: string | null; title: string; body: string; created_at: string; read_at: string | null; resource_type: string | null; resource_id: string | null; actor_id?: string | null; project_id?: string | null; comment_id?: string | null }>>([]);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
 
   useEffect(() => {
@@ -174,7 +175,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "notifications", filter: `profile_id=eq.${userId}` },
         (payload) => {
-          const row = payload.new as { id: string; title: string; body: string; created_at: string; read_at: string | null; resource_type: string | null; resource_id: string | null };
+          const row = payload.new as { id: string; type?: string | null; title: string; body: string; created_at: string; read_at: string | null; resource_type: string | null; resource_id: string | null; actor_id?: string | null; project_id?: string | null; comment_id?: string | null };
           setNotifications((prev) => {
             if (prev.some((n) => n.id === row.id)) return prev;
             return [{ ...row }, ...prev].slice(0, 50);
@@ -211,11 +212,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   async function markAllNotificationsRead() {
+    const previous = notifications;
+    const now = new Date().toISOString();
+    setNotifications((prev) => prev.map((n) => ({ ...n, read_at: n.read_at ?? now })));
     try {
-      await fetch("/api/v1/notifications", { method: "POST" });
-      setNotifications((prev) => prev.map((n) => ({ ...n, read_at: new Date().toISOString() })));
+      const res = await fetch("/api/v1/notifications", { method: "POST" });
+      if (!res.ok) throw new Error();
     } catch {
-      // Ignore
+      setNotifications(previous);
     }
   }
 
@@ -412,11 +416,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                         {notifications.map((n) => (
                           <Link
                             key={n.id}
-                            href={n.resource_type === "event" && n.resource_id ? `/events/${n.resource_id}` : n.resource_type === "project" && n.resource_id ? `/projects/${n.resource_id}` : "/dashboard"}
+                            href={notificationHref(n)}
                             onClick={() => {
                               if (!n.read_at) {
-                                void fetch("/api/v1/notifications", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: n.id }) });
-                                setNotifications((prev) => prev.map((item) => (item.id === n.id ? { ...item, read_at: new Date().toISOString() } : item)));
+                                const stamp = new Date().toISOString();
+                                setNotifications((prev) => prev.map((item) => (item.id === n.id ? { ...item, read_at: stamp } : item)));
+                                fetch("/api/v1/notifications", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: n.id }) })
+                                  .then((res) => {
+                                    if (!res.ok) setNotifications((prev) => prev.map((item) => (item.id === n.id ? { ...item, read_at: null } : item)));
+                                  })
+                                  .catch(() => setNotifications((prev) => prev.map((item) => (item.id === n.id ? { ...item, read_at: null } : item))));
                               }
                               setNotificationsOpen(false);
                             }}

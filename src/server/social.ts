@@ -1,4 +1,4 @@
-import { createSupabaseAdminClient } from "@/server/supabase/server";
+import { createSupabaseAdminClient, createSupabaseServerClient } from "@/server/supabase/server";
 import { ApiError } from "@/server/errors";
 
 export function normalizeProjectStatus(input?: string | null): "idea" | "recruiting" | "in_progress" | "launched" | "archived" {
@@ -35,11 +35,29 @@ export function throwIfSocialSchemaMissing(error: unknown): void {
   }
   throw error;
 }
-export async function createNotification(input: NotifyInput) {  try {
+export async function createNotification(input: NotifyInput) {
+  try {
     if (input.recipientId === input.actorId) return;
     const admin = createSupabaseAdminClient();
-    if (!admin) return;
-    await admin.from("notifications").insert({
+    const fallback = admin ?? (await createSupabaseServerClient());
+
+    // De-duplicate: if there is already an unread notification from the same
+    // actor for the same thing (e.g. re-follow, upvote after unvote), refresh
+    // it instead of stacking duplicates.
+    const dedupe = fallback
+      .from("notifications")
+      .update({ created_at: new Date().toISOString(), read_at: null })
+      .eq("profile_id", input.recipientId)
+      .eq("actor_id", input.actorId)
+      .eq("type", input.type)
+      .is("read_at", null);
+    if (input.projectId) dedupe.eq("project_id", input.projectId);
+    else dedupe.is("project_id", null);
+    if (input.commentId) dedupe.eq("comment_id", input.commentId);
+    const { data: existing } = await dedupe.select("id").limit(1);
+    if (existing && existing.length > 0) return;
+
+    const { error } = await fallback.from("notifications").insert({
       profile_id: input.recipientId,
       actor_id: input.actorId,
       type: input.type,
@@ -50,8 +68,11 @@ export async function createNotification(input: NotifyInput) {  try {
       project_id: input.projectId ?? null,
       comment_id: input.commentId ?? null,
     });
-  } catch {
-    // Notifications are best-effort; social actions must not fail because of them.
+    if (error) {
+      console.warn("[createNotification] insert failed:", error.message);
+    }
+  } catch (error) {
+    console.warn("[createNotification] failed:", error instanceof Error ? error.message : error);
   }
 }
 
