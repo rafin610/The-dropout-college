@@ -174,7 +174,7 @@ export function ArticleReaderClient({
 
       {/* Main Content Layout with Table of Contents */}
       <div className="journal-reader-body-layout">
-        <div className="journal-reader-body-container">
+        <div className={`journal-reader-body-container${tocItems.length > 0 ? " has-toc" : ""}`}>
           {tocItems.length > 0 && (
             <aside className="journal-reader-toc-col" aria-label="Table of Contents">
               <div className="journal-reader-toc-sticky">
