@@ -2,7 +2,9 @@ import Link from "next/link";
 import { ArrowRight, MessageCircle } from "lucide-react";
 import { getCategories, getCounts, getEvents, getMembers, getProjects } from "@/lib/supabase-data";
 import { SectionHeading } from "@/components/app-shell";
-import { EventCard, MemberCard, ProjectCard } from "@/components/cards";
+import { EventCard, MemberCard } from "@/components/cards";
+import { JournalCard } from "@/components/journal/journal-card";
+import { getPublishedArticles } from "@/server/journal/articles";
 import { LearningNetwork } from "@/components/learning-network";
 import { StayConnected } from "@/components/social";
 import { getSiteSections, getSiteSettings } from "@/server/site-content";
@@ -12,7 +14,7 @@ export const dynamic = "force-dynamic";
 export default async function Home() {
   let categories: Awaited<ReturnType<typeof getCategories>> = [];
   let members: Awaited<ReturnType<typeof getMembers>> = [];
-  let projects: Awaited<ReturnType<typeof getProjects>> = [];
+  let journalArticles: Awaited<ReturnType<typeof getPublishedArticles>>["articles"] = [];
   let events: Awaited<ReturnType<typeof getEvents>> = [];
   let counts: Awaited<ReturnType<typeof getCounts>> = { members: 0, projects: 0, events: 0, teams: 0 };
   let settings: Awaited<ReturnType<typeof getSiteSettings>> = {};
@@ -20,15 +22,22 @@ export default async function Home() {
   let loadError = false;
 
   try {
-    [categories, members, projects, events, counts, settings, sections] = await Promise.all([
+    const [fetchedCategories, fetchedMembers, journalData, fetchedEvents, fetchedCounts, fetchedSettings, fetchedSections] = await Promise.all([
       getCategories(),
       getMembers(8, true),
-      getProjects(undefined, 6),
+      getPublishedArticles({ limit: 3 }),
       getEvents(),
       getCounts(),
       getSiteSettings(),
       getSiteSections(),
     ]);
+    categories = fetchedCategories;
+    members = fetchedMembers;
+    journalArticles = journalData.articles;
+    events = fetchedEvents;
+    counts = fetchedCounts;
+    settings = fetchedSettings;
+    sections = fetchedSections;
   } catch {
     loadError = true;
   }
@@ -174,8 +183,16 @@ export default async function Home() {
       </section>
 
       <section className="section">
-        <SectionHeading eyebrow="What people are making" title="Fresh projects and ideas." action={<Link href="/projects" className="section-link">See projects <ArrowRight size={13} /></Link>} />
-        <div className="project-grid">{projects.map((project) => <ProjectCard key={project.id} project={project} />)}</div>
+        <SectionHeading
+          eyebrow="The DropOut Journal"
+          title="Independent thinking & published knowledge."
+          action={<Link href="/journal" className="section-link">Explore Journal <ArrowRight size={13} /></Link>}
+        />
+        <div className="journal-grid">
+          {journalArticles.map((article) => (
+            <JournalCard key={article.id} article={article} />
+          ))}
+        </div>
       </section>
 
       <section className="section">

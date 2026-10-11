@@ -12,7 +12,7 @@ import { EXTERNAL_LINKS, SiteFooter } from "@/components/social";
 const nav = [
   { label: "Home", href: "/", icon: Home },
   { label: "Explore", href: "/explore", icon: Compass },
-  { label: "Projects", href: "/projects", icon: FolderKanban },
+  { label: "Journal", href: "/journal", icon: BookOpen },
   { label: "Events", href: "/events", icon: Sparkles },
 ];
 

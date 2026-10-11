@@ -88,13 +88,17 @@ export function AdminDashboard() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "suspended">("all");
 
+  const [articles, setArticles] = useState<Array<any>>([]);
+  const [articlesLoading, setArticlesLoading] = useState(false);
+
   useEffect(() => {
     async function load() {
       try {
-        const [siteRes, overviewRes, usersRes] = await Promise.all([
+        const [siteRes, overviewRes, usersRes, journalRes] = await Promise.all([
           fetch("/api/v1/admin/site", { cache: "no-store" }),
           fetch("/api/v1/admin/overview", { cache: "no-store" }),
           fetch("/api/v1/admin/users?page=1&pageSize=50", { cache: "no-store" }),
+          fetch("/api/v1/journal/articles?scope=staff", { cache: "no-store" }),
         ]);
 
         if (siteRes.ok) {
@@ -103,6 +107,11 @@ export function AdminDashboard() {
           setSettings(nextSettings);
           setSections(siteData?.data?.sections?.length ? siteData.data.sections : defaultSections);
           setSocialLinks(siteData?.data?.socialLinks?.length ? siteData.data.socialLinks : defaultSocialLinks);
+        }
+
+        if (journalRes.ok) {
+          const journalData = await journalRes.json();
+          setArticles(journalData?.data ?? []);
         }
 
         if (overviewRes.ok) {
@@ -234,6 +243,7 @@ export function AdminDashboard() {
           {[
             ["overview", "Overview"],
             ["users", "Users"],
+            ["journal", "Journal Articles"],
             ["events", "Events"],
             ["website", "Website CMS"],
             ["settings", "Settings"],
@@ -538,6 +548,84 @@ export function AdminDashboard() {
                     <button className="button button-primary" type="button" onClick={saveSiteChanges}>Save settings</button>
                     {message && <p style={{ marginTop: 12, color: "var(--muted)" }}>{message}</p>}
                   </div>
+                </div>
+              )}
+
+              {tab === "journal" && (
+                <div className="admin-panel">
+                  <div className="section-heading" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                    <div>
+                      <h2>The DropOut Journal Publications</h2>
+                      <p>Manage essays, review drafts, and launch the writing studio.</p>
+                    </div>
+                    <Link href="/journal/studio" className="button button-primary" style={{ whiteSpace: "nowrap" }}>
+                      + New Article
+                    </Link>
+                  </div>
+
+                  {articles.length === 0 ? (
+                    <div className="admin-empty">
+                      <p>No journal articles found. Click "New Article" to write your first piece.</p>
+                    </div>
+                  ) : (
+                    <div className="admin-table-wrap" style={{ marginTop: 20 }}>
+                      <table className="admin-table">
+                        <thead>
+                          <tr>
+                            <th>Title</th>
+                            <th>Author</th>
+                            <th>Category</th>
+                            <th>Status</th>
+                            <th>Reading Time</th>
+                            <th>Updated</th>
+                            <th style={{ textAlign: "right" }}>Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {articles.map((art) => (
+                            <tr key={art.id}>
+                              <td>
+                                <strong>{art.title}</strong>
+                                <div style={{ fontSize: 11, color: "var(--muted)" }}>/journal/{art.slug}</div>
+                              </td>
+                              <td>{art.author?.displayName || "Author"}</td>
+                              <td>{art.categoryName || "General"}</td>
+                              <td>
+                                <span className={`status-pill status-${art.status}`}>
+                                  {art.status}
+                                </span>
+                              </td>
+                              <td>{art.readingTimeMinutes || 1} min</td>
+                              <td style={{ fontSize: 12 }}>
+                                {new Date(art.updatedAt || art.createdAt).toLocaleDateString()}
+                              </td>
+                              <td style={{ textAlign: "right" }}>
+                                <div style={{ display: "inline-flex", gap: 6 }}>
+                                  <Link
+                                    href={`/journal/studio/${art.id}`}
+                                    className="button button-ghost button-sm"
+                                    style={{ padding: "4px 8px", fontSize: 12 }}
+                                  >
+                                    Edit
+                                  </Link>
+                                  {art.status === "published" && (
+                                    <Link
+                                      href={`/journal/${art.slug}`}
+                                      className="button button-ghost button-sm"
+                                      target="_blank"
+                                      style={{ padding: "4px 8px", fontSize: 12 }}
+                                    >
+                                      View
+                                    </Link>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </div>
               )}
             </>

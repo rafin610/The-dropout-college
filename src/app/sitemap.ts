@@ -18,10 +18,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.9,
     },
     {
+      url: `${siteUrl}/journal`,
+      lastModified: now,
+      changeFrequency: "daily",
+      priority: 0.9,
+    },
+    {
       url: `${siteUrl}/projects`,
       lastModified: now,
       changeFrequency: "daily",
-      priority: 0.8,
+      priority: 0.7,
     },
     {
       url: `${siteUrl}/events`,

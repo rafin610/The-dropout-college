@@ -33,6 +33,10 @@ export async function getUserPermissions(userId: string): Promise<Set<string>> {
       permissions.add("users.manage");
       permissions.add("categories.manage");
       permissions.add("projects.moderate");
+      permissions.add("articles.create");
+      permissions.add("articles.publish");
+      permissions.add("articles.manage");
+      permissions.add("articles.delete");
       permissions.add("events.manage");
       permissions.add("badges.manage");
       permissions.add("reports.manage");
@@ -43,6 +47,9 @@ export async function getUserPermissions(userId: string): Promise<Set<string>> {
     if (roles.includes("moderator")) {
       permissions.add("dashboard.read");
       permissions.add("projects.moderate");
+      permissions.add("articles.create");
+      permissions.add("articles.publish");
+      permissions.add("articles.moderate");
       permissions.add("reports.manage");
     }
     if (roles.includes("event_organizer")) {
