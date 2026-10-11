@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import type { Editor } from "@tiptap/react";
+import { useEditorState, type Editor } from "@tiptap/react";
 import {
   Bold,
   Italic,
@@ -44,10 +44,35 @@ export function EditorToolbar({
   onOpenVideo,
   onOpenAddBlock,
 }: EditorToolbarProps) {
-  if (!editor) return null;
+  const toolbarState = useEditorState({
+    editor,
+    selector: ({ editor: currentEditor }) => currentEditor
+      ? {
+          heading1: currentEditor.isActive("heading", { level: 1 }),
+          heading2: currentEditor.isActive("heading", { level: 2 }),
+          heading3: currentEditor.isActive("heading", { level: 3 }),
+          bold: currentEditor.isActive("bold"),
+          italic: currentEditor.isActive("italic"),
+          underline: currentEditor.isActive("underline"),
+          strike: currentEditor.isActive("strike"),
+          code: currentEditor.isActive("code"),
+          bulletList: currentEditor.isActive("bulletList"),
+          orderedList: currentEditor.isActive("orderedList"),
+          blockquote: currentEditor.isActive("blockquote"),
+          codeBlock: currentEditor.isActive("codeBlock"),
+          table: currentEditor.isActive("table"),
+        }
+      : null,
+  });
+  if (!editor || !toolbarState) return null;
 
   return (
-    <div className="journal-editor-toolbar" role="toolbar" aria-label="Editor Formatting">
+    <div
+      className="journal-editor-toolbar"
+      role="toolbar"
+      aria-label="Editor Formatting"
+      onMouseDown={(event) => event.preventDefault()}
+    >
       {onOpenAddBlock && (
         <div className="journal-toolbar-group">
           <button
@@ -65,7 +90,7 @@ export function EditorToolbar({
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-          className={`journal-toolbar-btn ${editor.isActive("heading", { level: 1 }) ? "active" : ""}`}
+          className={`journal-toolbar-btn ${toolbarState.heading1 ? "active" : ""}`}
           title="Heading 1"
           aria-label="Heading 1"
         >
@@ -74,7 +99,7 @@ export function EditorToolbar({
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-          className={`journal-toolbar-btn ${editor.isActive("heading", { level: 2 }) ? "active" : ""}`}
+          className={`journal-toolbar-btn ${toolbarState.heading2 ? "active" : ""}`}
           title="Heading 2"
           aria-label="Heading 2"
         >
@@ -83,7 +108,7 @@ export function EditorToolbar({
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-          className={`journal-toolbar-btn ${editor.isActive("heading", { level: 3 }) ? "active" : ""}`}
+          className={`journal-toolbar-btn ${toolbarState.heading3 ? "active" : ""}`}
           title="Heading 3"
           aria-label="Heading 3"
         >
@@ -97,7 +122,7 @@ export function EditorToolbar({
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleBold().run()}
-          className={`journal-toolbar-btn ${editor.isActive("bold") ? "active" : ""}`}
+          className={`journal-toolbar-btn ${toolbarState.bold ? "active" : ""}`}
           title="Bold (Ctrl+B)"
           aria-label="Bold"
         >
@@ -106,7 +131,7 @@ export function EditorToolbar({
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleItalic().run()}
-          className={`journal-toolbar-btn ${editor.isActive("italic") ? "active" : ""}`}
+          className={`journal-toolbar-btn ${toolbarState.italic ? "active" : ""}`}
           title="Italic (Ctrl+I)"
           aria-label="Italic"
         >
@@ -115,7 +140,7 @@ export function EditorToolbar({
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleUnderline().run()}
-          className={`journal-toolbar-btn ${editor.isActive("underline") ? "active" : ""}`}
+          className={`journal-toolbar-btn ${toolbarState.underline ? "active" : ""}`}
           title="Underline (Ctrl+U)"
           aria-label="Underline"
         >
@@ -124,7 +149,7 @@ export function EditorToolbar({
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleStrike().run()}
-          className={`journal-toolbar-btn ${editor.isActive("strike") ? "active" : ""}`}
+          className={`journal-toolbar-btn ${toolbarState.strike ? "active" : ""}`}
           title="Strikethrough"
           aria-label="Strikethrough"
         >
@@ -133,7 +158,7 @@ export function EditorToolbar({
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleCode().run()}
-          className={`journal-toolbar-btn ${editor.isActive("code") ? "active" : ""}`}
+          className={`journal-toolbar-btn ${toolbarState.code ? "active" : ""}`}
           title="Inline Code"
           aria-label="Inline Code"
         >
@@ -147,7 +172,7 @@ export function EditorToolbar({
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleBulletList().run()}
-          className={`journal-toolbar-btn ${editor.isActive("bulletList") ? "active" : ""}`}
+          className={`journal-toolbar-btn ${toolbarState.bulletList ? "active" : ""}`}
           title="Bulleted List"
           aria-label="Bulleted List"
         >
@@ -156,7 +181,7 @@ export function EditorToolbar({
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
-          className={`journal-toolbar-btn ${editor.isActive("orderedList") ? "active" : ""}`}
+          className={`journal-toolbar-btn ${toolbarState.orderedList ? "active" : ""}`}
           title="Numbered List"
           aria-label="Numbered List"
         >
@@ -165,7 +190,7 @@ export function EditorToolbar({
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleBlockquote().run()}
-          className={`journal-toolbar-btn ${editor.isActive("blockquote") ? "active" : ""}`}
+          className={`journal-toolbar-btn ${toolbarState.blockquote ? "active" : ""}`}
           title="Blockquote"
           aria-label="Blockquote"
         >
@@ -199,7 +224,7 @@ export function EditorToolbar({
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleCodeBlock().run()}
-          className={`journal-toolbar-btn ${editor.isActive("codeBlock") ? "active" : ""}`}
+          className={`journal-toolbar-btn ${toolbarState.codeBlock ? "active" : ""}`}
           title="Insert Code Block"
           aria-label="Insert Code Block"
         >
@@ -238,18 +263,26 @@ export function EditorToolbar({
         <button
           type="button"
           onClick={() => {
-            if (editor.isActive("table")) {
+            if (toolbarState.table) {
               editor.chain().focus().deleteTable().run();
             } else {
               editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
             }
           }}
-          className={`journal-toolbar-btn ${editor.isActive("table") ? "active" : ""}`}
+          className={`journal-toolbar-btn ${toolbarState.table ? "active" : ""}`}
           title="Insert or delete Table"
           aria-label="Table"
         >
           <TableIcon size={15} />
         </button>
+        {toolbarState.table && (
+          <div className="journal-table-edit-actions" role="group" aria-label="Table editing">
+            <button type="button" onClick={() => editor.chain().focus().addRowAfter().run()} title="Add row below" aria-label="Add row below">+ Row</button>
+            <button type="button" onClick={() => editor.chain().focus().addColumnAfter().run()} title="Add column right" aria-label="Add column right">+ Column</button>
+            <button type="button" onClick={() => editor.chain().focus().deleteRow().run()} title="Delete current row" aria-label="Delete current row">− Row</button>
+            <button type="button" onClick={() => editor.chain().focus().deleteColumn().run()} title="Delete current column" aria-label="Delete current column">− Column</button>
+          </div>
+        )}
         <button
           type="button"
           onClick={onOpenImage}

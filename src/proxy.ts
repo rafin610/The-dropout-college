@@ -18,7 +18,14 @@ export async function proxy(request: NextRequest) {
   }
 
   try {
-    return await updateSession(request);
+    const { response, user } = await updateSession(request);
+    if (request.nextUrl.pathname === "/dashboard" && !user) {
+      const loginUrl = new URL("/login?next=/dashboard", request.url);
+      const redirectResponse = NextResponse.redirect(loginUrl);
+      response.cookies.getAll().forEach((cookie) => redirectResponse.cookies.set(cookie));
+      return redirectResponse;
+    }
+    return response;
   } catch {
     return NextResponse.next();
   }

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { Bell, BookOpen, Compass, FolderKanban, Home, LayoutDashboard, Menu, Moon, Search, Sparkles, Sun, Users, X } from "lucide-react";
+import { Bell, BookOpen, Compass, FolderKanban, Home, LayoutDashboard, Menu, Moon, Search, Sparkles, Sun, UserRound, Users, X } from "lucide-react";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { notificationHref } from "@/lib/notification-link";
@@ -36,6 +36,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [isMobile, setIsMobile] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [accountName, setAccountName] = useState<string | null>(null);
+  const [accountAvatar, setAccountAvatar] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   // Theme lives on <html data-theme>; the pre-paint script in layout sets it
   // from storage / OS preference, and this subscribes to changes so the
@@ -102,8 +103,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     if (!supabase) return;
 
     void supabase.auth.getUser().then(({ data }) => {
-      setUserId(data.user?.id ?? null);
-      setAccountName((data.user?.user_metadata?.full_name as string | undefined) || (data.user?.user_metadata?.name as string | undefined) || null);
+      const user = data.user;
+      setUserId(user?.id ?? null);
+      setAccountName((user?.user_metadata?.full_name as string | undefined) || (user?.user_metadata?.name as string | undefined) || null);
+      setAccountAvatar((user?.user_metadata?.avatar_url as string | undefined) || (user?.user_metadata?.picture as string | undefined) || null);
       if (data.user) {
         // Quick permission check
         fetch("/api/v1/admin/overview")
@@ -113,8 +116,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     });
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUserId(session?.user?.id ?? null);
-      setAccountName((session?.user?.user_metadata?.full_name as string | undefined) || (session?.user?.user_metadata?.name as string | undefined) || null);
+      const user = session?.user;
+      setUserId(user?.id ?? null);
+      setAccountName((user?.user_metadata?.full_name as string | undefined) || (user?.user_metadata?.name as string | undefined) || null);
+      setAccountAvatar((user?.user_metadata?.avatar_url as string | undefined) || (user?.user_metadata?.picture as string | undefined) || null);
       if (!session?.user) {
         setIsAdmin(false);
       } else {
@@ -126,6 +131,29 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
     return () => authListener.subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+
+    void fetch("/api/v1/users/me")
+      .then(async (response) => {
+        if (!response.ok) return;
+        const result = (await response.json()) as {
+          data?: { avatar_url?: string | null; display_name?: string | null };
+        };
+        if (cancelled) return;
+        if (result.data?.avatar_url) setAccountAvatar(result.data.avatar_url);
+        if (result.data?.display_name) setAccountName(result.data.display_name);
+      })
+      .catch((error: unknown) => {
+        console.error("Unable to load the account profile for the top bar.", error);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
 
   // ⌘K / Ctrl+K keyboard shortcut
   useEffect(() => {
@@ -369,7 +397,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           >
             <Search size={16} />
             <span>Search anything...</span>
-            <kbd>⌘ K</kbd>
           </button>
           <div className="topbar-actions">
             <button
@@ -447,11 +474,32 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
             {userId ? (
               <>
-                <Link href="/profile" className="login-link">{accountName || "My profile"}</Link>
+                <Link
+                  href="/profile"
+                  className="account-avatar"
+                  aria-label={accountName ? `Open ${accountName}'s profile` : "Open my profile"}
+                  title={accountName || "My profile"}
+                >
+                  {accountAvatar ? (
+                    <Image
+                      src={accountAvatar}
+                      alt=""
+                      width={36}
+                      height={36}
+                      unoptimized
+                      referrerPolicy="no-referrer"
+                      onError={() => setAccountAvatar(null)}
+                    />
+                  ) : (
+                    <UserRound size={19} aria-hidden="true" />
+                  )}
+                </Link>
                 <button className="login-link" onClick={signOut} style={{ background: "transparent", border: 0, cursor: "pointer" }}>Sign out</button>
               </>
             ) : (
-              <Link href="/login" className="login-link">Sign in</Link>
+              <Link href="/login" className="account-avatar" aria-label="Sign in" title="Sign in">
+                <UserRound size={19} aria-hidden="true" />
+              </Link>
             )}
           </div>
         </header>

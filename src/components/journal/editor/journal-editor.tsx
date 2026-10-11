@@ -88,7 +88,18 @@ export function JournalEditor({ initialArticle, isAdmin = false }: JournalEditor
           "\n"
         );
         if (textBefore === "" || textBefore === "\n" || textBefore === " ") {
-          setTimeout(() => setSlashMenuOpen(true), 50);
+          window.setTimeout(() => {
+            const { state, view } = editor;
+            const cursor = state.selection.from;
+            if (
+              state.selection.empty &&
+              cursor > 0 &&
+              state.doc.textBetween(cursor - 1, cursor) === "/"
+            ) {
+              view.dispatch(state.tr.delete(cursor - 1, cursor));
+            }
+            setSlashMenuOpen(true);
+          }, 0);
         }
       }
     };

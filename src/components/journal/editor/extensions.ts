@@ -1,4 +1,23 @@
-import { Node, mergeAttributes } from "@tiptap/core";
+import { Extension, Node, mergeAttributes, nodeInputRule } from "@tiptap/core";
+import CodeBlock from "@tiptap/extension-code-block";
+import { Plugin } from "@tiptap/pm/state";
+import { Decoration, DecorationSet } from "@tiptap/pm/view";
+import Prism from "prismjs";
+import "prismjs/components/prism-javascript";
+import "prismjs/components/prism-typescript";
+import "prismjs/components/prism-python";
+import "prismjs/components/prism-bash";
+import "prismjs/components/prism-sql";
+import "prismjs/components/prism-json";
+import "prismjs/components/prism-css";
+import "prismjs/components/prism-markup";
+import {
+  BlockEquationNodeView,
+  EditableCodeBlockNodeView,
+  EditableImageNodeView,
+  InlineEquationNodeView,
+} from "./block-node-views";
+import { ReactNodeViewRenderer } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import Link from "@tiptap/extension-link";
@@ -13,6 +32,8 @@ export const EquationExtension = Node.create({
   name: "equation",
   group: "block",
   atom: true,
+  selectable: true,
+  draggable: true,
 
   addAttributes() {
     return {
@@ -52,6 +73,10 @@ export const EquationExtension = Node.create({
       `$$ ${HTMLAttributes.latex} $$`,
     ];
   },
+
+  addNodeView() {
+    return ReactNodeViewRenderer(BlockEquationNodeView);
+  },
 });
 
 export const InlineEquationExtension = Node.create({
@@ -59,6 +84,7 @@ export const InlineEquationExtension = Node.create({
   group: "inline",
   inline: true,
   atom: true,
+  selectable: true,
 
   addAttributes() {
     return {
@@ -89,6 +115,129 @@ export const InlineEquationExtension = Node.create({
       }),
       `\\(${HTMLAttributes.latex}\\)`,
     ];
+  },
+
+  addNodeView() {
+    return ReactNodeViewRenderer(InlineEquationNodeView);
+  },
+
+  addInputRules() {
+    return [
+      nodeInputRule({
+        find: /\\\(([\s\S]+)\\\)$/,
+        type: this.type,
+        getAttributes: (match) => ({ latex: match[1] }),
+      }),
+    ];
+  },
+});
+
+const PRISM_LANGUAGE_ALIASES: Record<string, string> = {
+  bash: "bash",
+  css: "css",
+  html: "markup",
+  javascript: "javascript",
+  js: "javascript",
+  json: "json",
+  markup: "markup",
+  py: "python",
+  python: "python",
+  sh: "bash",
+  shell: "bash",
+  sql: "sql",
+  ts: "typescript",
+  typescript: "typescript",
+};
+
+function codeLanguage(language: unknown): string {
+  return PRISM_LANGUAGE_ALIASES[String(language || "").toLowerCase()] || "plain";
+}
+
+function addTokenDecorations(
+  tokens: Array<string | Prism.Token>,
+  position: number,
+  decorations: Decoration[],
+  parents: string[] = [],
+): number {
+  let offset = position;
+
+  for (const token of tokens) {
+    if (typeof token === "string") {
+      offset += token.length;
+      continue;
+    }
+
+    if (typeof token.content === "string") {
+      const end = offset + token.content.length;
+      if (end > offset) {
+        decorations.push(
+          Decoration.inline(offset, end, {
+            class: `token ${[...parents, token.type].join(" ")}`,
+          }),
+        );
+      }
+      offset = end;
+      continue;
+    }
+
+    if (Array.isArray(token.content)) {
+      offset = addTokenDecorations(token.content, offset, decorations, [...parents, token.type]);
+    }
+  }
+
+  return offset;
+}
+
+const CodeHighlighting = Extension.create({
+  name: "codeHighlighting",
+
+  addProseMirrorPlugins() {
+    return [
+      new Plugin({
+        props: {
+          decorations: (state) => {
+            const decorations: Decoration[] = [];
+            state.doc.descendants((node, position) => {
+              if (node.type.name !== "codeBlock") return;
+              const language = codeLanguage(node.attrs.language);
+              const grammar = Prism.languages[language];
+              if (!grammar) return;
+
+              addTokenDecorations(
+                Prism.tokenize(node.textContent, grammar),
+                position + 1,
+                decorations,
+              );
+            });
+
+            return DecorationSet.create(state.doc, decorations);
+          },
+        },
+      }),
+    ];
+  },
+});
+
+const EditableCodeBlock = CodeBlock.extend({
+  addNodeView() {
+    return ReactNodeViewRenderer(EditableCodeBlockNodeView);
+  },
+});
+
+const EditableImage = Image.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      caption: {
+        default: "",
+        parseHTML: (element) => element.getAttribute("data-caption") || "",
+        renderHTML: ({ caption }) => caption ? { "data-caption": caption } : {},
+      },
+    };
+  },
+
+  addNodeView() {
+    return ReactNodeViewRenderer(EditableImageNodeView);
   },
 });
 
@@ -131,7 +280,7 @@ export const CalloutExtension = Node.create({
         "data-type": "callout",
         "data-variant": HTMLAttributes.variant,
         "data-title": HTMLAttributes.title || "",
-        class: `journal-editor-callout-node journal-callout-${HTMLAttributes.variant}`,
+        class: `journal-editor-callout-node journal-callout journal-callout-${HTMLAttributes.variant}`,
       }),
       0,
     ];
@@ -236,11 +385,9 @@ export function getEditorExtensions(placeholder = "Write your story or press '/'
       heading: {
         levels: [1, 2, 3],
       },
-      codeBlock: {
-        HTMLAttributes: {
-          class: "journal-editor-code-node",
-        },
-      },
+      codeBlock: false,
+      link: false,
+      underline: false,
     }),
     Placeholder.configure({
       placeholder,
@@ -253,7 +400,7 @@ export function getEditorExtensions(placeholder = "Write your story or press '/'
         class: "journal-link",
       },
     }),
-    Image.configure({
+    EditableImage.configure({
       HTMLAttributes: {
         class: "journal-media-img",
       },
@@ -267,6 +414,11 @@ export function getEditorExtensions(placeholder = "Write your story or press '/'
     TableRow,
     TableHeader,
     TableCell,
+    EditableCodeBlock.configure({
+      defaultLanguage: "javascript",
+      HTMLAttributes: { class: "journal-editor-code-node" },
+    }),
+    CodeHighlighting,
     EquationExtension,
     InlineEquationExtension,
     CalloutExtension,

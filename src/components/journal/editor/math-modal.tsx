@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { X, Sigma, AlertCircle } from "lucide-react";
 import { normalizeMathInput, renderMath } from "../math";
 
@@ -10,6 +11,7 @@ interface MathModalProps {
   onInsert: (latex: string, displayMode: boolean) => void;
   initialLatex?: string;
   initialDisplayMode?: boolean;
+  allowDisplayModeChange?: boolean;
 }
 
 const MATH_SNIPPETS = [
@@ -35,6 +37,7 @@ export function MathModal({
   onInsert,
   initialLatex = "E = mc^2",
   initialDisplayMode = true,
+  allowDisplayModeChange = true,
 }: MathModalProps) {
   const [latex, setLatex] = useState(initialLatex);
   const [displayMode, setDisplayMode] = useState(initialDisplayMode);
@@ -49,6 +52,7 @@ export function MathModal({
   }, [latex, displayMode]);
 
   if (!isOpen) return null;
+  if (typeof document === "undefined") return null;
 
   function handleInsert() {
     if (!latex.trim() || error) return;
@@ -60,7 +64,7 @@ export function MathModal({
     setLatex(snippet);
   }
 
-  return (
+  return createPortal(
     <div className="journal-modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
       <div className="journal-modal-card journal-math-modal" onClick={(e) => e.stopPropagation()}>
         <div className="journal-modal-header">
@@ -124,6 +128,7 @@ export function MathModal({
                 type="checkbox"
                 checked={displayMode}
                 onChange={(e) => setDisplayMode(e.target.checked)}
+                disabled={!allowDisplayModeChange}
               />
               <span>Display block equation (centered on its own line)</span>
             </label>
@@ -144,6 +149,7 @@ export function MathModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

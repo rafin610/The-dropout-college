@@ -92,6 +92,9 @@ img { max-width: 100%; display: block; }
 .brand-logo { width: 30px; height: 30px; object-fit: contain; flex: 0 0 auto; }
 .login-link { color: var(--text); font-size: 12px; font-weight: 700; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; transition: color 0.15s ease; }
 .login-link:hover { color: var(--accent); }
+.account-avatar { width: 38px; height: 38px; flex: 0 0 38px; display: inline-grid; place-items: center; overflow: hidden; color: var(--text); background: var(--surface-2); border: 1px solid var(--line); border-radius: 50%; transition: border-color .15s ease, box-shadow .15s ease; }
+.account-avatar:hover, .account-avatar:focus-visible { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); outline: none; }
+.account-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .eyebrow, .sidebar-group-label { text-transform: uppercase; letter-spacing: .14em; font: 600 10px 'DM Mono', monospace; color: var(--muted); }
 .sidebar-eyebrow { padding: 36px 12px 14px; }
 .sidebar-group-label { padding: 28px 12px 10px; font-size: 9px; }
@@ -122,6 +125,7 @@ img { max-width: 100%; display: block; }
 kbd { margin-left: auto; font: 600 10px 'DM Mono', monospace; border: 1px solid var(--line); border-radius: 4px; padding: 2px 6px; color: var(--muted); background: var(--surface-2); }
 .topbar-actions { display: flex; align-items: center; gap: 14px; min-width: 0; }
 .icon-button, .mobile-menu-toggle { color: var(--muted); background: transparent; border: 0; padding: 8px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; transition: color 0.15s ease, background 0.15s ease; }
+.mobile-menu-toggle { display: none; }
 .icon-button:hover, .mobile-menu-toggle:hover { color: var(--text); background: rgba(255, 255, 255, 0.05); }
 .mobile-brand, .mobile-nav, .search-mobile, .mobile-search, .mobile-menu-panel { display: none; }
 .page-wrap { max-width: 1360px; margin: 0 auto; padding: 40px clamp(20px, 4vw, 56px) 100px; }
@@ -2747,6 +2751,287 @@ a.pf-empty-link { display: inline-flex; align-items: center; }
   min-height: 480px;
 }
 
+.journal-edit-equation {
+  position: relative;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.journal-edit-equation.is-block {
+  display: block;
+  margin: 1.75em 0;
+  padding: 18px 20px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  text-align: center;
+  transition: background .15s ease, border-color .15s ease;
+}
+
+.journal-edit-equation.is-block:hover,
+.journal-edit-equation.is-block.is-selected {
+  background: var(--surface);
+  border-color: var(--line);
+}
+
+.journal-edit-equation.is-inline {
+  display: inline;
+  vertical-align: baseline;
+  padding: 0 2px;
+}
+
+.journal-edit-equation-content {
+  display: inline-block;
+  max-width: 100%;
+  overflow-x: auto;
+  vertical-align: middle;
+}
+
+.journal-edit-equation.is-block .journal-edit-equation-content {
+  display: block;
+}
+
+.journal-edit-equation-actions {
+  position: absolute;
+  top: 4px;
+  right: 5px;
+  display: inline-flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity .15s ease;
+}
+
+.journal-edit-equation:hover .journal-edit-equation-actions,
+.journal-edit-equation:focus-within .journal-edit-equation-actions,
+.journal-edit-equation.is-selected .journal-edit-equation-actions {
+  opacity: 1;
+}
+
+.journal-edit-equation.is-inline .journal-edit-equation-actions {
+  top: -28px;
+  right: 0;
+}
+
+.journal-edit-block-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 26px;
+  padding: 3px 7px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.journal-edit-block-action:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.journal-edit-block-action.is-danger:hover {
+  border-color: var(--coral);
+  color: var(--coral);
+}
+
+.journal-edit-equation-error {
+  display: inline-block;
+  color: var(--coral);
+  font: 12px 'DM Mono', monospace;
+}
+
+.journal-edit-code-block {
+  margin: 1.75em 0;
+  overflow: hidden;
+  border: 1px solid #263129;
+  border-radius: 10px;
+  background: #0E1210;
+  color: #E2E8E4;
+}
+
+.journal-edit-code-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 42px;
+  padding: 5px 10px 5px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, .08);
+  background: #151C17;
+}
+
+.journal-edit-code-language-label select {
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: #AEBDB2;
+  font: 600 11px 'DM Mono', monospace;
+  cursor: pointer;
+}
+
+.journal-edit-code-language-label option {
+  background: #151C17;
+  color: #E2E8E4;
+}
+
+.journal-edit-code-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.journal-edit-code-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 7px;
+  border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 5px;
+  background: transparent;
+  color: #AEBDB2;
+  font-size: 11px;
+}
+
+.journal-edit-code-actions button:hover {
+  border-color: rgba(255, 255, 255, .32);
+  color: #F3F5EF;
+}
+
+.journal-edit-code-content {
+  min-height: 3.5em;
+  max-height: 560px;
+  margin: 0;
+  padding: 16px 18px;
+  overflow: auto;
+  color: #E2E8E4;
+  font: 13px/1.7 'DM Mono', monospace;
+  tab-size: 2;
+  white-space: pre;
+  outline: none;
+}
+
+.journal-edit-code-content code {
+  font: inherit;
+}
+
+.journal-edit-image-block figure {
+  margin: 1.75em 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.journal-edit-image-block img {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  max-height: 680px;
+  margin-inline: auto;
+  object-fit: contain;
+}
+
+.journal-edit-image-block figcaption {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.journal-edit-image-block figcaption input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+}
+
+.journal-edit-image-block figcaption button {
+  display: inline-grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.journal-edit-image-block figcaption button:hover {
+  color: var(--coral);
+}
+
+.journal-code-wrapper .token.comment,
+.journal-edit-code-block .token.comment,
+.journal-code-wrapper .token.prolog,
+.journal-edit-code-block .token.prolog {
+  color: #819184;
+}
+
+.journal-code-wrapper .token.keyword,
+.journal-edit-code-block .token.keyword,
+.journal-code-wrapper .token.selector,
+.journal-edit-code-block .token.selector,
+.journal-code-wrapper .token.atrule,
+.journal-edit-code-block .token.atrule {
+  color: #C792EA;
+}
+
+.journal-code-wrapper .token.string,
+.journal-edit-code-block .token.string,
+.journal-code-wrapper .token.attr-value,
+.journal-edit-code-block .token.attr-value {
+  color: #C3E88D;
+}
+
+.journal-code-wrapper .token.function,
+.journal-edit-code-block .token.function,
+.journal-code-wrapper .token.number,
+.journal-edit-code-block .token.number,
+.journal-code-wrapper .token.boolean,
+.journal-edit-code-block .token.boolean {
+  color: #F78C6C;
+}
+
+.journal-code-wrapper .token.operator,
+.journal-edit-code-block .token.operator,
+.journal-code-wrapper .token.punctuation,
+.journal-edit-code-block .token.punctuation {
+  color: #89DDFF;
+}
+
+.journal-code-wrapper .token.property,
+.journal-edit-code-block .token.property,
+.journal-code-wrapper .token.class-name,
+.journal-edit-code-block .token.class-name {
+  color: #FFCB6B;
+}
+
+.journal-table-edit-actions {
+  display: flex;
+  gap: 3px;
+  padding-left: 6px;
+  border-left: 1px solid var(--line);
+}
+
+.journal-table-edit-actions button {
+  padding: 5px 7px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.journal-table-edit-actions button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 .journal-tiptap-content {
   min-height: 400px;
   outline: none;
@@ -2759,6 +3044,63 @@ a.pf-empty-link { display: inline-flex; align-items: center; }
   line-height: 1.8;
   color: var(--text);
   min-height: 400px;
+}
+
+.journal-tiptap-content .ProseMirror > * {
+  margin-block: 1em;
+}
+
+.journal-tiptap-content .ProseMirror h1,
+.journal-tiptap-content .ProseMirror h2,
+.journal-tiptap-content .ProseMirror h3 {
+  font-family: 'Manrope', 'Noto Serif Bengali', sans-serif;
+  line-height: 1.35;
+  letter-spacing: 0;
+  break-after: avoid;
+}
+
+.journal-tiptap-content .ProseMirror h1 { font-size: 2rem; }
+.journal-tiptap-content .ProseMirror h2 { font-size: 1.65rem; }
+.journal-tiptap-content .ProseMirror h3 { font-size: 1.35rem; }
+
+.journal-tiptap-content .ProseMirror blockquote {
+  margin-inline: 0;
+  padding: 8px 18px;
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+  color: var(--muted);
+}
+
+.journal-tiptap-content .ProseMirror ul,
+.journal-tiptap-content .ProseMirror ol {
+  padding-inline-start: 1.6em;
+}
+
+.journal-tiptap-content .ProseMirror table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.journal-tiptap-content .ProseMirror th,
+.journal-tiptap-content .ProseMirror td {
+  min-width: 100px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  vertical-align: top;
+}
+
+.journal-tiptap-content .ProseMirror th {
+  background: var(--surface-2);
+}
+
+.journal-tiptap-content .ProseMirror .selectedCell {
+  background: var(--accent-soft);
+}
+
+.journal-tiptap-content .ProseMirror img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
 }
 
 .journal-tiptap-content .ProseMirror p.is-editor-empty:first-child::before {
