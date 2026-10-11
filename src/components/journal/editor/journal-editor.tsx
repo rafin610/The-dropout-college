@@ -18,6 +18,7 @@ import { TableOfContents, extractTocFromDoc } from "../renderer/table-of-content
 import type { JournalArticle, ArticleStatus } from "@/server/journal/types";
 import type { CalloutVariant } from "../renderer/callout-block";
 import { slugify } from "@/server/journal/validation";
+import { normalizeMathInput } from "../math";
 
 interface JournalEditorProps {
   initialArticle?: JournalArticle | null;
@@ -243,14 +244,18 @@ export function JournalEditor({ initialArticle, isAdmin = false }: JournalEditor
   // Block insertion helpers
   function insertMath(latex: string, displayMode: boolean) {
     if (!editor) return;
-    editor
+    const normalizedLatex = normalizeMathInput(latex);
+    const inserted = editor
       .chain()
       .focus()
       .insertContent({
-        type: "equation",
-        attrs: { latex, displayMode },
+        type: displayMode ? "equation" : "inlineEquation",
+        attrs: { latex: normalizedLatex, ...(displayMode ? { displayMode: true } : {}) },
       })
       .run();
+    if (!inserted) {
+      setErrorMessage("The equation could not be inserted at the current cursor position.");
+    }
   }
 
   function insertCallout(variant: CalloutVariant, title: string) {

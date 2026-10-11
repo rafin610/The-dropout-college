@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import katex from "katex";
 import { Check, Copy, Sigma, AlertCircle } from "lucide-react";
+import { renderMath } from "../math";
 
 interface MathBlockProps {
   latex: string;
@@ -15,17 +15,8 @@ export function MathBlock({ latex, displayMode = true, className = "" }: MathBlo
   const [showSource, setShowSource] = useState(false);
 
   const { html, error } = useMemo(() => {
-    if (!latex || !latex.trim()) {
-      return { html: "", error: "Empty equation" };
-    }
     try {
-      const rendered = katex.renderToString(latex.trim(), {
-        displayMode,
-        throwOnError: false,
-        errorColor: "var(--coral, #B85741)",
-        strict: false,
-      });
-      return { html: rendered, error: null };
+      return { html: renderMath(latex, displayMode), error: null };
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Invalid LaTeX expression";
       return { html: "", error: msg };
@@ -44,13 +35,16 @@ export function MathBlock({ latex, displayMode = true, className = "" }: MathBlo
   }
 
   if (error) {
-    return (
-      <div className={`journal-math-error ${displayMode ? "display" : "inline"}`}>
+    const message = (
+      <>
         <AlertCircle size={14} />
         <span>{error}</span>
         <code>{latex}</code>
-      </div>
+      </>
     );
+    return displayMode
+      ? <div className="journal-math-error display">{message}</div>
+      : <span className="journal-math-error inline">{message}</span>;
   }
 
   if (!displayMode) {

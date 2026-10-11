@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import katex from "katex";
 import { X, Sigma, AlertCircle } from "lucide-react";
+import { normalizeMathInput, renderMath } from "../math";
 
 interface MathModalProps {
   isOpen: boolean;
@@ -40,13 +40,8 @@ export function MathModal({
   const [displayMode, setDisplayMode] = useState(initialDisplayMode);
 
   const { html, error } = useMemo(() => {
-    if (!latex.trim()) return { html: "", error: "Please enter a LaTeX expression" };
     try {
-      const rendered = katex.renderToString(latex.trim(), {
-        displayMode,
-        throwOnError: true,
-      });
-      return { html: rendered, error: null };
+      return { html: renderMath(latex, displayMode), error: null };
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Invalid LaTeX syntax";
       return { html: "", error: msg };
@@ -57,12 +52,12 @@ export function MathModal({
 
   function handleInsert() {
     if (!latex.trim() || error) return;
-    onInsert(latex.trim(), displayMode);
+    onInsert(normalizeMathInput(latex), displayMode);
     onClose();
   }
 
   function handleSnippetClick(snippet: string) {
-    setLatex((prev) => (!prev.trim() || prev === "E = mc^2" ? snippet : `${prev} ${snippet}`));
+    setLatex(snippet);
   }
 
   return (
@@ -83,6 +78,7 @@ export function MathModal({
             <label className="journal-form-label">LaTeX Formula</label>
             <textarea
               className="journal-latex-input"
+              aria-label="LaTeX formula"
               value={latex}
               onChange={(e) => setLatex(e.target.value)}
               placeholder="e.g. \\int_{0}^{\\infty} e^{-x} \\, dx = 1"
@@ -110,9 +106,9 @@ export function MathModal({
 
           <div className="journal-math-preview-box">
             <div className="journal-preview-label">Live Equation Preview</div>
-            <div className="journal-preview-canvas">
+            <div className={`journal-preview-canvas ${displayMode ? "is-display" : "is-inline"}`}>
               {error ? (
-                <div className="journal-preview-error">
+                <div className="journal-preview-error" role="status" aria-live="polite">
                   <AlertCircle size={15} />
                   <span>{error}</span>
                 </div>

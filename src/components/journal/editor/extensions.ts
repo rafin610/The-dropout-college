@@ -54,6 +54,44 @@ export const EquationExtension = Node.create({
   },
 });
 
+export const InlineEquationExtension = Node.create({
+  name: "inlineEquation",
+  group: "inline",
+  inline: true,
+  atom: true,
+
+  addAttributes() {
+    return {
+      latex: {
+        default: "E = mc^2",
+      },
+    };
+  },
+
+  parseHTML() {
+    return [
+      {
+        tag: 'span[data-type="inline-equation"]',
+        getAttrs: (element) => ({
+          latex: (element as HTMLElement).getAttribute("data-latex") || "",
+        }),
+      },
+    ];
+  },
+
+  renderHTML({ HTMLAttributes }) {
+    return [
+      "span",
+      mergeAttributes(HTMLAttributes, {
+        "data-type": "inline-equation",
+        "data-latex": HTMLAttributes.latex,
+        class: "journal-editor-equation-node journal-editor-inline-equation-node",
+      }),
+      `\\(${HTMLAttributes.latex}\\)`,
+    ];
+  },
+});
+
 export const CalloutExtension = Node.create({
   name: "callout",
   group: "block",
@@ -230,6 +268,7 @@ export function getEditorExtensions(placeholder = "Write your story or press '/'
     TableHeader,
     TableCell,
     EquationExtension,
+    InlineEquationExtension,
     CalloutExtension,
     DetailsExtension,
     VideoEmbedExtension,
