@@ -136,7 +136,18 @@ export function JournalEditor({ initialArticle, isAdmin = false }: JournalEditor
 
       const resolvedStatus = targetStatus || status;
       const content = editor.getJSON();
-      const resolvedSlug = slug.trim() || slugify(title);
+      const enteredSlug = slugify(slug);
+      const resolvedSlug = enteredSlug.length >= 2 ? enteredSlug : slugify(title);
+
+      if (resolvedSlug.length < 2) {
+        setSaveStatus("error");
+        setErrorMessage("Please enter a URL slug with at least 2 characters.");
+        return null;
+      }
+
+      if (resolvedSlug !== slug) {
+        setSlug(resolvedSlug);
+      }
 
       const payload = {
         id: articleId,
