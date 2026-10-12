@@ -40,18 +40,16 @@ export function MemberCard({ member, viewerId: propViewerId }: { member: Member;
   const [avatarError, setAvatarError] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [currentViewerId, setCurrentViewerId] = useState<string | null>(propViewerId ?? null);
+  const [fetchedViewerId, setFetchedViewerId] = useState<string | null>(null);
+  const currentViewerId = propViewerId !== undefined ? propViewerId : fetchedViewerId;
   const [authPrompt, setAuthPrompt] = useState(false);
 
   useEffect(() => {
-    if (propViewerId !== undefined) {
-      setCurrentViewerId(propViewerId);
-      return;
-    }
+    if (propViewerId !== undefined) return;
     const supabase = createSupabaseBrowserClient();
     if (!supabase) return;
     void supabase.auth.getUser().then(({ data }) => {
-      setCurrentViewerId(data.user?.id ?? null);
+      setFetchedViewerId(data.user?.id ?? null);
     });
   }, [propViewerId]);
 
@@ -165,17 +163,23 @@ export function MemberCard({ member, viewerId: propViewerId }: { member: Member;
       </div>
 
       <div className="member-actions-row">
-        <Link href={`/profile?member=${encodeURIComponent(member.id)}`} className="member-btn-view">
+        <Link href={isSelf ? "/profile" : `/profile?member=${encodeURIComponent(member.id)}`} className="member-btn-view">
           View Profile
         </Link>
-        <button
-          type="button"
-          onClick={handleFollowClick}
-          disabled={follow.loading}
-          className={`member-btn-follow ${follow.isFollowing ? "following" : ""}`}
-        >
-          {isSelf ? "You" : follow.isFollowing ? "Following" : "Follow"}
-        </button>
+        {isSelf ? (
+          <Link href="/profile?edit=true" className="member-btn-follow" style={{ textAlign: "center", textDecoration: "none" }}>
+            Edit Profile
+          </Link>
+        ) : (
+          <button
+            type="button"
+            onClick={handleFollowClick}
+            disabled={follow.loading}
+            className={`member-btn-follow ${follow.isFollowing ? "following" : ""}`}
+          >
+            {follow.isFollowing ? "Following" : "Follow"}
+          </button>
+        )}
       </div>
       {follow.error && <p role="alert" style={{ color: "var(--coral)", fontSize: 11, margin: "6px 0 0" }}>{follow.error}</p>}
       <AuthPrompt open={authPrompt} action="follow" onClose={() => setAuthPrompt(false)} />

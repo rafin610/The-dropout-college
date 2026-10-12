@@ -90,7 +90,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
   }
 }
 
-export async function DELETE(request: Request, context: { params: Promise<{ id: string }> }) {
+export async function DELETE(request: Request) {
   const requestId = request.headers.get("x-request-id") ?? crypto.randomUUID();
   try {
     await getOptionalUser();

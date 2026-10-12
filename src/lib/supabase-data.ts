@@ -167,7 +167,8 @@ export async function getProjects(ownerId?: string, limit?: number): Promise<Pro
     let query = supabase.from("projects").select(FULL_PROJECT_SELECT).is("deleted_at", null).order("created_at", { ascending: false });
     if (ownerId) query = query.eq("owner_id", ownerId);
     if (limit) query = query.limit(limit);
-    let { data, error } = await query;
+    const { data: initialData, error } = await query;
+    let data = initialData;
     if (error) {
       let legacy = supabase.from("projects").select(LEGACY_PROJECT_SELECT).is("deleted_at", null).order("created_at", { ascending: false });
       if (ownerId) legacy = legacy.eq("owner_id", ownerId);

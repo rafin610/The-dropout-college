@@ -583,16 +583,60 @@ export async function deleteArticle(id: string, user: User): Promise<void> {
   }
 
   const supabase = await createSupabaseServerClient();
+  const deletedAt = new Date().toISOString();
+  let deleted = false;
 
+  // Try soft-deleting in articles table
   try {
-    await supabase.from("articles").update({ deleted_at: new Date().toISOString() }).eq("id", id);
-  } catch {
-    // Continue to projects fallback
+    const { error } = await supabase
+      .from("articles")
+      .update({ deleted_at: deletedAt })
+      .eq("id", id)
+      .is("deleted_at", null);
+
+    if (!error) {
+      deleted = true;
+    } else {
+      console.warn("[deleteArticle] articles table soft-delete error:", error.message);
+    }
+  } catch (err) {
+    console.warn("[deleteArticle] articles table exception:", err);
   }
 
-  try {
-    await supabase.from("projects").update({ deleted_at: new Date().toISOString() }).eq("id", id);
-  } catch {
-    // Continue
+  // Fallback: try soft-deleting in projects table
+  if (!deleted) {
+    try {
+      const { error } = await supabase
+        .from("projects")
+        .update({ deleted_at: deletedAt })
+        .eq("id", id)
+        .is("deleted_at", null);
+
+      if (!error) {
+        deleted = true;
+      } else {
+        console.warn("[deleteArticle] projects table soft-delete error:", error.message);
+      }
+    } catch (err) {
+      console.warn("[deleteArticle] projects table exception:", err);
+    }
+  }
+
+  if (!deleted) {
+    throw new ApiError("INTERNAL_ERROR", "Failed to delete the article. Please try again.", 500);
+  }
+
+  // Clean up associated cover image from storage if applicable
+  if (existing.coverImageUrl) {
+    try {
+      const url = new URL(existing.coverImageUrl);
+      const storageMatch = url.pathname.match(/\/storage\/v1\/object\/public\/([^/]+)\/(.+)/);
+      if (storageMatch) {
+        const [, bucket, path] = storageMatch;
+        await supabase.storage.from(bucket).remove([decodeURIComponent(path)]);
+      }
+    } catch {
+      // Non-critical: storage cleanup failure should not block the deletion response
+    }
   }
 }

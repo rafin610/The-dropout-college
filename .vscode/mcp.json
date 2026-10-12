@@ -1,3 +1,8 @@
 {
-	"servers": {}
+	"servers": {
+		"com.supabase/mcp": {
+			"type": "http",
+			"url": "https://mcp.supabase.com/mcp?project_ref=ddgklwyjvttjcclanism&features=database,docs"
+		}
+	}
 }

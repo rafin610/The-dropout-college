@@ -1,7 +1,7 @@
 "use client";
 
 import { CalendarPlus, Pencil, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { Category } from "@/lib/supabase-data";
 
 type AdminEvent = {
@@ -58,7 +58,7 @@ export function AdminEvents() {
     return () => clearTimeout(timer);
   }, [toast]);
 
-  async function load() {
+  const load = useCallback(async () => {
     try {
       const [eventResponse, categoryResponse] = await Promise.all([fetch("/api/v1/admin/events", { cache: "no-store" }), fetch("/api/v1/categories", { cache: "no-store" })]);
       if (eventResponse.ok) {
@@ -72,11 +72,11 @@ export function AdminEvents() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   // Initial data loading is the effect's external synchronization boundary.
   // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { void load(); }, []);
+  useEffect(() => { void load(); }, [load]);
 
   function updateField(field: keyof typeof emptyForm, value: string) {
     setForm((current) => {

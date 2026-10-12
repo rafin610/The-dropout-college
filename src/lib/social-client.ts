@@ -11,15 +11,22 @@ export function useUpvote(projectId: string, initialCount: number, userId: strin
   const [pulse, setPulse] = useState(0);
   const pending = useRef(false);
 
-  useEffect(() => {
+  // Sync count if initialCount prop changes during render
+  const [prevInitialCount, setPrevInitialCount] = useState(initialCount);
+  if (initialCount !== prevInitialCount) {
+    setPrevInitialCount(initialCount);
     setCount(initialCount);
-  }, [initialCount]);
+  }
+
+  // Clear upvoted if userId changes to null during render
+  const [prevUserId, setPrevUserId] = useState(userId);
+  if (userId !== prevUserId) {
+    setPrevUserId(userId);
+    if (!userId) setUpvoted(false);
+  }
 
   useEffect(() => {
-    if (!userId) {
-      setUpvoted(false);
-      return;
-    }
+    if (!userId) return;
     let cancelled = false;
     void fetch(`/api/v1/projects/${projectId}/upvote`)
       .then((res) => (res.ok ? res.json() : null))
@@ -105,9 +112,7 @@ export function useComments(projectId: string) {
   const [error, setError] = useState("");
   const [posting, setPosting] = useState(false);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError("");
+  const fetchComments = useCallback(async () => {
     try {
       const res = await fetch(`/api/v1/projects/${projectId}/comments`);
       const json = await res.json().catch(() => null);
@@ -121,8 +126,33 @@ export function useComments(projectId: string) {
   }, [projectId]);
 
   useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const res = await fetch(`/api/v1/projects/${projectId}/comments`);
+        const json = await res.json().catch(() => null);
+        if (!cancelled) {
+          if (!res.ok) {
+            setError(json?.error?.message || "Could not load comments.");
+          } else {
+            setComments(json.data ?? []);
+          }
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Could not load comments.");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
     void load();
-  }, [load]);
+    return () => {
+      cancelled = true;
+    };
+  }, [projectId]);
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
@@ -130,13 +160,13 @@ export function useComments(projectId: string) {
     const channel = supabase
       .channel(`comments-${projectId}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "project_comments", filter: `project_id=eq.${projectId}` }, () => {
-        void load();
+        void fetchComments();
       })
       .subscribe();
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [projectId, load]);
+  }, [projectId, fetchComments]);
 
   const post = useCallback(async (content: string) => {
     setPosting(true);
@@ -148,7 +178,7 @@ export function useComments(projectId: string) {
       });
       const json = await res.json().catch(() => null);
       if (!res.ok) throw new Error(json?.error?.message || "Could not post comment.");
-      await load();
+      setComments((prev) => [json.data, ...prev]);
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not post comment.");
@@ -156,9 +186,9 @@ export function useComments(projectId: string) {
     } finally {
       setPosting(false);
     }
-  }, [projectId, load]);
+  }, [projectId]);
 
-  return { comments, loading, error, posting, load, post, setComments, setError };
+  return { comments, loading, error, posting, load: fetchComments, post, setComments, setError };
 }
 
 export function useFollow(targetUserId: string | null, viewerId: string | null, options?: { onAuthRequired?: () => void }) {
@@ -166,14 +196,11 @@ export function useFollow(targetUserId: string | null, viewerId: string | null, 
   const [followersCount, setFollowersCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(Boolean(targetUserId));
   const [error, setError] = useState("");
 
-  const load = useCallback(async () => {
-    if (!targetUserId) {
-      setInitialLoading(false);
-      return;
-    }
+  const fetchFollowStatus = useCallback(async () => {
+    if (!targetUserId) return;
     try {
       const res = await fetch(`/api/v1/follows?userId=${encodeURIComponent(targetUserId)}`);
       const json = await res.json().catch(() => null);
@@ -190,8 +217,31 @@ export function useFollow(targetUserId: string | null, viewerId: string | null, 
   }, [targetUserId]);
 
   useEffect(() => {
+    if (!targetUserId) return;
+    const uid = targetUserId;
+    let cancelled = false;
+    async function load() {
+      try {
+        const res = await fetch(`/api/v1/follows?userId=${encodeURIComponent(uid)}`);
+        const json = await res.json().catch(() => null);
+        if (!cancelled && res.ok && json?.data) {
+          setIsFollowing(Boolean(json.data.isFollowing));
+          setFollowersCount(json.data.followersCount ?? 0);
+          setFollowingCount(json.data.followingCount ?? 0);
+        }
+      } catch {
+        // Keep previous state.
+      } finally {
+        if (!cancelled) {
+          setInitialLoading(false);
+        }
+      }
+    }
     void load();
-  }, [load]);
+    return () => {
+      cancelled = true;
+    };
+  }, [targetUserId]);
 
   const toggle = useCallback(async () => {
     if (!targetUserId) return;
@@ -204,32 +254,24 @@ export function useFollow(targetUserId: string | null, viewerId: string | null, 
     setError("");
     const prev = isFollowing;
     setIsFollowing(!prev);
-    setFollowersCount((c) => Math.max(0, c + (prev ? -1 : 1)));
+    setFollowersCount((c) => c + (!prev ? 1 : -1));
     try {
-      if (prev) {
-        const res = await fetch(`/api/v1/follows?followingId=${encodeURIComponent(targetUserId)}`, { method: "DELETE" });
-        const json = await res.json().catch(() => null);
-        if (!res.ok) throw new Error(json?.error?.message || "Could not unfollow.");
-      } else {
-        const res = await fetch("/api/v1/follows", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ followingId: targetUserId }),
-        });
-        const json = await res.json().catch(() => null);
-        if (!res.ok) throw new Error(json?.error?.message || "Could not follow.");
-      }
+      const res = await fetch(`/api/v1/follows?userId=${encodeURIComponent(targetUserId)}`, { method: "POST" });
+      const json = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(json?.error?.message || "Could not update follow.");
+      setIsFollowing(Boolean(json.data.isFollowing));
+      setFollowersCount(json.data.followersCount ?? 0);
+      setFollowingCount(json.data.followingCount ?? 0);
     } catch (err) {
       setIsFollowing(prev);
-      setFollowersCount((c) => Math.max(0, c + (prev ? 1 : -1)));
-      setError(err instanceof Error ? err.message : "Could not update follow. Please try again.");
+      setFollowersCount((c) => c + (prev ? 1 : -1));
+      setError(err instanceof Error ? err.message : "Could not update follow.");
     } finally {
       setLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [targetUserId, viewerId, loading, isFollowing, options?.onAuthRequired]);
+  }, [targetUserId, viewerId, loading, isFollowing, options]);
 
-  return { isFollowing, followersCount, followingCount, loading, initialLoading, error, toggle, reload: load };
+  return { isFollowing, followersCount, followingCount, loading, initialLoading, error, toggle, reload: fetchFollowStatus };
 }
 
 export function commentAuthor(comment: SocialComment): { name: string; username: string; avatar: string | null } {

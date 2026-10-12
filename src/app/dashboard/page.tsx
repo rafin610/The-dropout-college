@@ -86,7 +86,7 @@ export default async function DashboardPage() {
           <div className="eyebrow">Your profile signal</div>
           <h3 style={{ marginTop: 8 }}>{categoryNames.length ? categoryNames.join(" · ") : "Choose your focus areas"}</h3>
           <p className="member-bio">{skillNames.length ? `${skillNames.slice(0, 5).join(", ")} are part of your public profile.` : "Add categories and skills so relevant collaborators can find you."}</p>
-          <Link href="/profile" className="section-link">Manage profile <ArrowRight size={12} /></Link>
+          <Link href="/profile?edit=true" className="section-link">Edit profile <ArrowRight size={12} /></Link>
         </div>
         <div className="panel">
           <div className="eyebrow"><CalendarDays size={13} style={{ verticalAlign: "middle", marginRight: 6 }} />Next on the calendar</div>
@@ -100,7 +100,7 @@ export default async function DashboardPage() {
             <Bell size={15} style={{ verticalAlign: "middle", color: "var(--lime)", marginRight: 8 }} />
             Notifications
           </h3>
-          <Link href="/profile" className="section-link">Profile settings <ArrowRight size={12} /></Link>
+          <Link href="/profile?edit=true" className="section-link">Profile settings <ArrowRight size={12} /></Link>
         </div>
         {notifications?.length ? (
           <div className="activity-list">

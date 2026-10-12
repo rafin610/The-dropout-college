@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, MessageCircle } from "lucide-react";
-import { getCategories, getCounts, getEvents, getMembers, getProjects } from "@/lib/supabase-data";
+import { getCategories, getCounts, getEvents, getMembers } from "@/lib/supabase-data";
 import { SectionHeading } from "@/components/app-shell";
 import { EventCard, MemberCard } from "@/components/cards";
 import { JournalCard } from "@/components/journal/journal-card";

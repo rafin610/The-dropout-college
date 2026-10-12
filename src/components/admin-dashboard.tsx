@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { AdminEvents } from "@/components/admin-events";
+import type { JournalArticle } from "@/server/journal/types";
 
 type Metric = { label: string; value: number; tone: string };
 
@@ -88,8 +89,12 @@ export function AdminDashboard() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "suspended">("all");
 
-  const [articles, setArticles] = useState<Array<any>>([]);
-  const [articlesLoading, setArticlesLoading] = useState(false);
+  const [articles, setArticles] = useState<JournalArticle[]>([]);
+
+  // Journal deletion state
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteMessage, setDeleteMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -221,6 +226,32 @@ export function AdminDashboard() {
       setMessage("Network error while updating user role.");
     } finally {
       setPendingUserId(null);
+    }
+  }
+
+  async function deleteJournalArticle() {
+    if (!deleteTarget || deleteLoading) return;
+    setDeleteLoading(true);
+    setDeleteMessage(null);
+    try {
+      const response = await fetch(`/api/v1/journal/articles/${deleteTarget.id}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok || response.status === 204) {
+        setArticles((current) => current.filter((a) => a.id !== deleteTarget.id));
+        setDeleteMessage({ type: "success", text: `"${deleteTarget.title}" has been deleted successfully.` });
+        setDeleteTarget(null);
+        setTimeout(() => setDeleteMessage(null), 4000);
+      } else {
+        const body = await response.json().catch(() => null);
+        const errorText = body?.error?.message || `Failed to delete article (${response.status}).`;
+        setDeleteMessage({ type: "error", text: errorText });
+      }
+    } catch {
+      setDeleteMessage({ type: "error", text: "Network error. Please check your connection and try again." });
+    } finally {
+      setDeleteLoading(false);
     }
   }
 
@@ -563,9 +594,27 @@ export function AdminDashboard() {
                     </Link>
                   </div>
 
+                  {deleteMessage && (
+                    <div
+                      role="status"
+                      aria-live="polite"
+                      style={{
+                        marginTop: 12,
+                        padding: "10px 16px",
+                        borderRadius: 8,
+                        fontSize: 13,
+                        background: deleteMessage.type === "success" ? "rgba(34, 197, 94, 0.1)" : "rgba(255, 107, 107, 0.1)",
+                        border: `1px solid ${deleteMessage.type === "success" ? "rgba(34, 197, 94, 0.3)" : "rgba(255, 107, 107, 0.3)"}`,
+                        color: deleteMessage.type === "success" ? "var(--lime)" : "var(--coral)",
+                      }}
+                    >
+                      {deleteMessage.text}
+                    </div>
+                  )}
+
                   {articles.length === 0 ? (
                     <div className="admin-empty">
-                      <p>No journal articles found. Click "New Article" to write your first piece.</p>
+                      <p>No journal articles found. Click &quot;New Article&quot; to write your first piece.</p>
                     </div>
                   ) : (
                     <div className="admin-table-wrap" style={{ marginTop: 20 }}>
@@ -618,12 +667,147 @@ export function AdminDashboard() {
                                       View
                                     </Link>
                                   )}
+                                  <button
+                                    type="button"
+                                    aria-label={`Delete ${art.title}`}
+                                    onClick={() => setDeleteTarget({ id: art.id, title: art.title })}
+                                    style={{
+                                      padding: "4px 8px",
+                                      fontSize: 12,
+                                      background: "rgba(255, 107, 107, 0.08)",
+                                      border: "1px solid rgba(255, 107, 107, 0.25)",
+                                      color: "#ff6b6b",
+                                      borderRadius: 6,
+                                      cursor: "pointer",
+                                      transition: "all 0.15s ease",
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      (e.currentTarget as HTMLButtonElement).style.background = "rgba(255, 107, 107, 0.18)";
+                                      (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255, 107, 107, 0.5)";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      (e.currentTarget as HTMLButtonElement).style.background = "rgba(255, 107, 107, 0.08)";
+                                      (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255, 107, 107, 0.25)";
+                                    }}
+                                  >
+                                    Delete
+                                  </button>
                                 </div>
                               </td>
                             </tr>
                           ))}
                         </tbody>
                       </table>
+                    </div>
+                  )}
+
+                  {/* Delete Confirmation Dialog */}
+                  {deleteTarget && (
+                    <div
+                      style={{
+                        position: "fixed",
+                        inset: 0,
+                        background: "rgba(0, 0, 0, 0.6)",
+                        backdropFilter: "blur(6px)",
+                        zIndex: 200,
+                        display: "grid",
+                        placeItems: "center",
+                      }}
+                      onClick={(e) => { if (e.target === e.currentTarget && !deleteLoading) { setDeleteTarget(null); setDeleteMessage(null); } }}
+                    >
+                      <div
+                        role="alertdialog"
+                        aria-modal="true"
+                        aria-labelledby="delete-dialog-title"
+                        aria-describedby="delete-dialog-desc"
+                        style={{
+                          width: "min(440px, 90vw)",
+                          background: "var(--popover)",
+                          border: "1px solid var(--line)",
+                          borderRadius: 12,
+                          padding: "28px 24px 24px",
+                          boxShadow: "var(--shadow-lg)",
+                        }}
+                      >
+                        <div style={{ marginBottom: 8 }}>
+                          <span
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              width: 40,
+                              height: 40,
+                              borderRadius: 10,
+                              background: "rgba(255, 107, 107, 0.12)",
+                              marginBottom: 12,
+                            }}
+                          >
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ff6b6b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                              <path d="M3 6h18" />
+                              <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                              <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                              <line x1="10" y1="11" x2="10" y2="17" />
+                              <line x1="14" y1="11" x2="14" y2="17" />
+                            </svg>
+                          </span>
+                        </div>
+                        <h3 id="delete-dialog-title" style={{ margin: "0 0 8px", fontSize: 18 }}>Delete article?</h3>
+                        <p id="delete-dialog-desc" style={{ color: "var(--muted)", fontSize: 13, margin: "0 0 8px", lineHeight: 1.5 }}>
+                          You are about to permanently delete:
+                        </p>
+                        <p style={{
+                          fontWeight: 600,
+                          fontSize: 14,
+                          padding: "10px 14px",
+                          borderRadius: 8,
+                          background: "rgba(255, 107, 107, 0.06)",
+                          border: "1px solid rgba(255, 107, 107, 0.15)",
+                          margin: "0 0 12px",
+                          wordBreak: "break-word",
+                        }}>
+                          &ldquo;{deleteTarget.title}&rdquo;
+                        </p>
+                        <p style={{ color: "var(--muted)", fontSize: 12, margin: "0 0 20px", lineHeight: 1.5 }}>
+                          This action cannot be undone. The article and its content will be permanently removed.
+                        </p>
+
+                        {deleteMessage && deleteMessage.type === "error" && (
+                          <p role="alert" style={{ color: "var(--coral)", fontSize: 13, margin: "0 0 14px" }}>{deleteMessage.text}</p>
+                        )}
+
+                        <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+                          <button
+                            type="button"
+                            className="button button-ghost"
+                            disabled={deleteLoading}
+                            onClick={() => { setDeleteTarget(null); setDeleteMessage(null); }}
+                            style={{ padding: "8px 16px", fontSize: 13 }}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            disabled={deleteLoading}
+                            onClick={() => void deleteJournalArticle()}
+                            style={{
+                              padding: "8px 18px",
+                              fontSize: 13,
+                              fontWeight: 600,
+                              background: deleteLoading ? "rgba(255, 107, 107, 0.3)" : "#ff6b6b",
+                              color: "#fff",
+                              border: "none",
+                              borderRadius: 8,
+                              cursor: deleteLoading ? "not-allowed" : "pointer",
+                              transition: "background 0.15s ease",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 6,
+                            }}
+                          >
+                            {deleteLoading ? "Deleting…" : "Delete permanently"}
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>

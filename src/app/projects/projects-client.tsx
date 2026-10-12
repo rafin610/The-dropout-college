@@ -208,8 +208,7 @@ export function ProjectsClient({
 
       setProjects((prev) => editingId ? prev.map((project) => project.id === editingId ? { ...project, name: newCard.name, description: newCard.description, status: newCard.status, color: newCard.color, coverImageUrl: newCard.coverImageUrl ?? project.coverImageUrl, demoUrl: newCard.demoUrl, githubUrl: newCard.githubUrl } : project) : [newCard, ...prev]);
       setSuccess(editingId ? "Project updated successfully!" : "Project created successfully!");
-      const keepCoverPreview = coverPreview;
-      resetFormKeepPreview(keepCoverPreview);
+      resetFormKeepPreview();
       setTimeout(() => {
         setModalOpen(false);
         setSuccess("");
@@ -222,7 +221,7 @@ export function ProjectsClient({
     }
   }
 
-  function resetFormKeepPreview(_preview: string) {
+  function resetFormKeepPreview() {
     // Clear file state but keep inputs cleared; preview cleanup happens on close.
   }
 

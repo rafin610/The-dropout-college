@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { Bell, BookOpen, Compass, FolderKanban, Home, LayoutDashboard, Menu, Moon, Search, Sparkles, Sun, UserRound, Users, X } from "lucide-react";
+import { Bell, BookOpen, Compass, Home, LayoutDashboard, Menu, Moon, Search, Sparkles, Sun, UserRound, Users, X } from "lucide-react";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { notificationHref } from "@/lib/notification-link";
@@ -25,14 +25,27 @@ function readTheme(): "light" | "dark" {
   return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
 }
 
+function subscribeSidebar(change: () => void) {
+  window.addEventListener("tdc-sidebar-change", change);
+  return () => window.removeEventListener("tdc-sidebar-change", change);
+}
+
+function readSidebar(): boolean {
+  try {
+    return window.localStorage.getItem("tdc-sidebar-collapsed") === "1";
+  } catch {
+    return false;
+  }
+}
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [sidebarReady, setSidebarReady] = useState(false);
+  const sidebarCollapsed = useSyncExternalStore(subscribeSidebar, readSidebar, () => false);
+  const [sidebarReady] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [accountName, setAccountName] = useState<string | null>(null);
@@ -63,25 +76,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [notifications, setNotifications] = useState<Array<{ id: string; type?: string | null; title: string; body: string; created_at: string; read_at: string | null; resource_type: string | null; resource_id: string | null; actor_id?: string | null; project_id?: string | null; comment_id?: string | null }>>([]);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
 
-  useEffect(() => {
+  function toggleSidebar() {
     try {
-      setSidebarCollapsed(window.localStorage.getItem("tdc-sidebar-collapsed") === "1");
+      const next = !sidebarCollapsed;
+      window.localStorage.setItem("tdc-sidebar-collapsed", next ? "1" : "0");
+      window.dispatchEvent(new Event("tdc-sidebar-change"));
     } catch {
       // Collapse preference simply won't persist.
     }
-    setSidebarReady(true);
-  }, []);
-
-  function toggleSidebar() {
-    setSidebarCollapsed((value) => {
-      const next = !value;
-      try {
-        window.localStorage.setItem("tdc-sidebar-collapsed", next ? "1" : "0");
-      } catch {
-        // Ignore persistence errors.
-      }
-      return next;
-    });
   }
 
   useEffect(() => {
@@ -122,6 +124,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       setAccountAvatar((user?.user_metadata?.avatar_url as string | undefined) || (user?.user_metadata?.picture as string | undefined) || null);
       if (!session?.user) {
         setIsAdmin(false);
+        setNotifications([]);
       } else {
         fetch("/api/v1/admin/overview")
           .then((res) => setIsAdmin(res.ok))
@@ -155,6 +158,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     };
   }, [userId]);
 
+  useEffect(() => {
+    function handleProfileUpdated(event: Event) {
+      const customEvent = event as CustomEvent<{ displayName?: string; avatarUrl?: string | null }>;
+      if (customEvent.detail?.displayName) {
+        setAccountName(customEvent.detail.displayName);
+      }
+      if (customEvent.detail?.avatarUrl !== undefined) {
+        setAccountAvatar(customEvent.detail.avatarUrl);
+      }
+    }
+
+    window.addEventListener("profile-updated", handleProfileUpdated);
+    return () => {
+      window.removeEventListener("profile-updated", handleProfileUpdated);
+    };
+  }, []);
+
   // ⌘K / Ctrl+K keyboard shortcut
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -184,10 +204,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   // Realtime notification inserts + initial unread fetch for the badge.
   useEffect(() => {
-    if (!userId) {
-      setNotifications([]);
-      return;
-    }
+    if (!userId) return;
     const supabase = createSupabaseBrowserClient();
     if (!supabase) return;
     let cancelled = false;
@@ -267,6 +284,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     setUserId(null);
     setAccountName(null);
     setIsAdmin(false);
+    setNotifications([]);
     router.push("/");
     router.refresh();
   }
@@ -476,22 +494,40 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <>
                 <Link
                   href="/profile"
-                  className="account-avatar"
+                  className="account-avatar-group"
                   aria-label={accountName ? `Open ${accountName}'s profile` : "Open my profile"}
                   title={accountName || "My profile"}
+                  style={{ display: "inline-flex", alignItems: "center", gap: 8, textDecoration: "none" }}
                 >
-                  {accountAvatar ? (
-                    <Image
-                      src={accountAvatar}
-                      alt=""
-                      width={36}
-                      height={36}
-                      unoptimized
-                      referrerPolicy="no-referrer"
-                      onError={() => setAccountAvatar(null)}
-                    />
-                  ) : (
-                    <UserRound size={19} aria-hidden="true" />
+                  <span className="account-avatar">
+                    {accountAvatar ? (
+                      <Image
+                        src={accountAvatar}
+                        alt=""
+                        width={36}
+                        height={36}
+                        unoptimized
+                        referrerPolicy="no-referrer"
+                        onError={() => setAccountAvatar(null)}
+                      />
+                    ) : (
+                      <UserRound size={19} aria-hidden="true" />
+                    )}
+                  </span>
+                  {accountName && !isMobile && (
+                    <span
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 500,
+                        color: "var(--text)",
+                        maxWidth: 120,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {accountName}
+                    </span>
                   )}
                 </Link>
                 <button className="login-link" onClick={signOut} style={{ background: "transparent", border: 0, cursor: "pointer" }}>Sign out</button>

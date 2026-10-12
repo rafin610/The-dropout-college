@@ -9,9 +9,10 @@ export const dynamic = "force-dynamic";
 export default async function ProfilePage({
   searchParams,
 }: {
-  searchParams: Promise<{ member?: string }>;
+  searchParams: Promise<{ member?: string; edit?: string }>;
 }) {
-  const { member: memberId } = await searchParams;
+  const { member: memberId, edit } = await searchParams;
+  const initialEdit = edit === "true" || edit === "1";
   const currentUser = await getOptionalUser();
 
   const supabase = await createSupabaseServerClient();
@@ -19,6 +20,7 @@ export default async function ProfilePage({
 
   if (!targetUserId) {
     if (!currentUser) {
+      const loginNext = edit ? "/profile?edit=true" : "/profile";
       return (
         <section className="panel" style={{ maxWidth: 540, margin: "40px auto", textAlign: "center" }}>
           <div className="eyebrow" style={{ color: "var(--lime)" }}>Community Profile</div>
@@ -27,7 +29,7 @@ export default async function ProfilePage({
             Create your profile, showcase your projects, and connect with other learners across the talent network.
           </p>
           <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
-            <Link href="/login?next=/profile" className="button button-primary">
+            <Link href={`/login?next=${encodeURIComponent(loginNext)}`} className="button button-primary">
               Sign in
             </Link>
             <Link href="/explore" className="button button-ghost">
@@ -151,5 +153,5 @@ export default async function ProfilePage({
 
   const isOwner = currentUser?.id === profile.id;
 
-  return <ProfileClient profile={profileData} categories={availableCategories} skills={availableSkills} isOwner={isOwner} viewerId={currentUser?.id ?? null} />;
+  return <ProfileClient profile={profileData} categories={availableCategories} skills={availableSkills} isOwner={isOwner} viewerId={currentUser?.id ?? null} initialEdit={initialEdit && isOwner} />;
 }

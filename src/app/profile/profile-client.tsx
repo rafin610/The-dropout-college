@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -120,16 +120,18 @@ export function ProfileClient({
   skills,
   isOwner,
   viewerId,
+  initialEdit = false,
 }: {
   profile: ProfileData;
   categories: Category[];
   skills: Skill[];
   isOwner: boolean;
   viewerId: string | null;
+  initialEdit?: boolean;
 }) {
   const router = useRouter();
   const [currentProfile, setCurrentProfile] = useState(profile);
-  const [modalOpen, setModalOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(initialEdit && isOwner);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -178,9 +180,26 @@ export function ProfileClient({
     }
   }
 
-  useEffect(() => {
+  const handleCloseModal = useCallback(() => {
+    if (loading) return;
+    setModalOpen(false);
+    setError("");
+    setSuccess("");
+    setDisplayName(currentProfile.displayName);
+    setUsername(currentProfile.username);
+    setBio(currentProfile.bio || "");
+    setAvatarUrl(currentProfile.avatarUrl || "");
+    setFacebookUrl(currentProfile.links.find((link) => link.platform.toLowerCase() === "facebook")?.url || "");
+    setYoutubeUrl(currentProfile.links.find((link) => link.platform.toLowerCase() === "youtube")?.url || "");
+    setCategoryIds(currentProfile.categories.map((category) => category.id));
+    setSkillIds(currentProfile.skills.map((skill) => skill.id));
+  }, [loading, currentProfile]);
+
+  const [prevProfileId, setPrevProfileId] = useState(profile.id);
+  if (profile.id !== prevProfileId) {
+    setPrevProfileId(profile.id);
     setFollowListTab(null);
-  }, [profile.id]);
+  }
 
   // Scroll-spy for the profile tabs.
   useEffect(() => {
@@ -201,9 +220,9 @@ export function ProfileClient({
     return () => observer.disconnect();
   }, []);
 
-  // Close the overflow menu on outside click / Escape.
+  // Close the overflow menu or modal on outside click / Escape.
   useEffect(() => {
-    if (!menuOpen && !followListTab) return;
+    if (!menuOpen && !followListTab && !modalOpen) return;
     function onPointerDown(e: PointerEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
     }
@@ -211,6 +230,9 @@ export function ProfileClient({
       if (e.key === "Escape") {
         setMenuOpen(false);
         setFollowListTab(null);
+        if (modalOpen && !loading) {
+          handleCloseModal();
+        }
       }
     }
     document.addEventListener("pointerdown", onPointerDown);
@@ -219,7 +241,7 @@ export function ProfileClient({
       document.removeEventListener("pointerdown", onPointerDown);
       document.removeEventListener("keydown", onKey);
     };
-  }, [menuOpen, followListTab]);
+  }, [menuOpen, followListTab, modalOpen, loading, handleCloseModal]);
 
   useEffect(() => {
     return () => {
@@ -313,6 +335,16 @@ export function ProfileClient({
       }));
 
       setSuccess("Profile updated successfully!");
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("profile-updated", {
+            detail: {
+              displayName: displayName.trim(),
+              avatarUrl: avatarUrl.trim() || null,
+            },
+          })
+        );
+      }
       setTimeout(() => {
         setModalOpen(false);
         setSuccess("");
@@ -713,11 +745,11 @@ export function ProfileClient({
       {modalOpen && isOwner && (
         <div
           className="pf-modal-root"
-          onClick={(e) => { if (e.target === e.currentTarget && !loading) setModalOpen(false); }}
+          onClick={(e) => { if (e.target === e.currentTarget && !loading) handleCloseModal(); }}
         >
           <div className="pf-modal" role="dialog" aria-modal="true" aria-labelledby="pf-edit-h">
             <button
-              onClick={() => setModalOpen(false)}
+              onClick={handleCloseModal}
               disabled={loading}
               className="pf-modal-close"
               aria-label="Close modal"
@@ -850,7 +882,7 @@ export function ProfileClient({
               <div className="pf-form-actions">
                 <button
                   type="button"
-                  onClick={() => setModalOpen(false)}
+                  onClick={handleCloseModal}
                   className="button button-ghost"
                   disabled={loading}
                 >
