@@ -229,27 +229,60 @@ export function AdminDashboard() {
     }
   }
 
+  async function refreshStaffArticles(): Promise<JournalArticle[]> {
+    const response = await fetch("/api/v1/journal/articles?scope=staff", { cache: "no-store" });
+    const body = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      throw new Error(body?.error?.message || `Could not refresh journal articles (${response.status}).`);
+    }
+
+    const nextArticles = Array.isArray(body?.data) ? (body.data as JournalArticle[]) : [];
+    setArticles(nextArticles);
+    return nextArticles;
+  }
+
   async function deleteJournalArticle() {
     if (!deleteTarget || deleteLoading) return;
     setDeleteLoading(true);
     setDeleteMessage(null);
+
+    let deleteAccepted = false;
     try {
       const response = await fetch(`/api/v1/journal/articles/${deleteTarget.id}`, {
         method: "DELETE",
       });
 
-      if (response.ok || response.status === 204) {
-        setArticles((current) => current.filter((a) => a.id !== deleteTarget.id));
-        setDeleteMessage({ type: "success", text: `"${deleteTarget.title}" has been deleted successfully.` });
-        setDeleteTarget(null);
-        setTimeout(() => setDeleteMessage(null), 4000);
-      } else {
+      if (!response.ok) {
         const body = await response.json().catch(() => null);
         const errorText = body?.error?.message || `Failed to delete article (${response.status}).`;
         setDeleteMessage({ type: "error", text: errorText });
+        return;
       }
-    } catch {
-      setDeleteMessage({ type: "error", text: "Network error. Please check your connection and try again." });
+
+      deleteAccepted = true;
+      const nextArticles = await refreshStaffArticles();
+
+      if (nextArticles.some((article) => article.id === deleteTarget.id)) {
+        setDeleteMessage({
+          type: "error",
+          text: `"${deleteTarget.title}" still appears in the journal list, so the deletion could not be confirmed. Please refresh and try again.`,
+        });
+        return;
+      }
+
+      setDeleteMessage({ type: "success", text: `"${deleteTarget.title}" has been deleted successfully.` });
+      setDeleteTarget(null);
+      setTimeout(() => setDeleteMessage(null), 4000);
+    } catch (error) {
+      setDeleteMessage({
+        type: "error",
+        text: deleteAccepted
+          ? "The delete request was accepted, but the article list could not be refreshed. Reload the page to confirm the article is gone."
+          : error instanceof Error
+            ? error.message
+            : "Network error. Please check your connection and try again.",
+      });
     } finally {
       setDeleteLoading(false);
     }
@@ -753,7 +786,7 @@ export function AdminDashboard() {
                         </div>
                         <h3 id="delete-dialog-title" style={{ margin: "0 0 8px", fontSize: 18 }}>Delete article?</h3>
                         <p id="delete-dialog-desc" style={{ color: "var(--muted)", fontSize: 13, margin: "0 0 8px", lineHeight: 1.5 }}>
-                          You are about to permanently delete:
+                          You are about to remove this article from the journal:
                         </p>
                         <p style={{
                           fontWeight: 600,
@@ -768,7 +801,7 @@ export function AdminDashboard() {
                           &ldquo;{deleteTarget.title}&rdquo;
                         </p>
                         <p style={{ color: "var(--muted)", fontSize: 12, margin: "0 0 20px", lineHeight: 1.5 }}>
-                          This action cannot be undone. The article and its content will be permanently removed.
+                          The article will be hidden from the public journal, studio, and admin list. This cannot be undone from the dashboard.
                         </p>
 
                         {deleteMessage && deleteMessage.type === "error" && (
@@ -804,7 +837,7 @@ export function AdminDashboard() {
                               gap: 6,
                             }}
                           >
-                            {deleteLoading ? "Deleting…" : "Delete permanently"}
+                            {deleteLoading ? "Deleting…" : "Delete article"}
                           </button>
                         </div>
                       </div>

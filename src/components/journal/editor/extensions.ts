@@ -241,6 +241,39 @@ const EditableImage = Image.extend({
   },
 });
 
+const TEXT_ALIGNMENTS = new Set(["left", "center", "right", "justify"]);
+
+function parseTextAlign(element: HTMLElement): string | null {
+  const styleAlign = element.style.textAlign?.toLowerCase();
+  const attributeAlign = (
+    element.getAttribute("data-text-align") ||
+    element.getAttribute("align") ||
+    ""
+  ).toLowerCase();
+  const value = styleAlign || attributeAlign;
+  return TEXT_ALIGNMENTS.has(value) ? value : null;
+}
+
+export const TextAlignExtension = Extension.create({
+  name: "textAlign",
+
+  addGlobalAttributes() {
+    return [
+      {
+        types: ["heading", "paragraph"],
+        attributes: {
+          textAlign: {
+            default: null,
+            parseHTML: (element) => parseTextAlign(element as HTMLElement),
+            renderHTML: (attributes) =>
+              attributes.textAlign ? { style: `text-align: ${attributes.textAlign}` } : {},
+          },
+        },
+      },
+    ];
+  },
+});
+
 export const CalloutExtension = Node.create({
   name: "callout",
   group: "block",
@@ -394,6 +427,7 @@ export function getEditorExtensions(placeholder = "Write your story or press '/'
       emptyEditorClass: "is-editor-empty",
     }),
     Underline,
+    TextAlignExtension,
     Link.configure({
       openOnClick: false,
       HTMLAttributes: {

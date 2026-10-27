@@ -7,6 +7,7 @@ import { CalloutBlock, CalloutVariant } from "./callout-block";
 import { DetailsBlock } from "./details-block";
 import { VideoBlock } from "./video-block";
 import { slugify, extractTextFromDoc } from "@/server/journal/validation";
+import { isSafeTextAlign, sanitizeHref, sanitizeMediaUrl } from "@/lib/journal/urls";
 
 interface ArticleRendererProps {
   content: Record<string, unknown> | null;
@@ -26,6 +27,11 @@ interface Node {
   marks?: Mark[];
 }
 
+function alignmentStyle(node: Node): React.CSSProperties | undefined {
+  const value = node.attrs?.textAlign;
+  return isSafeTextAlign(value) ? { textAlign: value } : undefined;
+}
+
 function renderInline(node: Node, index: number): React.ReactNode {
   if (node.type === "text") {
     let result: React.ReactNode = node.text || "";
@@ -42,8 +48,9 @@ function renderInline(node: Node, index: number): React.ReactNode {
           result = <del>{result}</del>;
         } else if (mark.type === "code") {
           result = <code className="journal-inline-code">{result}</code>;
-        } else if (mark.type === "link" && mark.attrs?.href) {
-          const href = String(mark.attrs.href);
+        } else if (mark.type === "link") {
+          const href = sanitizeHref(mark.attrs?.href);
+          if (!href) continue;
           const isExternal = href.startsWith("http://") || href.startsWith("https://");
           result = (
             <a
@@ -79,34 +86,39 @@ function renderInline(node: Node, index: number): React.ReactNode {
 }
 
 function renderNode(node: Node, index: number): React.ReactNode {
+  if (node.type === "text" || node.type === "hardBreak" || node.type === "inlineEquation") {
+    return renderInline(node, index);
+  }
+
   const children = node.content?.map((child, i) => renderNode(child, i));
   const inlineChildren = node.content?.map((child, i) => renderInline(child, i));
 
   switch (node.type) {
     case "paragraph":
-      return <p key={index} className="journal-paragraph">{inlineChildren}</p>;
+      return <p key={index} className="journal-paragraph" style={alignmentStyle(node)}>{inlineChildren}</p>;
 
     case "heading": {
       const level = Number(node.attrs?.level || 1);
       const text = extractTextFromDoc(node).trim();
       const anchorId = `${slugify(text) || "section"}-${index}`;
+      const style = alignmentStyle(node);
 
       if (level === 1) {
         return (
-          <h1 key={index} id={anchorId} className="journal-h1">
+          <h1 key={index} id={anchorId} className="journal-h1" style={style}>
             <a href={`#${anchorId}`} className="journal-heading-anchor">{inlineChildren}</a>
           </h1>
         );
       }
       if (level === 2) {
         return (
-          <h2 key={index} id={anchorId} className="journal-h2">
+          <h2 key={index} id={anchorId} className="journal-h2" style={style}>
             <a href={`#${anchorId}`} className="journal-heading-anchor">{inlineChildren}</a>
           </h2>
         );
       }
       return (
-        <h3 key={index} id={anchorId} className="journal-h3">
+        <h3 key={index} id={anchorId} className="journal-h3" style={style}>
           <a href={`#${anchorId}`} className="journal-heading-anchor">{inlineChildren}</a>
         </h3>
       );
@@ -166,7 +178,8 @@ function renderNode(node: Node, index: number): React.ReactNode {
     }
 
     case "videoEmbed": {
-      const src = String(node.attrs?.src || "");
+      const src = sanitizeMediaUrl(node.attrs?.src);
+      if (!src) return null;
       const title = node.attrs?.title ? String(node.attrs.title) : undefined;
       const caption = node.attrs?.caption ? String(node.attrs.caption) : undefined;
       return <VideoBlock key={index} src={src} title={title} caption={caption} />;
@@ -174,7 +187,7 @@ function renderNode(node: Node, index: number): React.ReactNode {
 
     case "image":
     case "imageBlock": {
-      const src = String(node.attrs?.src || "");
+      const src = sanitizeMediaUrl(node.attrs?.src);
       const alt = String(node.attrs?.alt || "");
       const caption = node.attrs?.caption ? String(node.attrs.caption) : undefined;
 

@@ -1,6 +1,7 @@
 import { getCurrentUser, getOptionalUser } from "@/server/auth/current-user";
 import { toErrorResponse, ApiError } from "@/server/errors";
 import { getArticleBySlugOrId, saveArticle, deleteArticle } from "@/server/journal/articles";
+import { isValidArticleId } from "@/server/journal/delete-article";
 import { articleSchema } from "@/server/journal/validation";
 import { getUserPermissions } from "@/server/auth/permissions";
 
@@ -97,6 +98,9 @@ export async function DELETE(
   try {
     const id = await getId(context);
     const user = await getCurrentUser();
+    if (!isValidArticleId(id)) {
+      throw new ApiError("VALIDATION_ERROR", "Invalid article ID.", 400);
+    }
     await deleteArticle(id, user);
 
     return new Response(null, { status: 204, headers: { "x-request-id": requestId } });

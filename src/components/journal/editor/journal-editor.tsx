@@ -5,6 +5,7 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { getEditorExtensions } from "./extensions";
+import { journalClipboardEditorProps } from "./clipboard";
 import { EditorToolbar } from "./editor-toolbar";
 import { SlashMenu } from "./slash-menu";
 import { MathModal } from "./math-modal";
@@ -60,6 +61,7 @@ export function JournalEditor({ initialArticle, isAdmin = false }: JournalEditor
   const editor = useEditor({
     immediatelyRender: false,
     extensions: getEditorExtensions(),
+    editorProps: journalClipboardEditorProps,
     content: initialArticle?.content || {
       type: "doc",
       content: [
@@ -248,15 +250,19 @@ export function JournalEditor({ initialArticle, isAdmin = false }: JournalEditor
 
   async function handleDelete() {
     if (!articleId) return;
-    const confirm = window.confirm("Are you sure you want to delete this article? This action cannot be undone.");
+    const confirm = window.confirm("Are you sure you want to delete this article? It will be removed from the journal and studio.");
     if (!confirm) return;
 
     try {
       const res = await fetch(`/api/v1/journal/articles/${articleId}`, {
         method: "DELETE",
       });
-      if (!res.ok) throw new Error("Failed to delete article.");
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.error?.message || `Failed to delete article (${res.status}).`);
+      }
       router.push("/journal");
+      router.refresh();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to delete article.";
       setErrorMessage(msg);

@@ -1,9 +1,14 @@
-import { createSupabaseServerClient } from "@/server/supabase/server";
+import { createSupabaseServerClient, createSupabaseAdminClient } from "@/server/supabase/server";
 import { ApiError } from "@/server/errors";
 import { getUserPermissions } from "@/server/auth/permissions";
 import type { User } from "@supabase/supabase-js";
 import type { JournalArticle, ArticleAuthor, SaveArticleInput } from "./types";
 import { calculateReadingTime, slugify } from "./validation";
+import { getSafeCoverImageUrl, normalizeArticleContent } from "./content";
+import {
+  deleteArticleWithDependencies,
+  type DeletionClient,
+} from "./delete-article";
 
 interface ArticleRow {
   id: string;
@@ -66,8 +71,8 @@ function mapArticleRow(row: ArticleRow): JournalArticle {
     title: row.title,
     slug: row.slug,
     excerpt: row.excerpt,
-    coverImageUrl: row.cover_image_url,
-    content: row.content || { type: "doc", content: [] },
+    coverImageUrl: getSafeCoverImageUrl(row.cover_image_url),
+    content: normalizeArticleContent(row.content || { type: "doc", content: [] }),
     authorId: row.author_id,
     categoryId: row.category_id,
     categoryName: category?.name || null,
@@ -130,7 +135,7 @@ function projectToArticle(p: ProjectFallbackRow): JournalArticle {
     title: p.name,
     slug: p.slug,
     excerpt: p.description?.slice(0, 260) || null,
-    coverImageUrl: p.cover_image_url || null,
+    coverImageUrl: getSafeCoverImageUrl(p.cover_image_url),
     content: {
       type: "doc",
       content: docContent.length > 0 ? docContent : [{ type: "paragraph", content: [{ type: "text", text: p.description || "" }] }],
@@ -259,7 +264,15 @@ export async function getArticleBySlugOrId(
   user?: User | null
 ): Promise<JournalArticle | null> {
   const supabase = await createSupabaseServerClient();
+  return getArticleBySlugOrIdWithClient(supabase, slugOrId, user);
+}
 
+export async function getArticleBySlugOrIdWithClient(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  slugOrId: string,
+  user?: User | null,
+  permissionsForUser: (userId: string) => Promise<Set<string>> = getUserPermissions,
+): Promise<JournalArticle | null> {
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slugOrId);
 
   // 1. Try querying articles table
@@ -281,7 +294,7 @@ export async function getArticleBySlugOrId(
         if (!user) {
           throw new ApiError("NOT_FOUND", "Article not found.", 404);
         }
-        const permissions = await getUserPermissions(user.id);
+        const permissions = await permissionsForUser(user.id);
         const isAuthor = article.authorId === user.id;
         const isStaff = permissions.has("*") || permissions.has("articles.manage") || permissions.has("articles.moderate");
 
@@ -296,7 +309,27 @@ export async function getArticleBySlugOrId(
     if (err instanceof ApiError) throw err;
   }
 
-  // 2. Fallback to projects table by slug or id
+  // 2. If the article row exists but has been soft-deleted, never resurrect it
+  // from the mirrored projects row. This matters for migrated rows that share
+  // the same UUID/slug in both tables.
+  try {
+    let tombstoneQuery = supabase
+      .from("articles")
+      .select("id")
+      .not("deleted_at", "is", null);
+    if (isUuid) {
+      tombstoneQuery = tombstoneQuery.or(`id.eq.${slugOrId},slug.eq.${slugOrId}`);
+    } else {
+      tombstoneQuery = tombstoneQuery.eq("slug", slugOrId);
+    }
+
+    const { data: tombstone } = await tombstoneQuery.maybeSingle();
+    if (tombstone) return null;
+  } catch {
+    // Continue to the projects fallback if the tombstone lookup fails.
+  }
+
+  // 3. Fallback to projects table by slug or id
   try {
     let q = supabase.from("projects").select(PROJECT_FALLBACK_SELECT).is("deleted_at", null);
     if (isUuid) {
@@ -420,7 +453,13 @@ export async function saveArticle(input: SaveArticleInput, user: User): Promise<
     throw new ApiError("VALIDATION_ERROR", "A valid slug could not be generated.", 400);
   }
 
-  const readingTime = calculateReadingTime(input.content);
+  const content = normalizeArticleContent(input.content);
+  const coverImageUrl = getSafeCoverImageUrl(input.coverImageUrl);
+  if (input.coverImageUrl && !coverImageUrl) {
+    throw new ApiError("VALIDATION_ERROR", "Cover image URL must use http(s) or a relative path.", 400);
+  }
+
+  const readingTime = calculateReadingTime(content);
   const isPublishing = input.status === "published";
 
   // Check if updating an existing article
@@ -441,8 +480,8 @@ export async function saveArticle(input: SaveArticleInput, user: User): Promise<
       title: input.title,
       slug: generatedSlug,
       excerpt: input.excerpt || null,
-      cover_image_url: input.coverImageUrl || null,
-      content: input.content,
+      cover_image_url: coverImageUrl,
+      content,
       category_id: input.categoryId || null,
       tags: input.tags || [],
       status: input.status || existing.status,
@@ -484,7 +523,7 @@ export async function saveArticle(input: SaveArticleInput, user: User): Promise<
           name: input.title,
           slug: generatedSlug,
           description: input.excerpt || input.title,
-          cover_image_url: input.coverImageUrl || null,
+          cover_image_url: coverImageUrl,
           category_id: input.categoryId || null,
           updated_at: new Date().toISOString(),
         })
@@ -504,8 +543,8 @@ export async function saveArticle(input: SaveArticleInput, user: User): Promise<
     title: input.title,
     slug: generatedSlug,
     excerpt: input.excerpt || null,
-    cover_image_url: input.coverImageUrl || null,
-    content: input.content,
+    cover_image_url: coverImageUrl,
+    content,
     author_id: user.id,
     category_id: input.categoryId || null,
     tags: input.tags || [],
@@ -546,7 +585,7 @@ export async function saveArticle(input: SaveArticleInput, user: User): Promise<
         slug: generatedSlug,
         description: input.excerpt || input.title,
         category_id: input.categoryId || null,
-        cover_image_url: input.coverImageUrl || null,
+        cover_image_url: coverImageUrl,
         status: isPublishing ? "launched" : "idea",
         visibility: "public",
       })
@@ -568,75 +607,36 @@ export async function saveArticle(input: SaveArticleInput, user: User): Promise<
 }
 
 export async function deleteArticle(id: string, user: User): Promise<void> {
-  const permissions = await getUserPermissions(user.id);
-  const existing = await getArticleBySlugOrId(id, user);
+  let storageClient: Awaited<ReturnType<typeof createSupabaseServerClient>> | null = null;
 
-  if (!existing) {
-    throw new ApiError("NOT_FOUND", "Article not found.", 404);
-  }
+  const outcome = await deleteArticleWithDependencies(id, user, {
+    getPermissions: getUserPermissions,
+    getExistingArticle: (articleId, identity) =>
+      getArticleBySlugOrId(articleId, identity as User),
+    getClient: async () => {
+      const adminClient = createSupabaseAdminClient();
+      storageClient = adminClient ?? (await createSupabaseServerClient());
+      return storageClient as unknown as DeletionClient;
+    },
+    log: (message, meta) => {
+      console.warn(message, meta);
+    },
+  });
 
-  const isSuperOrAdmin = permissions.has("*") || permissions.has("articles.manage");
-  const isAuthorModerator = permissions.has("articles.create") && existing.authorId === user.id;
-
-  if (!isSuperOrAdmin && !isAuthorModerator) {
-    throw new ApiError("FORBIDDEN", "You do not have permission to delete this article.", 403);
-  }
-
-  const supabase = await createSupabaseServerClient();
-  const deletedAt = new Date().toISOString();
-  let deleted = false;
-
-  // Try soft-deleting in articles table
-  try {
-    const { error } = await supabase
-      .from("articles")
-      .update({ deleted_at: deletedAt })
-      .eq("id", id)
-      .is("deleted_at", null);
-
-    if (!error) {
-      deleted = true;
-    } else {
-      console.warn("[deleteArticle] articles table soft-delete error:", error.message);
-    }
-  } catch (err) {
-    console.warn("[deleteArticle] articles table exception:", err);
-  }
-
-  // Fallback: try soft-deleting in projects table
-  if (!deleted) {
+  // Clean up the associated cover image from storage after deletion has been
+  // verified. This is deliberately non-critical: the article is already gone
+  // and an orphaned storage object should not make the delete response fail.
+  if (outcome.article.coverImageUrl) {
     try {
-      const { error } = await supabase
-        .from("projects")
-        .update({ deleted_at: deletedAt })
-        .eq("id", id)
-        .is("deleted_at", null);
-
-      if (!error) {
-        deleted = true;
-      } else {
-        console.warn("[deleteArticle] projects table soft-delete error:", error.message);
-      }
-    } catch (err) {
-      console.warn("[deleteArticle] projects table exception:", err);
-    }
-  }
-
-  if (!deleted) {
-    throw new ApiError("INTERNAL_ERROR", "Failed to delete the article. Please try again.", 500);
-  }
-
-  // Clean up associated cover image from storage if applicable
-  if (existing.coverImageUrl) {
-    try {
-      const url = new URL(existing.coverImageUrl);
+      const client = storageClient ?? createSupabaseAdminClient() ?? (await createSupabaseServerClient());
+      const url = new URL(outcome.article.coverImageUrl);
       const storageMatch = url.pathname.match(/\/storage\/v1\/object\/public\/([^/]+)\/(.+)/);
       if (storageMatch) {
         const [, bucket, path] = storageMatch;
-        await supabase.storage.from(bucket).remove([decodeURIComponent(path)]);
+        await client.storage.from(bucket).remove([decodeURIComponent(path)]);
       }
     } catch {
-      // Non-critical: storage cleanup failure should not block the deletion response
+      // Non-critical: storage cleanup failure should not block deletion.
     }
   }
 }
