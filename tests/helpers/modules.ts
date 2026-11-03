@@ -32,6 +32,22 @@ export const errors = require("../../src/server/errors.ts") as typeof import(
   "../../src/server/errors"
 );
 
+export const accountStatus = require(
+  "../../src/server/auth/account-status.ts",
+) as typeof import("../../src/server/auth/account-status");
+
+export const safeRedirect = require(
+  "../../src/lib/safe-redirect.ts",
+) as typeof import("../../src/lib/safe-redirect");
+
+export const memberPolicy = require(
+  "../../src/server/admin/member-policy.ts",
+) as typeof import("../../src/server/admin/member-policy");
+
+export const journalAccess = require(
+  "../../src/server/journal/access.ts",
+) as typeof import("../../src/server/journal/access");
+
 export const renderer = require(
   "../../src/components/journal/renderer/article-renderer.tsx",
 ) as typeof import("../../src/components/journal/renderer/article-renderer");

@@ -1,63 +1,65 @@
 import { NextResponse } from "next/server";
+import { getAccountStatus } from "@/server/auth/current-user";
+import { isActiveAccountStatus } from "@/server/auth/account-status";
+import { safeRedirectPath, DEFAULT_REDIRECT_PATH } from "@/lib/safe-redirect";
 import { createSupabaseServerClient } from "@/server/supabase/server";
 
 export const dynamic = "force-dynamic";
+
+function resolveOrigin(requestUrl: URL): string {
+  // Do not trust x-forwarded-host: it is attacker-controlled unless a trusted
+  // proxy strips it. Prefer the configured canonical origin; if none is
+  // configured, stay on the origin that served this callback so the session
+  // cookies just set on this response remain usable.
+  if (process.env.NODE_ENV === "development") return requestUrl.origin;
+  const configured = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/+$/, "");
+  return configured || requestUrl.origin;
+}
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
   const error = url.searchParams.get("error");
   const errorDescription = url.searchParams.get("error_description");
-  const next = url.searchParams.get("next");
-  const safeNext = next?.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
+  const safeNext = safeRedirectPath(url.searchParams.get("next"));
+  const origin = resolveOrigin(url);
 
-  // Resolve true public origin (important on Vercel and reverse proxies)
-  const forwardedHost = request.headers.get("x-forwarded-host");
-  const forwardedProto = request.headers.get("x-forwarded-proto") || "https";
-  const isLocal = process.env.NODE_ENV === "development";
-
-  let origin = url.origin;
-  if (!isLocal && forwardedHost) {
-    origin = `${forwardedProto}://${forwardedHost}`;
-  } else if (!isLocal && process.env.NEXT_PUBLIC_SITE_URL) {
-    origin = process.env.NEXT_PUBLIC_SITE_URL.replace(/\/+$/, "");
-  }
+  const loginRedirect = (errorCode: string) => {
+    const redirectUrl = new URL("/login", origin);
+    redirectUrl.searchParams.set("error", errorCode);
+    if (safeNext !== DEFAULT_REDIRECT_PATH) {
+      redirectUrl.searchParams.set("next", safeNext);
+    }
+    return NextResponse.redirect(redirectUrl);
+  };
 
   // Handle OAuth provider errors (e.g. user dismissed or cancelled Google consent)
   if (error) {
     console.error("[OAuth Provider Error]", error, errorDescription);
-    const redirectUrl = new URL("/login", origin);
-    redirectUrl.searchParams.set("error", error === "access_denied" ? "cancelled" : "oauth_failed");
-    if (safeNext !== "/dashboard") {
-      redirectUrl.searchParams.set("next", safeNext);
-    }
-    return NextResponse.redirect(redirectUrl);
+    return loginRedirect(error === "access_denied" ? "cancelled" : "oauth_failed");
   }
 
   if (!code) {
-    const redirectUrl = new URL("/login", origin);
-    redirectUrl.searchParams.set("error", "missing_code");
-    if (safeNext !== "/dashboard") {
-      redirectUrl.searchParams.set("next", safeNext);
-    }
-    return NextResponse.redirect(redirectUrl);
+    return loginRedirect("missing_code");
   }
 
   try {
     const supabase = await createSupabaseServerClient();
-    const { data: sessionData, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+    const { data: sessionData, error: exchangeError } =
+      await supabase.auth.exchangeCodeForSession(code);
 
     if (exchangeError) {
       console.error("[OAuth Code Exchange Error]", exchangeError.message);
-      const redirectUrl = new URL("/login", origin);
-      redirectUrl.searchParams.set("error", "oauth_failed");
-      if (safeNext !== "/dashboard") {
-        redirectUrl.searchParams.set("next", safeNext);
-      }
-      return NextResponse.redirect(redirectUrl);
+      return loginRedirect("oauth_failed");
     }
 
     if (sessionData?.user) {
+      const status = await getAccountStatus(sessionData.user.id);
+      if (status !== null && !isActiveAccountStatus(status)) {
+        await supabase.auth.signOut();
+        return loginRedirect("suspended");
+      }
+
       const { ensureUserProfile } = await import("@/server/auth/current-user");
       await ensureUserProfile(sessionData.user);
     }
@@ -65,11 +67,6 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL(safeNext, origin));
   } catch (err) {
     console.error("[OAuth Callback Exception]", err);
-    const redirectUrl = new URL("/login", origin);
-    redirectUrl.searchParams.set("error", "service_unavailable");
-    if (safeNext !== "/dashboard") {
-      redirectUrl.searchParams.set("next", safeNext);
-    }
-    return NextResponse.redirect(redirectUrl);
+    return loginRedirect("service_unavailable");
   }
 }

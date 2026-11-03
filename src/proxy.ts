@@ -19,8 +19,19 @@ export async function proxy(request: NextRequest) {
 
   try {
     const { response, user } = await updateSession(request);
-    if (request.nextUrl.pathname === "/dashboard" && !user) {
-      const loginUrl = new URL("/login?next=/dashboard", request.url);
+    const protectedPrefixes = ["/dashboard", "/control-room", "/journal/studio"];
+    const isProtected = protectedPrefixes.some(
+      (prefix) =>
+        request.nextUrl.pathname === prefix ||
+        request.nextUrl.pathname.startsWith(`${prefix}/`),
+    );
+
+    if (isProtected && !user) {
+      const loginUrl = new URL("/login", request.url);
+      loginUrl.searchParams.set(
+        "next",
+        `${request.nextUrl.pathname}${request.nextUrl.search}`,
+      );
       const redirectResponse = NextResponse.redirect(loginUrl);
       response.cookies.getAll().forEach((cookie) => redirectResponse.cookies.set(cookie));
       return redirectResponse;

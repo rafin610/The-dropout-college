@@ -89,18 +89,11 @@ export async function POST(request: Request) {
     // Only notify on a genuinely new follow — re-following (or a duplicate
     // click losing the race) must not spam the recipient.
     if (!error) {
-      try {
-        const { data: actor } = await supabase.from("profiles").select("display_name").eq("id", user.id).single();
-        await createNotification({
-          recipientId: parsed.data.followingId,
-          actorId: user.id,
-          type: "FOLLOW",
-          title: "New follower",
-          body: `${actor?.display_name ?? "A user"} started following you`,
-        });
-      } catch {
-        // Ignore notification errors.
-      }
+      await createNotification({
+        recipientId: parsed.data.followingId,
+        actorId: user.id,
+        type: "FOLLOW",
+      });
     }
     return Response.json({ data: { following: true }, requestId }, { status: 201 });
   } catch (error) {

@@ -61,21 +61,18 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       }
       upvoted = true;
       // Notify the project owner (best-effort, never blocks).
-      try {
-        const { data: project } = await supabase.from("projects").select("id, owner_id, name").eq("id", projectId).single();
-        const { data: actor } = await supabase.from("profiles").select("display_name").eq("id", user.id).single();
-        if (project && project.owner_id !== user.id) {
-          await createNotification({
-            recipientId: project.owner_id,
-            actorId: user.id,
-            type: "UPVOTE",
-            title: "New upvote",
-            body: `${actor?.display_name ?? "A user"} upvoted your project “${project.name}”`,
-            projectId,
-          });
-        }
-      } catch {
-        // Ignore notification errors.
+      const { data: project } = await supabase
+        .from("projects")
+        .select("id, owner_id")
+        .eq("id", projectId)
+        .single();
+      if (project && project.owner_id !== user.id) {
+        await createNotification({
+          recipientId: project.owner_id,
+          actorId: user.id,
+          type: "UPVOTE",
+          projectId,
+        });
       }
     }
 

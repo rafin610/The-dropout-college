@@ -1,6 +1,12 @@
 import { createSupabaseServerClient, createSupabaseAdminClient } from "@/server/supabase/server";
 import { ApiError } from "@/server/errors";
 import { getUserPermissions } from "@/server/auth/permissions";
+import {
+  canCreateArticles,
+  canFeatureArticles,
+  canModerateArticles,
+  canPublishArticles,
+} from "./access";
 import type { User } from "@supabase/supabase-js";
 import type { JournalArticle, ArticleAuthor, SaveArticleInput } from "./types";
 import { calculateReadingTime, slugify } from "./validation";
@@ -180,7 +186,7 @@ const PROJECT_FALLBACK_SELECT = `
 
 export async function checkUserCanWriteArticles(userId: string): Promise<boolean> {
   const permissions = await getUserPermissions(userId);
-  return permissions.has("*") || permissions.has("articles.create") || permissions.has("articles.manage");
+  return canCreateArticles(permissions);
 }
 
 export async function getPublishedArticles({
@@ -296,7 +302,7 @@ export async function getArticleBySlugOrIdWithClient(
         }
         const permissions = await permissionsForUser(user.id);
         const isAuthor = article.authorId === user.id;
-        const isStaff = permissions.has("*") || permissions.has("articles.manage") || permissions.has("articles.moderate");
+        const isStaff = canModerateArticles(permissions);
 
         if (!isAuthor && !isStaff) {
           throw new ApiError("NOT_FOUND", "Article not found.", 404);
@@ -393,7 +399,7 @@ export async function getRelatedArticles(
 export async function getStaffArticles(user: User): Promise<JournalArticle[]> {
   const permissions = await getUserPermissions(user.id);
   const isSuperOrAdmin = permissions.has("*") || permissions.has("articles.manage");
-  const isModerator = permissions.has("articles.create") || permissions.has("articles.moderate");
+  const isModerator = canCreateArticles(permissions) || canModerateArticles(permissions);
 
   if (!isSuperOrAdmin && !isModerator) {
     throw new ApiError("FORBIDDEN", "Staff permission required to view article studio.", 403);
@@ -440,10 +446,17 @@ export async function getStaffArticles(user: User): Promise<JournalArticle[]> {
 
 export async function saveArticle(input: SaveArticleInput, user: User): Promise<JournalArticle> {
   const permissions = await getUserPermissions(user.id);
-  const isStaff = permissions.has("*") || permissions.has("articles.create") || permissions.has("articles.manage");
+  const isStaff = canCreateArticles(permissions);
 
   if (!isStaff) {
     throw new ApiError("FORBIDDEN", "Only Admins and Moderators can write and edit articles.", 403);
+  }
+
+  if (input.status === "published" && !canPublishArticles(permissions)) {
+    throw new ApiError("FORBIDDEN", "You do not have permission to publish articles.", 403);
+  }
+  if (input.featured === true && !canFeatureArticles(permissions)) {
+    throw new ApiError("FORBIDDEN", "You do not have permission to feature articles.", 403);
   }
 
   const supabase = await createSupabaseServerClient();
@@ -473,6 +486,22 @@ export async function saveArticle(input: SaveArticleInput, user: User): Promise<
     const canManageAll = permissions.has("*") || permissions.has("articles.manage");
     if (!canManageAll && existing.authorId !== user.id) {
       throw new ApiError("FORBIDDEN", "You can only update your own articles.", 403);
+    }
+
+    if (
+      input.featured !== undefined &&
+      input.featured !== existing.featured &&
+      !canFeatureArticles(permissions)
+    ) {
+      throw new ApiError("FORBIDDEN", "You do not have permission to feature articles.", 403);
+    }
+    if (
+      input.status !== undefined &&
+      input.status !== existing.status &&
+      input.status === "published" &&
+      !canPublishArticles(permissions)
+    ) {
+      throw new ApiError("FORBIDDEN", "You do not have permission to publish articles.", 403);
     }
 
     // Prepare update payload

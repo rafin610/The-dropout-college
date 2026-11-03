@@ -286,7 +286,7 @@ test("article ID validation and permission checks happen before database work", 
   assert.equal(forbidden.clientCalls, 0);
 });
 
-test("delete permissions allow managers and article authors only", () => {
+test("delete permissions allow managers and draft authors only", () => {
   const article = makeArticle(ARTICLE_ID, USER_ID);
   assert.equal(
     deleteArticleModule.canDeleteArticle(article, USER_ID, new Set(["articles.manage"])),
@@ -297,12 +297,28 @@ test("delete permissions allow managers and article authors only", () => {
     true,
   );
   assert.equal(
-    deleteArticleModule.canDeleteArticle(article, USER_ID, new Set(["articles.create"])),
+    deleteArticleModule.canDeleteArticle(
+      { ...article, status: "draft" },
+      USER_ID,
+      new Set(["articles.create"]),
+    ),
     true,
   );
   assert.equal(
+    deleteArticleModule.canDeleteArticle(article, USER_ID, new Set(["articles.create"])),
+    false,
+  );
+  assert.equal(
     deleteArticleModule.canDeleteArticle(
-      article,
+      { ...article, status: "archived" },
+      USER_ID,
+      new Set(["articles.create"]),
+    ),
+    false,
+  );
+  assert.equal(
+    deleteArticleModule.canDeleteArticle(
+      { ...article, status: "draft" },
       "22222222-2222-4222-8222-222222222222",
       new Set(["articles.create"]),
     ),

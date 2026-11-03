@@ -59,22 +59,19 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       .select("id, content, created_at, updated_at, user_id")
       .single();
     if (error) throw error;
-    try {
-      const { data: project } = await supabase.from("projects").select("id, owner_id, name").eq("id", projectId).single();
-      const { data: actor } = await supabase.from("profiles").select("display_name").eq("id", user.id).single();
-      if (project && project.owner_id !== user.id) {
-        await createNotification({
-          recipientId: project.owner_id,
-          actorId: user.id,
-          type: "COMMENT",
-          title: "New comment",
-          body: `${actor?.display_name ?? "A user"} commented on your project “${project.name}”`,
-          projectId,
-          commentId: data.id,
-        });
-      }
-    } catch {
-      // Ignore notification errors.
+    const { data: project } = await supabase
+      .from("projects")
+      .select("id, owner_id")
+      .eq("id", projectId)
+      .single();
+    if (project && project.owner_id !== user.id) {
+      await createNotification({
+        recipientId: project.owner_id,
+        actorId: user.id,
+        type: "COMMENT",
+        projectId,
+        commentId: data.id,
+      });
     }
     return Response.json({ data, requestId }, { status: 201 });
   } catch (error) {

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { getOptionalUser } from "@/server/auth/current-user";
+import { safeRedirectPath } from "@/lib/safe-redirect";
 import { LoginForm } from "@/app/login/login-form";
 
 export const dynamic = "force-dynamic";
@@ -11,8 +12,7 @@ export default async function LoginPage({
   searchParams: Promise<{ next?: string; error?: string; error_description?: string }>;
 }) {
   const params = await searchParams;
-  const next = params.next;
-  const safeNext = next?.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
+  const safeNext = safeRedirectPath(params.next);
 
   // If already authenticated, redirect immediately without rendering or flashing the login page
   const user = await getOptionalUser();

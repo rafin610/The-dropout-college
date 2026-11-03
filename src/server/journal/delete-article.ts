@@ -1,4 +1,5 @@
 import { ApiError } from "@/server/errors";
+import { canDeleteArticle } from "./access";
 import type { JournalArticle } from "./types";
 
 const ARTICLE_TABLES = ["articles", "projects"] as const;
@@ -57,21 +58,7 @@ export function isValidArticleId(id: string): boolean {
   return UUID_PATTERN.test(id);
 }
 
-export function canDeleteArticle(
-  article: Pick<JournalArticle, "authorId">,
-  userId: string,
-  permissions: Set<string>,
-): boolean {
-  if (
-    permissions.has("*") ||
-    permissions.has("articles.manage") ||
-    permissions.has("articles.delete")
-  ) {
-    return true;
-  }
-
-  return permissions.has("articles.create") && article.authorId === userId;
-}
+export { canDeleteArticle } from "./access";
 
 async function countActiveRows(
   client: DeletionClient,

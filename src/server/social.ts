@@ -1,4 +1,4 @@
-import { createSupabaseAdminClient, createSupabaseServerClient } from "@/server/supabase/server";
+import { createSupabaseServerClient } from "@/server/supabase/server";
 import { ApiError } from "@/server/errors";
 
 export function normalizeProjectStatus(input?: string | null): "idea" | "recruiting" | "in_progress" | "launched" | "archived" {
@@ -19,14 +19,10 @@ type NotifyInput = {
   recipientId: string;
   actorId: string;
   type: "UPVOTE" | "COMMENT" | "FOLLOW";
-  title: string;
-  body: string;
   projectId?: string | null;
   commentId?: string | null;
 };
 
-/** Insert a notification via the service-role client so the
- *  "service role only" RLS policy stays intact. Never throws. */
 export function throwIfSocialSchemaMissing(error: unknown): void {
   const message = error instanceof Error ? error.message : typeof error === "object" && error !== null && "message" in error ? String((error as { message: unknown }).message) : "";
   const code = typeof error === "object" && error !== null && "code" in error ? String((error as { code: unknown }).code) : "";
@@ -35,41 +31,27 @@ export function throwIfSocialSchemaMissing(error: unknown): void {
   }
   throw error;
 }
+/**
+ * Create a social notification through a restricted security-definer RPC.
+ *
+ * Authenticated clients have no direct INSERT policy on notifications. The RPC
+ * derives the actor from auth.uid(), verifies that the follow/upvote/comment
+ * evidence actually exists, verifies the recipient owns the referenced
+ * resource, and writes a server-controlled message. Never throws: a failed
+ * notification must not fail the social action itself.
+ */
 export async function createNotification(input: NotifyInput) {
   try {
     if (input.recipientId === input.actorId) return;
-    const admin = createSupabaseAdminClient();
-    const fallback = admin ?? (await createSupabaseServerClient());
-
-    // De-duplicate: if there is already an unread notification from the same
-    // actor for the same thing (e.g. re-follow, upvote after unvote), refresh
-    // it instead of stacking duplicates.
-    const dedupe = fallback
-      .from("notifications")
-      .update({ created_at: new Date().toISOString(), read_at: null })
-      .eq("profile_id", input.recipientId)
-      .eq("actor_id", input.actorId)
-      .eq("type", input.type)
-      .is("read_at", null);
-    if (input.projectId) dedupe.eq("project_id", input.projectId);
-    else dedupe.is("project_id", null);
-    if (input.commentId) dedupe.eq("comment_id", input.commentId);
-    const { data: existing } = await dedupe.select("id").limit(1);
-    if (existing && existing.length > 0) return;
-
-    const { error } = await fallback.from("notifications").insert({
-      profile_id: input.recipientId,
-      actor_id: input.actorId,
-      type: input.type,
-      title: input.title,
-      body: input.body,
-      resource_type: input.projectId ? "project" : input.type === "FOLLOW" ? "profile" : null,
-      resource_id: input.projectId ?? (input.type === "FOLLOW" ? input.actorId : null),
-      project_id: input.projectId ?? null,
-      comment_id: input.commentId ?? null,
+    const supabase = await createSupabaseServerClient();
+    const { error } = await supabase.rpc("create_social_notification", {
+      p_recipient_id: input.recipientId,
+      p_type: input.type,
+      p_project_id: input.projectId ?? null,
+      p_comment_id: input.commentId ?? null,
     });
     if (error) {
-      console.warn("[createNotification] insert failed:", error.message);
+      console.warn("[createNotification] RPC failed:", error.message);
     }
   } catch (error) {
     console.warn("[createNotification] failed:", error instanceof Error ? error.message : error);

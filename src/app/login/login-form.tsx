@@ -7,8 +7,6 @@ import { useState, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
-const OAUTH_SITE_URL = "https://the-dropout-college-ahmedrafin014-9807s-projects.vercel.app";
-
 function GoogleIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -41,6 +39,9 @@ function resolveFriendlyError(errorCode?: string | null): string | null {
   }
   if (lower.includes("service_unavailable") || lower.includes("not configured")) {
     return "Authentication is currently unavailable. Please try again in a few moments.";
+  }
+  if (lower.includes("suspended") || lower.includes("not active")) {
+    return "This account is not active. Contact an administrator if you believe this is a mistake.";
   }
   return "Couldn't sign you in with Google. Please try again.";
 }
@@ -79,19 +80,16 @@ export function LoginForm({
   async function continueWithGoogle() {
     if (loading) return;
 
-    if (window.location.origin !== OAUTH_SITE_URL) {
-      // This redirect intentionally leaves the current origin for the hosted OAuth flow.
-      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-      window.location.assign(`${OAUTH_SITE_URL}/login?next=${encodeURIComponent(nextUrl)}`);
-      return;
-    }
-
     setLoading(true);
     setErrorMessage(null);
 
     try {
       const supabase = createSupabaseBrowserClient();
-      const redirectTo = `${OAUTH_SITE_URL}/auth/callback?next=${encodeURIComponent(nextUrl)}`;
+      // Stay on the origin the user is currently using. The callback route
+      // resolves the canonical production origin from configuration, so this
+      // works for local development and preview deployments without an open
+      // redirect or a hard-coded deployment host.
+      const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextUrl)}`;
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",

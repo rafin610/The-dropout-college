@@ -20,7 +20,7 @@ export async function PUT(request: Request) {
   const requestId = request.headers.get("x-request-id") ?? crypto.randomUUID();
 
   try {
-    await requirePermission("dashboard.read");
+    await requirePermission("site.manage");
     const payload = await request.json();
     const settings = (payload?.settings ?? {}) as Record<string, string>;
     const sections = (payload?.sections ?? []) as Array<Record<string, unknown>>;

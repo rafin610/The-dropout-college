@@ -1,9 +1,20 @@
-import { getCurrentUser } from "@/server/auth/current-user";
+import { getCurrentUser, getAccountStatus } from "@/server/auth/current-user";
+import { isActiveAccountStatus } from "@/server/auth/account-status";
 import { ApiError } from "@/server/errors";
 import { createSupabaseServerClient } from "@/server/supabase/server";
 
 export async function getUserPermissions(userId: string): Promise<Set<string>> {
   const permissions = new Set<string>();
+
+  // Defence in depth: a suspended account must not inherit staff permissions
+  // even if a stale session or a caller bypasses getCurrentUser().
+  try {
+    const status = await getAccountStatus(userId);
+    if (status !== null && !isActiveAccountStatus(status)) return permissions;
+  } catch {
+    return permissions;
+  }
+
   const supabase = await createSupabaseServerClient();
 
   // 1. Check user_roles table
@@ -26,6 +37,7 @@ export async function getUserPermissions(userId: string): Promise<Set<string>> {
       permissions.add("discord.manage");
       permissions.add("roles.manage");
       permissions.add("audit_logs.read");
+      permissions.add("site.manage");
       return permissions;
     }
     if (roles.includes("admin")) {
@@ -43,6 +55,7 @@ export async function getUserPermissions(userId: string): Promise<Set<string>> {
       permissions.add("discord.manage");
       permissions.add("audit_logs.read");
       permissions.add("roles.manage");
+      permissions.add("site.manage");
     }
     if (roles.includes("moderator")) {
       permissions.add("dashboard.read");
@@ -84,6 +97,7 @@ export async function getUserPermissions(userId: string): Promise<Set<string>> {
             permissions.add("discord.manage");
             permissions.add("roles.manage");
             permissions.add("audit_logs.read");
+            permissions.add("site.manage");
             return permissions;
           }
 

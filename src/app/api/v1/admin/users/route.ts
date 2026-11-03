@@ -1,19 +1,15 @@
 import { getUserPermissions, requirePermission } from "@/server/auth/permissions";
+import {
+  canManageMember,
+  isAssignableRole,
+  isMemberStatus,
+  type AssignableRole,
+  type MemberStatus,
+} from "@/server/admin/member-policy";
 import { ApiError, toErrorResponse } from "@/server/errors";
 import { createSupabaseAdminClient } from "@/server/supabase/server";
 
 export const runtime = "nodejs";
-
-const validStatuses = ["active", "suspended", "deleted"] as const;
-const assignableRoles = ["member", "mentor", "event_organizer", "moderator", "admin"] as const;
-
-function isValidStatus(value: string): value is (typeof validStatuses)[number] {
-  return validStatuses.includes(value as (typeof validStatuses)[number]);
-}
-
-function isValidRole(value: string): value is (typeof assignableRoles)[number] {
-  return assignableRoles.includes(value as (typeof assignableRoles)[number]);
-}
 
 function getAdminClient() {
   const supabase = createSupabaseAdminClient();
@@ -93,18 +89,18 @@ export async function PUT(request: Request) {
     const payload = await request.json();
     const { userId, status, role } = payload ?? {};
     if (typeof userId !== "string" || !userId) throw new ApiError("VALIDATION_ERROR", "A user ID is required.", 400);
-    if (status !== undefined && (typeof status !== "string" || !isValidStatus(status))) {
+    if (status !== undefined && !isMemberStatus(status)) {
       throw new ApiError("VALIDATION_ERROR", "The member update is invalid.", 400);
     }
-    if (role !== undefined && (typeof role !== "string" || !isValidRole(role))) {
+    if (role !== undefined && !isAssignableRole(role)) {
       throw new ApiError("VALIDATION_ERROR", "That role cannot be assigned.", 400);
     }
     if (status === undefined && role === undefined) {
       throw new ApiError("VALIDATION_ERROR", "Choose a status or role to update.", 400);
     }
 
-    const normalizedStatus = status as (typeof validStatuses)[number] | undefined;
-    const normalizedRole = role as (typeof assignableRoles)[number] | undefined;
+    const normalizedStatus = status as MemberStatus | undefined;
+    const normalizedRole = role as AssignableRole | undefined;
 
     const actorPermissions = await getUserPermissions(actor.id);
     if (normalizedRole !== undefined && !actorPermissions.has("*") && !actorPermissions.has("roles.manage")) {
@@ -114,45 +110,104 @@ export async function PUT(request: Request) {
     const supabase = getAdminClient();
     const { data: target, error: targetError } = await supabase
       .from("profiles")
-      .select("id, display_name, username, status, created_at, user_roles(role), users(email, account_status)")
+      .select("id, display_name, username, status, created_at, user_roles(role), user_admin_roles(admin_roles(slug)), users(email, account_status)")
       .eq("id", userId)
       .maybeSingle();
     if (targetError) throw targetError;
     if (!target) throw new ApiError("NOT_FOUND", "Member not found.", 404);
 
-    const targetRoles = Array.isArray(target.user_roles) ? target.user_roles : target.user_roles ? [target.user_roles] : [];
-    if (role !== undefined && targetRoles.some((entry: { role?: string | null }) => entry.role === "super_admin") && !actorPermissions.has("*")) {
-      throw new ApiError("FORBIDDEN", "Only a super admin can change another super admin.", 403);
+    const targetRoles = [
+      ...(Array.isArray(target.user_roles) ? target.user_roles : target.user_roles ? [target.user_roles] : [])
+        .map((entry: { role?: string | null }) => entry.role)
+        .filter((value): value is string => Boolean(value)),
+      ...(Array.isArray(target.user_admin_roles) ? target.user_admin_roles : target.user_admin_roles ? [target.user_admin_roles] : [])
+        .flatMap((entry: { admin_roles?: { slug?: string | null } | Array<{ slug?: string | null }> | null }) => {
+          const role = entry?.admin_roles;
+          const list = Array.isArray(role) ? role : role ? [role] : [];
+          return list.map((item) => item?.slug).filter((value): value is string => Boolean(value));
+        }),
+    ];
+
+    const policy = canManageMember(
+      { id: actor.id, isSuperAdmin: actorPermissions.has("*") },
+      { id: target.id, roles: targetRoles },
+    );
+    if (!policy.allowed) {
+      throw new ApiError("FORBIDDEN", policy.message ?? "You cannot change this member.", 403);
     }
 
-    const updatedAt = new Date().toISOString();
+    // The RPC updates users, profiles, roles, and the audit log in one
+    // transaction. It also re-checks the hierarchy and the last-super-admin
+    // invariant while holding a lock, so concurrent requests cannot race past
+    // those checks.
+    const { data: updatedData, error: updateError } = await supabase.rpc("admin_update_member", {
+      p_actor_id: actor.id,
+      p_user_id: userId,
+      p_status: normalizedStatus ?? null,
+      p_role: normalizedRole ?? null,
+      p_request_id: requestId,
+    });
+
+    if (updateError) {
+      if (
+        updateError.code === "PGRST202" ||
+        updateError.message?.includes("admin_update_member")
+      ) {
+        throw new ApiError(
+          "SERVICE_UNAVAILABLE",
+          "Member management is not ready. Apply supabase/migrations/0013_security_hardening.sql first.",
+          503,
+        );
+      }
+      if (updateError.code === "42501") {
+        throw new ApiError("FORBIDDEN", "You cannot change this member.", 403);
+      }
+      if (updateError.code === "P0002") {
+        throw new ApiError("NOT_FOUND", "Member not found.", 404);
+      }
+      if (updateError.code === "23514") {
+        throw new ApiError(
+          "CONFLICT",
+          "At least one active super admin must remain.",
+          409,
+        );
+      }
+      if (updateError.code === "22023") {
+        throw new ApiError("VALIDATION_ERROR", "The member update is invalid.", 400);
+      }
+      throw updateError;
+    }
+
+    // Supabase Auth's ban prevents refresh tokens from minting new access
+    // tokens. The application-level account check covers the remaining
+    // lifetime of an already-issued access token.
     if (normalizedStatus !== undefined) {
-      const [{ error: profileError }, { error: accountError }] = await Promise.all([
-        supabase.from("profiles").update({ status: normalizedStatus, updated_at: updatedAt }).eq("id", userId),
-        supabase.from("users").update({ account_status: normalizedStatus, updated_at: updatedAt }).eq("id", userId),
-      ]);
-      if (profileError) throw profileError;
-      if (accountError) throw accountError;
+      const banDuration = normalizedStatus === "active" ? "none" : "876000h";
+      const { error: authError } = await supabase.auth.admin.updateUserById(userId, {
+        ban_duration: banDuration,
+      });
+      if (authError) {
+        console.warn(
+          "[admin/users] Could not update the auth ban state:",
+          authError.message,
+        );
+      }
     }
 
-    if (normalizedRole !== undefined) {
-      const { error: deleteError } = await supabase.from("user_roles").delete().eq("profile_id", userId);
-      if (deleteError) throw deleteError;
-      const { error: insertError } = await supabase.from("user_roles").insert({ profile_id: userId, role: normalizedRole });
-      if (insertError) throw insertError;
-    }
-
+    const updated = (updatedData ?? {}) as Record<string, unknown>;
     const rowUser = Array.isArray(target.users) ? target.users[0] : target.users;
     return Response.json({
       data: {
-        id: target.id,
-        displayName: target.display_name,
-        username: target.username,
-        email: rowUser?.email ?? "",
-        status: normalizedStatus ?? target.status,
-        accountStatus: normalizedStatus ?? rowUser?.account_status ?? "active",
-        createdAt: target.created_at,
-        roles: [normalizedRole ?? getSingleRole(targetRoles)],
+        id: updated.id ?? target.id,
+        displayName: updated.displayName ?? target.display_name,
+        username: updated.username ?? target.username,
+        email: updated.email ?? rowUser?.email ?? "",
+        status: updated.status ?? normalizedStatus ?? target.status,
+        accountStatus: updated.accountStatus ?? normalizedStatus ?? rowUser?.account_status ?? "active",
+        createdAt: updated.createdAt ?? target.created_at,
+        roles: Array.isArray(updated.roles)
+          ? updated.roles
+          : [normalizedRole ?? getSingleRole(targetRoles.map((role) => ({ role })))],
       },
       requestId,
     });
