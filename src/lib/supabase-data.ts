@@ -29,79 +29,46 @@ export type Event = { id: string; date: string; month: string; title: string; ty
 
 const colors = ["#d8ff62", "#77e7e1", "#ff836d", "#c4a4ff"];
 
-const fallbackCategories: Category[] = [
-  { id: "learn", name: "Learn", description: "Build practical knowledge with guided prompts, resources, and thoughtful feedback.", icon: "✦", color: "#d8ff62" },
-  { id: "build", name: "Build", description: "Ship projects, prototypes, and experiments with peers who move quickly.", icon: "▣", color: "#77e7e1" },
-  { id: "connect", name: "Connect", description: "Find people, communities, and real opportunities for collaboration and growth.", icon: "◎", color: "#c4a4ff" },
-];
-
-const fallbackMembers: Member[] = [
-  { id: "m-1", name: "Ari Hsu", handle: "@ari", bio: "I build learning systems and help people turn curiosity into momentum.", category: "Learn", skills: ["Learning"], role: "member", initials: "AH", color: "#d8ff62", online: true },
-  { id: "m-2", name: "Noah Kim", handle: "@noah", bio: "Shipping projects, finding patterns, and helping teams move with clarity.", category: "Build", skills: ["JavaScript"], role: "member", initials: "NK", color: "#77e7e1", online: true },
-  { id: "m-3", name: "Sara Dela", handle: "@sara", bio: "Designing better learning experiences and stronger community loops.", category: "Connect", skills: ["Community Building"], role: "member", initials: "SD", color: "#c4a4ff", online: false },
-  { id: "m-4", name: "Leo Hart", handle: "@leo", bio: "Turning ideas into systems, products, and habits that last.", category: "Build", skills: ["Product Thinking"], role: "member", initials: "LH", color: "#ff836d", online: true },
-];
-
-const fallbackProjects: Project[] = [
-  { id: "p-1", name: "Mentor Match", description: "An early-stage platform for matching learners with the right people to guide them.", status: "Active", color: "#d8ff62", team: ["AH", "NK"], metric: "2 contributors", technologies: [] },
-  { id: "p-2", name: "Study Rooms", description: "A collaborative learning space where small groups can share resources and weekly goals.", status: "Researching", color: "#77e7e1", team: ["SD", "LH"], metric: "2 contributors", technologies: [] },
-  { id: "p-3", name: "Creator Circles", description: "A lightweight community for creators who want feedback, accountability, and momentum.", status: "Growing", color: "#c4a4ff", team: ["AH", "SD", "LH"], metric: "3 contributors", technologies: [] },
-];
-
-const fallbackEvents: Event[] = [
-  { id: "e-1", date: "12", month: "SEP", title: "Founders Circle", type: "Workshop", meta: "Friday · 7:00 PM UTC · Remote", accent: "lime" },
-  { id: "e-2", date: "19", month: "SEP", title: "Build & Learn Live", type: "AMA", meta: "Friday · 6:30 PM UTC · Community room", accent: "cyan" },
-  { id: "e-3", date: "27", month: "SEP", title: "Product Critique Night", type: "Feedback", meta: "Saturday · 6:00 PM UTC · Discord stage", accent: "coral" },
-];
-
 function initials(name: string) { return name.split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase(); }
 function colorFor(index: number, color?: string | null) { return color || colors[index % colors.length]; }
 
 export async function getCategories(): Promise<Category[]> {
-  try {
-    const supabase = await createSupabaseServerClient();
-    const { data, error } = await supabase.from("categories").select("id, name, description, icon, color").eq("is_active", true).order("sort_order");
-    if (error) throw error;
-    return data ?? fallbackCategories;
-  } catch {
-    return fallbackCategories;
-  }
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.from("categories").select("id, name, description, icon, color").eq("is_active", true).order("sort_order");
+  if (error) throw error;
+  return data ?? [];
 }
 
 export async function getMembers(limit?: number, completeOnly = false): Promise<Member[]> {
-  try {
-    const supabase = await createSupabaseServerClient();
-    let query = supabase.from("profiles").select("id, username, display_name, avatar_url, bio, last_active_at, profile_categories(categories(name, color)), profile_skills(skills(name)), user_roles(role)").eq("status", "active").order("display_name");
-    if (completeOnly) query = query.not("bio", "is", null).neq("bio", "").neq("bio", "No bio added yet").neq("bio", "No bio added yet.");
-    if (limit) query = query.limit(limit);
-    const { data, error } = await query;
-    if (error) throw error;
-    return (data ?? []).map((profile, index) => {
-      const categoryValue = Array.isArray(profile.profile_categories) ? profile.profile_categories[0]?.categories : null;
-      const category = Array.isArray(categoryValue) ? categoryValue[0] : categoryValue;
-      const rawSkills = Array.isArray(profile.profile_skills) ? profile.profile_skills : [];
-      const skills = rawSkills.flatMap((item) => {
-        const skill = Array.isArray(item.skills) ? item.skills[0] : item.skills;
-        return skill?.name ? [skill.name] : [];
-      });
-      const roles = Array.isArray(profile.user_roles) ? profile.user_roles.map((entry) => entry.role).filter(Boolean) : [];
-      return {
-        id: profile.id,
-        name: profile.display_name,
-        handle: `@${profile.username}`,
-        bio: profile.bio || "",
-        category: category?.name || "Member",
-        skills,
-        role: roles[0] || "member",
-        initials: initials(profile.display_name),
-        color: colorFor(index, category?.color),
-        online: profile.last_active_at ? Date.now() - new Date(profile.last_active_at).getTime() < 15 * 60 * 1000 : false,
-        avatarUrl: profile.avatar_url,
-      };
+  const supabase = await createSupabaseServerClient();
+  let query = supabase.from("profiles").select("id, username, display_name, avatar_url, bio, last_active_at, profile_categories(categories(name, color)), profile_skills(skills(name)), user_roles(role)").eq("status", "active").order("display_name");
+  if (completeOnly) query = query.not("bio", "is", null).neq("bio", "").neq("bio", "No bio added yet").neq("bio", "No bio added yet.");
+  if (limit) query = query.limit(limit);
+  const { data, error } = await query;
+  if (error) throw error;
+  return (data ?? []).map((profile, index) => {
+    const categoryValue = Array.isArray(profile.profile_categories) ? profile.profile_categories[0]?.categories : null;
+    const category = Array.isArray(categoryValue) ? categoryValue[0] : categoryValue;
+    const rawSkills = Array.isArray(profile.profile_skills) ? profile.profile_skills : [];
+    const skills = rawSkills.flatMap((item) => {
+      const skill = Array.isArray(item.skills) ? item.skills[0] : item.skills;
+      return skill?.name ? [skill.name] : [];
     });
-  } catch {
-    return fallbackMembers;
-  }
+    const roles = Array.isArray(profile.user_roles) ? profile.user_roles.map((entry) => entry.role).filter(Boolean) : [];
+    return {
+      id: profile.id,
+      name: profile.display_name,
+      handle: `@${profile.username}`,
+      bio: profile.bio || "",
+      category: category?.name || "Member",
+      skills,
+      role: roles[0] || "member",
+      initials: initials(profile.display_name),
+      color: colorFor(index, category?.color),
+      online: profile.last_active_at ? Date.now() - new Date(profile.last_active_at).getTime() < 15 * 60 * 1000 : false,
+      avatarUrl: profile.avatar_url,
+    };
+  });
 }
 
 function mapProjectRow(project: {
@@ -160,40 +127,32 @@ const LEGACY_PROJECT_SELECT = "id, owner_id, name, description, cover_image_url,
 const FULL_PROJECT_SELECT = "id, owner_id, name, description, cover_image_url, demo_url, github_url, status, upvote_count, comment_count, created_at, categories(name, color), owner:profiles!projects_owner_id_fkey(display_name, username, avatar_url), project_members(profile_id, profiles(display_name)), project_technologies(technology), project_links(label, url)";
 
 export async function getProjects(ownerId?: string, limit?: number): Promise<Project[]> {
-  try {
-    const supabase = await createSupabaseServerClient();
-    // Full select first (needs migration 0010). Falls back to the legacy
-    // select when the social columns are not deployed yet — never mock data.
-    let query = supabase.from("projects").select(FULL_PROJECT_SELECT).is("deleted_at", null).order("created_at", { ascending: false });
-    if (ownerId) query = query.eq("owner_id", ownerId);
-    if (limit) query = query.limit(limit);
-    const { data: initialData, error } = await query;
-    let data = initialData;
-    if (error) {
-      let legacy = supabase.from("projects").select(LEGACY_PROJECT_SELECT).is("deleted_at", null).order("created_at", { ascending: false });
-      if (ownerId) legacy = legacy.eq("owner_id", ownerId);
-      if (limit) legacy = legacy.limit(limit);
-      const retry = await legacy;
-      if (retry.error) throw retry.error;
-      data = retry.data as typeof data;
-    }
-    return ((data ?? []) as Array<Parameters<typeof mapProjectRow>[0]>).map((project, index) => mapProjectRow(project, index));
-  } catch {
-    return ownerId ? [] : fallbackProjects;
+  const supabase = await createSupabaseServerClient();
+  let query = supabase.from("projects").select(FULL_PROJECT_SELECT).is("deleted_at", null).order("created_at", { ascending: false });
+  if (ownerId) query = query.eq("owner_id", ownerId);
+  if (limit) query = query.limit(limit);
+  const { data: initialData, error } = await query;
+  let data = initialData;
+  if (error) {
+    let legacy = supabase.from("projects").select(LEGACY_PROJECT_SELECT).is("deleted_at", null).order("created_at", { ascending: false });
+    if (ownerId) legacy = legacy.eq("owner_id", ownerId);
+    if (limit) legacy = legacy.limit(limit);
+    const retry = await legacy;
+    if (retry.error) throw retry.error;
+    data = retry.data as typeof data;
   }
+  return ((data ?? []) as Array<Parameters<typeof mapProjectRow>[0]>).map((project, index) => mapProjectRow(project, index));
 }
 
 export async function getProjectById(id: string): Promise<Project | null> {
-  try {
-    const supabase = await createSupabaseServerClient();
-    const { data, error } = await supabase.from("projects").select(`${FULL_PROJECT_SELECT}, created_at`).eq("id", id).is("deleted_at", null).single();
-    if (!error && data) return mapProjectRow(data as Parameters<typeof mapProjectRow>[0], 0);
-    const retry = await supabase.from("projects").select(LEGACY_PROJECT_SELECT).eq("id", id).is("deleted_at", null).single();
-    if (retry.error || !retry.data) return null;
-    return mapProjectRow(retry.data as Parameters<typeof mapProjectRow>[0], 0);
-  } catch {
-    return null;
-  }
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.from("projects").select(`${FULL_PROJECT_SELECT}, created_at`).eq("id", id).is("deleted_at", null).maybeSingle();
+  if (!error && data) return mapProjectRow(data as Parameters<typeof mapProjectRow>[0], 0);
+  if (!error) return null;
+  const retry = await supabase.from("projects").select(LEGACY_PROJECT_SELECT).eq("id", id).is("deleted_at", null).maybeSingle();
+  if (retry.error) throw retry.error;
+  if (!retry.data) return null;
+  return mapProjectRow(retry.data as Parameters<typeof mapProjectRow>[0], 0);
 }
 
 export async function getEvents(): Promise<Event[]> {
@@ -207,29 +166,21 @@ export async function getEvents(): Promise<Event[]> {
 }
 
 export async function getCounts() {
-  try {
-    const supabase = await createSupabaseServerClient();
-    const [members, projects, events, teams] = await Promise.all([
-      supabase.from("profiles").select("id", { count: "exact", head: true }).eq("status", "active"),
-      supabase.from("projects").select("id", { count: "exact", head: true }).is("deleted_at", null),
-      supabase.from("events").select("id", { count: "exact", head: true }).eq("status", "published"),
-      supabase.from("teams").select("id", { count: "exact", head: true }),
-    ]);
-    const failure = [members, projects, events, teams].find((result) => result.error);
-    if (failure?.error) throw failure.error;
-    return { members: members.count ?? 0, projects: projects.count ?? 0, events: events.count ?? 0, teams: teams.count ?? 0 };
-  } catch {
-    return { members: fallbackMembers.length, projects: fallbackProjects.length, events: fallbackEvents.length, teams: 12 };
-  }
+  const supabase = await createSupabaseServerClient();
+  const [members, projects, events, teams] = await Promise.all([
+    supabase.from("profiles").select("id", { count: "exact", head: true }).eq("status", "active"),
+    supabase.from("projects").select("id", { count: "exact", head: true }).is("deleted_at", null),
+    supabase.from("events").select("id", { count: "exact", head: true }).eq("status", "published"),
+    supabase.from("teams").select("id", { count: "exact", head: true }),
+  ]);
+  const failure = [members, projects, events, teams].find((result) => result.error);
+  if (failure?.error) throw failure.error;
+  return { members: members.count ?? 0, projects: projects.count ?? 0, events: events.count ?? 0, teams: teams.count ?? 0 };
 }
 
 export async function getSkills(): Promise<Skill[]> {
-  try {
-    const supabase = await createSupabaseServerClient();
-    const { data, error } = await supabase.from("skills").select("id, name").eq("is_active", true).order("sort_order").order("name");
-    if (error) throw error;
-    return data ?? [];
-  } catch {
-    return [];
-  }
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.from("skills").select("id, name").eq("is_active", true).order("sort_order").order("name");
+  if (error) throw error;
+  return data ?? [];
 }

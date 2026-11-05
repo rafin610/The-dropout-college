@@ -1,13 +1,15 @@
-import Link from "next/link";
-import { ArrowRight, MessageCircle } from "lucide-react";
-import { getCategories, getCounts, getEvents, getMembers } from "@/lib/supabase-data";
-import { SectionHeading } from "@/components/app-shell";
-import { EventCard, MemberCard } from "@/components/cards";
-import { JournalCard } from "@/components/journal/journal-card";
+import { getCategories, getCounts, getMembers, getProjects } from "@/lib/supabase-data";
 import { getPublishedArticles } from "@/server/journal/articles";
-import { LearningNetwork } from "@/components/learning-network";
+import { getAnnouncements, getSiteSections, getSiteSettings } from "@/server/site-content";
+import { HomepageHero } from "@/components/home/hero";
+import { JournalCarousel } from "@/components/home/journal-carousel";
+import { FeaturedProjectsSection } from "@/components/home/featured-projects";
+import { FeaturedMembersSection } from "@/components/home/featured-members";
+import { CommunityActivitySection } from "@/components/home/community-activity";
+import { CommunityStatsSection } from "@/components/home/community-stats";
+import { CommunityNoticeboardSection } from "@/components/home/community-noticeboard";
+import { FinalCommunityCTA } from "@/components/home/final-cta";
 import { StayConnected } from "@/components/social";
-import { getSiteSections, getSiteSettings } from "@/server/site-content";
 
 export const dynamic = "force-dynamic";
 
@@ -15,26 +17,39 @@ export default async function Home() {
   let categories: Awaited<ReturnType<typeof getCategories>> = [];
   let members: Awaited<ReturnType<typeof getMembers>> = [];
   let journalArticles: Awaited<ReturnType<typeof getPublishedArticles>>["articles"] = [];
-  let events: Awaited<ReturnType<typeof getEvents>> = [];
+  let projects: Awaited<ReturnType<typeof getProjects>> = [];
+  let announcements: Awaited<ReturnType<typeof getAnnouncements>> = [];
   let counts: Awaited<ReturnType<typeof getCounts>> = { members: 0, projects: 0, events: 0, teams: 0 };
   let settings: Awaited<ReturnType<typeof getSiteSettings>> = {};
   let sections: Awaited<ReturnType<typeof getSiteSections>> = [];
   let loadError = false;
 
   try {
-    const [fetchedCategories, fetchedMembers, journalData, fetchedEvents, fetchedCounts, fetchedSettings, fetchedSections] = await Promise.all([
+    const [
+      fetchedCategories,
+      fetchedMembers,
+      journalData,
+      fetchedProjects,
+      fetchedAnnouncements,
+      fetchedCounts,
+      fetchedSettings,
+      fetchedSections,
+    ] = await Promise.all([
       getCategories(),
-      getMembers(8, true),
-      getPublishedArticles({ limit: 3 }),
-      getEvents(),
+      getMembers(12, true),
+      getPublishedArticles({ limit: 12 }),
+      getProjects(undefined, 6),
+      getAnnouncements(),
       getCounts(),
       getSiteSettings(),
       getSiteSections(),
     ]);
+
     categories = fetchedCategories;
     members = fetchedMembers;
     journalArticles = journalData.articles;
-    events = fetchedEvents;
+    projects = fetchedProjects;
+    announcements = fetchedAnnouncements;
     counts = fetchedCounts;
     settings = fetchedSettings;
     sections = fetchedSections;
@@ -44,180 +59,203 @@ export default async function Home() {
 
   if (loadError) {
     return (
-      <section className="panel">
-        <h2>Unable to load the network</h2>
-        <p className="member-bio">Please try again later.</p>
+      <section className="panel" style={{ padding: 40, textAlign: "center" }}>
+        <h2>Unable to load community discovery</h2>
+        <p className="member-bio">Please check your connection and try again.</p>
       </section>
     );
   }
 
-  const valuesSection = sections.find((section) => section.slug === "community-values");
-  const rawCards =
-    valuesSection?.content && typeof valuesSection.content === "object" && "cards" in valuesSection.content
-      ? (valuesSection.content as { cards?: unknown }).cards
-      : null;
-  const communityValues = Array.isArray(rawCards)
-    ? rawCards.filter((card): card is string => typeof card === "string")
-    : ["Curiosity", "Learning", "Sharing", "Helping", "Collaboration", "Growth"];
+  // Section visibility check helper
+  const isSectionEnabled = (slug: string, defaultState = true): boolean => {
+    const found = sections.find(
+      (s) => s.slug === slug || s.slug === slug.replace("-", "_")
+    );
+    if (!found) return defaultState;
+    return Boolean(found.enabled);
+  };
 
-  const whoWeAre = sections.find((section) => section.slug === "who-we-are");
-  const ourAim = sections.find((section) => section.slug === "our-aim");
-  const ourGoal = sections.find((section) => section.slug === "our-goal");
-  const whyJoin = sections.find((section) => section.slug === "why-join");
-  const heroCtaHref = settings.hero_cta_href || "https://discord.gg/3xfu5TMgF";
-  const inviteLink = settings.community_invite_link || heroCtaHref;
-  const featuredMembers = members.filter((member) => {
-    const bio = member.bio.trim().replace(/[.]$/, "");
+  const getSectionConfig = (slug: string): Record<string, unknown> => {
+    const found = sections.find(
+      (s) => s.slug === slug || s.slug === slug.replace("-", "_")
+    );
+    if (!found) return {};
+    return {
+      ...found.content,
+      title: found.title,
+      description: found.description,
+      cta_label: found.cta_label,
+      cta_href: found.cta_href,
+    };
+  };
+
+  // Journal carousel articles ordering / selection
+  const carouselConfig = getSectionConfig("journal-carousel");
+  const articleIds = carouselConfig.featuredArticleIds ?? carouselConfig.pinnedArticleIds;
+  const configuredArticleIds = Array.isArray(articleIds)
+    ? articleIds.filter((id): id is string => typeof id === "string")
+    : [];
+
+  let carouselArticles = [...journalArticles];
+  if (configuredArticleIds.length > 0) {
+    // Put explicitly ordered articles first
+    const customOrdered = configuredArticleIds
+      .map((id) => carouselArticles.find((a) => a.id === id))
+      .filter((a): a is (typeof carouselArticles)[0] => Boolean(a));
+    const remainder = carouselArticles.filter((a) => !configuredArticleIds.includes(a.id));
+    carouselArticles = [...customOrdered, ...remainder];
+  } else {
+    // Sort featured articles to the front
+    carouselArticles.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
+  }
+
+  // Featured projects ordering / selection
+  const projectsConfig = getSectionConfig("featured-projects");
+  const projectIds = projectsConfig.featuredProjectIds ?? projectsConfig.pinnedProjectIds;
+  const configuredProjectIds = Array.isArray(projectIds)
+    ? projectIds.filter((id): id is string => typeof id === "string")
+    : [];
+
+  let featuredProjects = [...projects];
+  if (configuredProjectIds.length > 0) {
+    const customOrdered = configuredProjectIds
+      .map((id) => featuredProjects.find((p) => p.id === id))
+      .filter((p): p is (typeof featuredProjects)[0] => Boolean(p));
+    const remainder = featuredProjects.filter((p) => !configuredProjectIds.includes(p.id));
+    featuredProjects = [...customOrdered, ...remainder];
+  }
+
+  // Featured members selection
+  const membersConfig = getSectionConfig("featured-members");
+  const memberIds = membersConfig.featuredMemberIds ?? membersConfig.pinnedUserIds;
+  const configuredMemberIds = Array.isArray(memberIds)
+    ? memberIds.filter((id): id is string => typeof id === "string")
+    : [];
+
+  let featuredMembers = members.filter((m) => {
+    const bio = m.bio.trim().replace(/[.]$/, "");
     return bio.length > 0 && bio !== "No bio added yet";
   });
-  const stats: Array<[number, string]> = [
-    [counts.members, counts.members === 1 ? "member" : "members"],
-    [counts.projects, counts.projects === 1 ? "project" : "projects"],
-    ...(counts.events > 0 ? [[counts.events, counts.events === 1 ? "event" : "events"] as [number, string]] : []),
-    ...(counts.teams > 0 ? [[counts.teams, counts.teams === 1 ? "team" : "teams"] as [number, string]] : []),
-  ];
+  if (configuredMemberIds.length > 0) {
+    const customOrdered = configuredMemberIds
+      .map((id) => featuredMembers.find((m) => m.id === id))
+      .filter((m): m is (typeof featuredMembers)[0] => Boolean(m));
+    const remainder = featuredMembers.filter((m) => !configuredMemberIds.includes(m.id));
+    featuredMembers = [...customOrdered, ...remainder];
+  }
+  featuredMembers = featuredMembers.slice(0, 6);
+
+  // Real database-driven statistics (Never fake or hardcoded numbers)
+  const realStats: Array<{ label: string; value: number | string; description?: string }> = [];
+  if (counts.members > 0) {
+    realStats.push({
+      label: "Community Members",
+      value: counts.members,
+      description: "Self-driven builders & learners",
+    });
+  }
+  if (journalArticles.length > 0) {
+    realStats.push({
+      label: "Published Journals",
+      value: journalArticles.length,
+      description: "Original essays & breakdowns",
+    });
+  }
+  if (counts.projects > 0) {
+    realStats.push({
+      label: "Shipped Projects",
+      value: counts.projects,
+      description: "Live prototypes & software",
+    });
+  }
+  if (categories.length > 0) {
+    realStats.push({
+      label: "Core Focus Tracks",
+      value: categories.length,
+      description: "Learn, Build & Connect",
+    });
+  }
+
+  const inviteUrl = settings.community_invite_link || "https://discord.gg/3xfu5TMgF";
 
   return (
-    <>
-      <section className="hero">
-        <div>
-          <div className="eyebrow">
-            {settings.hero_subtitle || "A home for the relentlessly curious"} <span style={{ color: "var(--lime)" }}>●</span>
-          </div>
-          <h1>{settings.hero_title || "Make your next move together."}</h1>
-          <p className="hero-copy">
-            {settings.hero_description || "The DropOut College is a learning-focused community built around curiosity, knowledge sharing, guidance, collaboration, and personal growth."}
-          </p>
-          <div className="hero-actions">
-            <Link href={inviteLink} className="button button-primary" target={inviteLink.startsWith("http") ? "_blank" : undefined} rel={inviteLink.startsWith("http") ? "noreferrer" : undefined}>
-              <MessageCircle size={15} /> Join Discord
-            </Link>
-          </div>
-        </div>
-        <LearningNetwork />
-      </section>
+    <div className="home-discovery-page">
+      {/* 1. Hero Section */}
+      {isSectionEnabled("hero") && <HomepageHero settings={settings} />}
 
-      <section className="stats-grid" aria-label="Community statistics">
-        {stats.map(([value, label]) => (
-          <div className="stat" key={String(label)}>
-            <strong>{String(value)}</strong>
-            <span>{String(label)}</span>
-          </div>
-        ))}
-      </section>
-
-      <section className="content-grid section">
-        <div className="content-panel">
-          <div className="eyebrow">Who We Are</div>
-          <h2>{whoWeAre?.title || "Who We Are"}</h2>
-          <p>{settings.who_we_are || "We are creating an environment where people can come together, learn new things, ask questions, share knowledge, help each other, and grow together."}</p>
-        </div>
-        <div className="content-panel accent-panel">
-          <div className="eyebrow">Our Aim</div>
-          <h2>{ourAim?.title || "Our Aim"}</h2>
-          <p>{settings.our_aim || "To build a positive learning culture where curiosity is encouraged, beginners feel supported, useful knowledge is shared, and members grow through guidance and collaboration."}</p>
-        </div>
-      </section>
-
-      <section className="section">
-        <SectionHeading
-          eyebrow="Learning-first culture"
-          title={ourGoal?.title || "Our Goal"}
+      {/* 2. Featured Journal Carousel */}
+      {isSectionEnabled("journal-carousel") && (
+        <JournalCarousel
+          articles={carouselArticles}
+          title={String(getSectionConfig("journal-carousel").title || "The DropOut Journal")}
+          eyebrow={String(getSectionConfig("journal-carousel").eyebrow || "Curated Knowledge")}
+          intervalMs={Number(carouselConfig.intervalMs ?? carouselConfig.interval ?? 5500)}
         />
-        <div className="feature-grid">
-          {["Guidance", "Resources", "People to learn with", "People to ask questions", "Opportunities to share knowledge", "Opportunities to collaborate"].map((item) => (
-            <div className="feature-tile" key={item}>
-              <span className="feature-index">{item.slice(0, 1)}</span>
-              <p>{item}</p>
-            </div>
-          ))}
-        </div>
-        <p className="lead-copy">{settings.our_goal || "We are not trying to create a community where one person teaches everyone. Instead, everyone can learn, contribute, help, and grow."}</p>
-      </section>
+      )}
 
-      <section className="section" id="community-values">
-        <SectionHeading
-          eyebrow="Our values"
-          title="Community culture"
-          action={<Link href="/explore" className="section-link">Meet the community <ArrowRight size={13} /></Link>}
-        />
-        <div className="value-grid">
-          {communityValues.map((value, idx) => (
-            <article className="value-card" key={`${value}-${idx}`}>
-              <div className="value-icon">0{idx + 1}</div>
-              <h3>{value}</h3>
-              <p>
-                {idx === 0 && "Always be willing to explore something new."}
-                {idx === 1 && "Never stop improving yourself and building your skills."}
-                {idx === 2 && "Share useful knowledge, resources, and discoveries with others."}
-                {idx === 3 && "If you know something, help someone who does not yet."}
-                {idx === 4 && "Build and learn together instead of learning alone."}
-                {idx === 5 && "Focus on becoming better every day."}
-              </p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="section">
-        <SectionHeading eyebrow="Find your frequency" title="Communities with range." action={<Link href="/explore" className="section-link">View all <ArrowRight size={13} /></Link>} />
-        <div className="category-grid">
-          {categories.length ? (
-            categories.map((category) => (
-              <Link href={`/explore?category=${category.id}`} className="category-card" key={category.id}>
-                <span className="category-icon">{category.icon || "•"}</span>
-                <h3>{category.name}</h3>
-                <p>{category.description || "No description added yet."}</p>
-                <div className="category-meta"><span>Explore</span><span>↗</span></div>
-              </Link>
-            ))
-          ) : (
-            <p className="muted-text">No categories have been added yet.</p>
+      {/* 3. Featured Community Projects */}
+      {isSectionEnabled("featured-projects") && (
+        <FeaturedProjectsSection
+          projects={featuredProjects}
+          title={String(getSectionConfig("featured-projects").title || "Featured Community Projects")}
+          eyebrow={String(getSectionConfig("featured-projects").eyebrow || "Built by Members")}
+          description={String(
+            getSectionConfig("featured-projects").description ||
+              "Explore real software, experiments, and open-source tools created by community members."
           )}
-        </div>
-      </section>
-
-      <section className="section">
-        <SectionHeading eyebrow="People in motion" title="People building, sharing, growing." action={<Link href="/explore" className="section-link">Browse people <ArrowRight size={13} /></Link>} />
-        <div className="member-grid">{featuredMembers.map((member) => <MemberCard key={member.id} member={member} />)}</div>
-      </section>
-
-      <section className="section">
-        <SectionHeading
-          eyebrow="The DropOut Journal"
-          title="Independent thinking & published knowledge."
-          action={<Link href="/journal" className="section-link">Explore Journal <ArrowRight size={13} /></Link>}
         />
-        <div className="journal-grid">
-          {journalArticles.map((article) => (
-            <JournalCard key={article.id} article={article} />
-          ))}
-        </div>
-      </section>
+      )}
 
-      <section className="section">
-        <SectionHeading eyebrow="Live sessions" title="Events to join." action={<Link href="/events" className="section-link">View calendar <ArrowRight size={13} /></Link>} />
-        <div className="event-grid">{events.map((event) => <EventCard key={event.id} event={event} />)}</div>
-      </section>
+      {/* 4. Featured Creators & Builders */}
+      {isSectionEnabled("featured-members") && (
+        <FeaturedMembersSection
+          members={featuredMembers}
+          title={String(getSectionConfig("featured-members").title || "Featured Creators & Builders")}
+          eyebrow={String(getSectionConfig("featured-members").eyebrow || "People in Motion")}
+          description={String(
+            getSectionConfig("featured-members").description ||
+              "Meet self-taught developers, designers, and thinkers actively building inside The DropOut College."
+          )}
+        />
+      )}
 
+      {/* 5. Latest Community Activity Feed */}
+      {isSectionEnabled("community-activity") && (
+        <CommunityActivitySection
+          projects={projects}
+          articles={journalArticles}
+          announcements={announcements}
+          title={String(getSectionConfig("community-activity").title || "Latest Community Activity")}
+          eyebrow={String(getSectionConfig("community-activity").eyebrow || "Pulse & Momentum")}
+        />
+      )}
+
+      {/* 6. Real Community Statistics (strictly verified data only) */}
+      {isSectionEnabled("community-stats") && <CommunityStatsSection stats={realStats} />}
+
+      {/* 7. Community Noticeboard / Announcements */}
+      {isSectionEnabled("community-noticeboard") && (
+        <CommunityNoticeboardSection
+          announcements={announcements}
+          title={String(getSectionConfig("community-noticeboard").title || "Community Noticeboard")}
+          eyebrow={String(getSectionConfig("community-noticeboard").eyebrow || "Announcements & Updates")}
+        />
+      )}
+
+      {/* Stay Connected across social channels */}
       <StayConnected />
 
-      <section className="section">
-        <div className="discord-banner">
-          <div>
-            <div className="eyebrow">You are welcome here</div>
-            <h2>{whyJoin?.title || "Have something you want to learn?"}</h2>
-          </div>
-          <div>
-            <p>{whyJoin?.description || "Bring your question, project, or idea and learn with people who care about growth."}</p>
-            <div className="hero-actions compact-actions">
-              <Link href={inviteLink} className="button button-primary" target={inviteLink.startsWith("http") ? "_blank" : undefined} rel={inviteLink.startsWith("http") ? "noreferrer" : undefined}>
-                <MessageCircle size={15} /> Join Discord
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-    </>
+      {/* 8. Final Community CTA */}
+      {isSectionEnabled("final-cta") && (
+        <FinalCommunityCTA
+          title={String(getSectionConfig("final-cta").title || "Ready to build with relentless learners?")}
+          description={String(
+            getSectionConfig("final-cta").description ||
+              "Join The DropOut College to connect with self-directed developers, share your projects, read original essays, and build real-world momentum."
+          )}
+          inviteUrl={inviteUrl}
+        />
+      )}
+    </div>
   );
 }

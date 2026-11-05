@@ -112,7 +112,9 @@ export function SiteFooter() {
         <nav className="site-footer-col" aria-label="Explore">
           <span className="site-footer-label">Explore</span>
           <Link href="/">Home</Link>
+          <Link href="/about">About Us</Link>
           <Link href="/explore">Community</Link>
+          <Link href="/journal">Journal</Link>
           <Link href="/projects">Projects</Link>
           <Link href="/events">Events</Link>
         </nav>

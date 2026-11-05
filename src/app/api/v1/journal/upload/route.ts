@@ -5,8 +5,13 @@ import { createSupabaseServerClient, createSupabaseAdminClient } from "@/server/
 
 export const runtime = "nodejs";
 
-const MAX_BYTES = 8 * 1024 * 1024; // 8MB
-const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/svg+xml"];
+const MAX_BYTES = 5 * 1024 * 1024;
+const ALLOWED_IMAGE_EXTENSIONS: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/gif": "gif",
+};
 
 export async function POST(request: Request) {
   const requestId = request.headers.get("x-request-id") ?? crypto.randomUUID();
@@ -26,18 +31,17 @@ export async function POST(request: Request) {
       throw new ApiError("VALIDATION_ERROR", "No image file provided.", 400);
     }
 
-    if (!ALLOWED_MIME_TYPES.includes(file.type)) {
-      throw new ApiError("VALIDATION_ERROR", "File type not supported. Allowed: JPEG, PNG, WebP, GIF, SVG.", 400);
+    const extension = ALLOWED_IMAGE_EXTENSIONS[file.type];
+    if (!extension) {
+      throw new ApiError("VALIDATION_ERROR", "File type not supported. Allowed: JPEG, PNG, WebP, and GIF.", 400);
     }
 
     if (file.size > MAX_BYTES) {
-      throw new ApiError("VALIDATION_ERROR", "Image exceeds maximum allowed size of 8MB.", 400);
+      throw new ApiError("VALIDATION_ERROR", "Image exceeds maximum allowed size of 5MB.", 400);
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    const ext = file.name.split(".").pop() || "png";
-    const cleanExt = ext.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
-    const filename = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${cleanExt}`;
+    const filename = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${extension}`;
 
     const adminClient = createSupabaseAdminClient();
     const supabase = adminClient ?? (await createSupabaseServerClient());

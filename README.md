@@ -238,6 +238,41 @@ The application connects to a Supabase PostgreSQL instance with the following pr
 - **`skills`**: Skill taxonomy and member assignments.
 - **`notifications`**: User notifications for social interactions.
 
+### Applying Supabase migrations
+
+The migration history currently contains two different `0005` files, and the
+database test runner applies migrations in an explicit order. Do not rename
+historical migrations or run `supabase db push` against production until you
+have compared the repository with that project's migration history.
+
+The latest additions are `supabase/migrations/0014_homepage_cms_and_founders.sql`
+and `supabase/migrations/0015_team_and_project_relationships.sql`. Before
+applying them, confirm that the target project has the prerequisite schema and
+security functions from migrations `0001` through `0013`. Connect using the
+database connection string from the existing Supabase project's dashboard
+(never put it in a committed file), then apply only migrations that are not
+already present:
+
+```bash
+psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -X \
+  -f supabase/migrations/0014_homepage_cms_and_founders.sql
+psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -X \
+  -f supabase/migrations/0015_team_and_project_relationships.sql
+```
+
+Set `SUPABASE_DB_URL` in the shell from the existing project's database
+connection details. These commands apply SQL directly and do not update
+Supabase CLI migration history. Do not run a later `db push` until migration
+history has been reconciled. The SQL test suite can be run locally with
+`npm run test:db`; it uses a disposable PostgreSQL container and does not
+connect to production.
+
+The current storage configuration is the public `project-covers` bucket for
+public project covers and published journal media. It allows JPEG, PNG, WebP,
+and GIF files up to 5 MiB. Upload writes are scoped to the authenticated
+uploader's folder; public reads are intentional for this bucket. Do not store
+private or draft-only media there.
+
 ---
 
 ## 📡 API & Health Endpoints

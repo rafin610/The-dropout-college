@@ -3,30 +3,24 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { AdminEvents } from "@/components/admin-events";
+import { CmsWebsiteTab } from "@/components/admin/cms-website";
+import { CmsAnnouncementsTab } from "@/components/admin/cms-announcements";
+import { CmsFoundersTab } from "@/components/admin/cms-founders";
 import type { JournalArticle } from "@/server/journal/types";
+import {
+  defaultAnnouncements,
+  defaultFounders,
+  defaultHomepageSections,
+  defaultSiteSettings,
+  type Announcement,
+  type FounderProfile,
+  type SiteSection,
+  type SiteSettingsMap,
+  type SocialLink,
+} from "@/lib/site-cms-types";
 
 type Metric = { label: string; value: number; tone: string };
 
-type SiteSettings = Record<string, string>;
-type SiteSection = {
-  id?: string;
-  slug: string;
-  title: string;
-  description: string;
-  cta_label: string;
-  cta_href: string;
-  enabled: boolean;
-  sort_order: number;
-  content?: Record<string, unknown>;
-};
-type SocialLink = {
-  id?: string;
-  platform: string;
-  label: string;
-  url: string;
-  enabled: boolean;
-  sort_order: number;
-};
 type UserRow = {
   id: string;
   displayName: string;
@@ -36,36 +30,6 @@ type UserRow = {
   createdAt: string;
   roles: string[];
 };
-
-const defaultSettings: SiteSettings = {
-  site_name: "The DropOut College",
-  site_description: "A learning-focused community built around curiosity, knowledge sharing, guidance, collaboration, and personal growth.",
-  hero_title: "Make your next move together.",
-  hero_subtitle: "A home for the relentlessly curious",
-  hero_description: "The DropOut College is a learning-focused community where people come together to learn, ask questions, share ideas, and grow with like-minded people.",
-  hero_cta_text: "Join The DropOut College",
-  hero_cta_href: "https://discord.gg/3xfu5TMgF",
-  who_we_are: "We are creating an environment where people can come together, learn new things, ask questions, share knowledge, help each other, and grow together.",
-  our_aim: "To build a positive learning culture where curiosity is encouraged, beginners feel supported, useful knowledge is shared, and members grow through guidance and collaboration.",
-  our_goal: "To build a large, supportive ecosystem where anyone with the willingness to learn can find guidance, resources, people to learn with, and opportunities to share and collaborate.",
-  footer_text: "The DropOut College is a learning community for curious people who want to grow together through guidance, sharing, and collaboration.",
-  community_invite_link: "https://discord.gg/3xfu5TMgF",
-  contact_email: "hello@thedropoutcollege.com",
-  contact_phone: "+1 (000) 000-0000",
-  discord_link: "https://discord.gg/3xfu5TMgF",
-  github_link: "",
-  facebook_link: "",
-  instagram_link: "",
-  youtube_link: "",
-};
-
-const defaultSections: SiteSection[] = [
-  { slug: "who-we-are", title: "Who We Are", description: "Learning-focused people building a positive environment for curiosity, guidance, and personal growth.", cta_label: "Learn more", cta_href: "#who-we-are", enabled: true, sort_order: 1 },
-  { slug: "our-aim", title: "Our Aim", description: "We want to create a supportive culture where people genuinely want to learn and improve together.", cta_label: "Explore the community", cta_href: "/explore", enabled: true, sort_order: 2 },
-  { slug: "our-goal", title: "Our Goal", description: "We want to build a learning ecosystem where everyone can find guidance, resources, and people to learn and collaborate with.", cta_label: "Join the community", cta_href: "https://discord.gg/3xfu5TMgF", enabled: true, sort_order: 3 },
-  { slug: "community-values", title: "Community Values", description: "The culture of The DropOut College is centered on curiosity, learning, and helping one another grow.", cta_label: "Meet the community", cta_href: "/explore", enabled: true, sort_order: 4 },
-  { slug: "why-join", title: "Why Join Us", description: "Because learning is more rewarding when it happens together with thoughtful, motivated people.", cta_label: "Join now", cta_href: "https://discord.gg/3xfu5TMgF", enabled: true, sort_order: 5 },
-];
 
 const defaultSocialLinks: SocialLink[] = [
   { platform: "discord", label: "Discord", url: "https://discord.gg/3xfu5TMgF", enabled: true, sort_order: 1 },
@@ -78,9 +42,14 @@ const defaultSocialLinks: SocialLink[] = [
 export function AdminDashboard() {
   const [tab, setTab] = useState("overview");
   const [loading, setLoading] = useState(true);
-  const [settings, setSettings] = useState<SiteSettings>(defaultSettings);
-  const [sections, setSections] = useState<SiteSection[]>(defaultSections);
+  const [siteLoaded, setSiteLoaded] = useState(false);
+  const [settings, setSettings] = useState<SiteSettingsMap>(defaultSiteSettings);
+  const [sections, setSections] = useState<SiteSection[]>(defaultHomepageSections);
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>(defaultSocialLinks);
+  const [announcements, setAnnouncements] = useState<Announcement[]>(defaultAnnouncements);
+  const [founders, setFounders] = useState<FounderProfile[]>(defaultFounders);
+  const [projects, setProjects] = useState<Array<{ id: string; name: string; description: string; status: string; cover_image_url?: string | null }>>([]);
+  const [savingSite, setSavingSite] = useState(false);
   const [userRows, setUserRows] = useState<UserRow[]>([]);
   const [metrics, setMetrics] = useState<Metric[]>([]);
   const [message, setMessage] = useState("");
@@ -99,19 +68,33 @@ export function AdminDashboard() {
   useEffect(() => {
     async function load() {
       try {
-        const [siteRes, overviewRes, usersRes, journalRes] = await Promise.all([
+        const [siteRes, overviewRes, usersRes, journalRes, projectsRes] = await Promise.all([
           fetch("/api/v1/admin/site", { cache: "no-store" }),
           fetch("/api/v1/admin/overview", { cache: "no-store" }),
           fetch("/api/v1/admin/users?page=1&pageSize=50", { cache: "no-store" }),
           fetch("/api/v1/journal/articles?scope=staff", { cache: "no-store" }),
+          fetch("/api/v1/projects", { cache: "no-store" }),
         ]);
 
         if (siteRes.ok) {
           const siteData = await siteRes.json();
-          const nextSettings = { ...defaultSettings, ...(siteData?.data?.settings ?? {}) };
+          if (!siteData?.data) {
+            throw new Error("Website content response was invalid.");
+          }
+          const nextSettings = { ...defaultSiteSettings, ...(siteData?.data?.settings ?? {}) };
           setSettings(nextSettings);
-          setSections(siteData?.data?.sections?.length ? siteData.data.sections : defaultSections);
-          setSocialLinks(siteData?.data?.socialLinks?.length ? siteData.data.socialLinks : defaultSocialLinks);
+          setSections(Array.isArray(siteData.data.sections) ? siteData.data.sections : []);
+          setSocialLinks(Array.isArray(siteData.data.socialLinks) ? siteData.data.socialLinks : []);
+          setAnnouncements(Array.isArray(siteData.data.announcements) ? siteData.data.announcements : []);
+          setFounders(Array.isArray(siteData.data.founders) ? siteData.data.founders : []);
+          setSiteLoaded(true);
+        } else {
+          setMessage("Website content could not be loaded. CMS changes are disabled until the database is available.");
+        }
+
+        if (projectsRes.ok) {
+          const projectsData = await projectsRes.json();
+          setProjects(projectsData?.data ?? []);
         }
 
         if (journalRes.ok) {
@@ -136,7 +119,7 @@ export function AdminDashboard() {
           setCanManageRoles(Boolean(userData?.capabilities?.canManageRoles));
         }
       } catch {
-        setMessage("Unable to load admin data right now.");
+        setMessage("Unable to load admin data right now. CMS changes are disabled until website content loads.");
       } finally {
         setLoading(false);
       }
@@ -156,23 +139,32 @@ export function AdminDashboard() {
   }, [search, statusFilter, userRows]);
 
   async function saveSiteChanges() {
-    setMessage("Saving website content...");
+    if (!siteLoaded) {
+      setMessage("Website content has not loaded. No changes were saved.");
+      return;
+    }
+
+    setSavingSite(true);
+    setMessage("Saving website & CMS content...");
     try {
       const response = await fetch("/api/v1/admin/site", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ settings, sections, socialLinks }),
+        body: JSON.stringify({ settings, sections, socialLinks, announcements, founders }),
       });
 
       if (!response.ok) {
-        setMessage("The website updates could not be saved.");
+        const body = await response.json().catch(() => null);
+        setMessage(body?.error?.message || "The website updates could not be saved.");
         return;
       }
 
-      setMessage("Website changes saved successfully.");
+      setMessage("Website & CMS changes saved successfully.");
       setTimeout(() => setMessage(""), 4000);
     } catch {
       setMessage("Network error saving website content.");
+    } finally {
+      setSavingSite(false);
     }
   }
 
@@ -309,8 +301,10 @@ export function AdminDashboard() {
             ["users", "Users"],
             ["journal", "Journal Articles"],
             ["events", "Events"],
-            ["website", "Website CMS"],
-            ["settings", "Settings"],
+            ["website", "Homepage CMS"],
+            ["announcements", "Noticeboard / News"],
+            ["founders", "Founders & Leadership"],
+            ["settings", "Socials & Contact"],
           ].map(([id, label]) => (
             <button key={id} className={tab === id ? "active" : ""} onClick={() => setTab(id)}>{label}</button>
           ))}
@@ -492,76 +486,38 @@ export function AdminDashboard() {
               {tab === "events" && <AdminEvents />}
 
               {tab === "website" && (
-                <div className="admin-panel">
-                  <div className="section-heading">
-                    <div>
-                      <div className="eyebrow">CMS</div>
-                      <h2>Website content editor</h2>
-                    </div>
-                  </div>
+                <CmsWebsiteTab
+                  settings={settings}
+                  onUpdateSettings={setSettings}
+                  sections={sections}
+                  onUpdateSections={setSections}
+                  articles={articles}
+                  projects={projects}
+                  users={userRows.map((u) => ({ id: u.id, displayName: u.displayName, username: u.username }))}
+                  onSave={saveSiteChanges}
+                  saving={savingSite}
+                  message={message}
+                />
+              )}
 
-                  <div className="admin-form-grid">
-                    <div className="field full">
-                      <label>Hero title</label>
-                      <input value={settings.hero_title ?? ""} onChange={(event) => setSettings({ ...settings, hero_title: event.target.value })} />
-                    </div>
-                    <div className="field">
-                      <label>Hero subtitle</label>
-                      <input value={settings.hero_subtitle ?? ""} onChange={(event) => setSettings({ ...settings, hero_subtitle: event.target.value })} />
-                    </div>
-                    <div className="field">
-                      <label>Hero CTA text</label>
-                      <input value={settings.hero_cta_text ?? ""} onChange={(event) => setSettings({ ...settings, hero_cta_text: event.target.value })} />
-                    </div>
-                    <div className="field full">
-                      <label>Hero description</label>
-                      <textarea value={settings.hero_description ?? ""} onChange={(event) => setSettings({ ...settings, hero_description: event.target.value })} />
-                    </div>
-                    <div className="field full">
-                      <label>Who We Are</label>
-                      <textarea value={settings.who_we_are ?? ""} onChange={(event) => setSettings({ ...settings, who_we_are: event.target.value })} />
-                    </div>
-                    <div className="field full">
-                      <label>Our Aim</label>
-                      <textarea value={settings.our_aim ?? ""} onChange={(event) => setSettings({ ...settings, our_aim: event.target.value })} />
-                    </div>
-                    <div className="field full">
-                      <label>Our Goal</label>
-                      <textarea value={settings.our_goal ?? ""} onChange={(event) => setSettings({ ...settings, our_goal: event.target.value })} />
-                    </div>
-                    <div className="field full">
-                      <label>Footer text</label>
-                      <textarea value={settings.footer_text ?? ""} onChange={(event) => setSettings({ ...settings, footer_text: event.target.value })} />
-                    </div>
-                    <div className="field full">
-                      <label>CTA link</label>
-                      <input value={settings.hero_cta_href ?? ""} onChange={(event) => setSettings({ ...settings, hero_cta_href: event.target.value })} />
-                    </div>
-                    <div className="field full">
-                      <label>Community invite URL</label>
-                      <input value={settings.community_invite_link ?? ""} onChange={(event) => setSettings({ ...settings, community_invite_link: event.target.value })} />
-                    </div>
-                  </div>
+              {tab === "announcements" && (
+                <CmsAnnouncementsTab
+                  announcements={announcements}
+                  onUpdateAnnouncements={setAnnouncements}
+                  onSave={saveSiteChanges}
+                  saving={savingSite}
+                  message={message}
+                />
+              )}
 
-                  <div style={{ marginTop: 20 }}>
-                    <h3>Section blocks</h3>
-                    <div className="pill-row">
-                      {sections.map((section) => (
-                        <button key={section.slug} type="button" className="filter active" onClick={() => {
-                          const next = sections.map((item) => item.slug === section.slug ? { ...item, enabled: !item.enabled } : item);
-                          setSections(next);
-                        }}>
-                          {section.title} {section.enabled ? "On" : "Off"}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div style={{ marginTop: 24 }}>
-                    <button className="button button-primary" type="button" onClick={saveSiteChanges}>Save website content</button>
-                    {message && <p style={{ marginTop: 12, color: "var(--muted)" }}>{message}</p>}
-                  </div>
-                </div>
+              {tab === "founders" && (
+                <CmsFoundersTab
+                  founders={founders}
+                  onUpdateFounders={setFounders}
+                  onSave={saveSiteChanges}
+                  saving={savingSite}
+                  message={message}
+                />
               )}
 
               {tab === "settings" && (

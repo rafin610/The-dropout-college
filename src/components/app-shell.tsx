@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { Bell, BookOpen, Compass, Home, LayoutDashboard, Menu, Moon, Search, Sparkles, Sun, UserRound, Users, X } from "lucide-react";
+import { Bell, BookOpen, Compass, Home, Info, LayoutDashboard, Menu, Moon, Search, Sparkles, Sun, UserRound, Users, X } from "lucide-react";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { notificationHref } from "@/lib/notification-link";
@@ -13,6 +13,7 @@ const nav = [
   { label: "Home", href: "/", icon: Home },
   { label: "Explore", href: "/explore", icon: Compass },
   { label: "Journal", href: "/journal", icon: BookOpen },
+  { label: "About", href: "/about", icon: Info },
   { label: "Events", href: "/events", icon: Sparkles },
 ];
 

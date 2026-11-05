@@ -1417,4 +1417,96 @@ begin
 end $$;
 rollback;
 
+-- A member can create teams and projects without leaving partial rows; owner
+-- memberships are created by the database triggers. Visibility policies keep
+-- private team/project data hidden from unrelated accounts.
+begin;
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '33333333-3333-4333-8333-333333333333', true);
+
+insert into public.teams (id, owner_id, name, slug, visibility)
+values (
+  'c1000000-0000-4000-8000-000000000001',
+  '33333333-3333-4333-8333-333333333333',
+  'Private Team Fixture',
+  'security-private-team-fixture',
+  'private'
+);
+
+select test.assert(
+  (select count(*) = 1
+   from public.team_members
+   where team_id = 'c1000000-0000-4000-8000-000000000001'
+     and profile_id = '33333333-3333-4333-8333-333333333333'
+     and role = 'owner'),
+  'team creation atomically adds the owner membership'
+);
+
+insert into public.projects (id, owner_id, name, slug, description, visibility)
+values (
+  'c2000000-0000-4000-8000-000000000001',
+  '33333333-3333-4333-8333-333333333333',
+  'Members Project Fixture',
+  'security-members-project-fixture',
+  'A members-only project fixture.',
+  'members'
+);
+
+select test.assert(
+  (select count(*) = 1
+   from public.project_members
+   where project_id = 'c2000000-0000-4000-8000-000000000001'
+     and profile_id = '33333333-3333-4333-8333-333333333333'
+     and role = 'owner'),
+  'project creation atomically adds the owner membership'
+);
+
+select test.expect_error(
+  $sql$insert into public.teams (owner_id, name, slug, visibility) values ('55555555-5555-4555-8555-555555555555', 'Impersonated Team', 'security-impersonated-team', 'public')$sql$,
+  '42501',
+  'a member cannot create a team for another owner'
+);
+
+select test.expect_error(
+  $sql$insert into public.team_members (team_id, profile_id, role) values ('c1000000-0000-4000-8000-000000000001', '55555555-5555-4555-8555-555555555555', 'owner')$sql$,
+  '42501',
+  'a team owner cannot assign ownership to another member'
+);
+
+select test.expect_error(
+  $sql$select public.save_site_cms('{}'::jsonb, '[]'::jsonb, '[]'::jsonb)$sql$,
+  '42501',
+  'a regular member cannot update CMS content'
+);
+rollback;
+
+-- A site manager saves all CMS fields in one database transaction.
+begin;
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', true);
+
+select public.save_site_cms(
+  '{"hero_title":"Persisted CMS test"}'::jsonb,
+  '[{"slug":"security-cms-test","title":"CMS test","description":"Persisted section","cta_label":"","cta_href":"","enabled":true,"sort_order":100,"content":{"featuredArticleIds":["test-id"]}}]'::jsonb,
+  '[{"platform":"security-test","label":"Test link","url":"https://example.test","enabled":true,"sort_order":100}]'::jsonb,
+  '[]'::jsonb,
+  '[]'::jsonb
+);
+
+select test.assert(
+  (select value = 'Persisted CMS test' from public.site_settings where key = 'hero_title'),
+  'CMS settings are persisted'
+);
+select test.assert(
+  (select content -> 'featuredArticleIds' = '["test-id"]'::jsonb
+   from public.site_sections where slug = 'security-cms-test'),
+  'homepage section content is persisted'
+);
+select test.assert(
+  (select label = 'Test link' and enabled
+   from public.site_social_links where platform = 'security-test'),
+  'site social links are persisted using the declared schema'
+);
+rollback;
+
 select 'security_rls.sql: all assertions passed' as result;

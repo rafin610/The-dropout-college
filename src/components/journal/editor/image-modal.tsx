@@ -31,7 +31,7 @@ export function ImageModal({ isOpen, onClose, onInsert }: ImageModalProps) {
     }
 
     if (file.size > 8 * 1024 * 1024) {
-      setError("Image must be smaller than 8MB.");
+      setError("Image must be smaller than 5MB.");
       return;
     }
 
@@ -132,7 +132,7 @@ export function ImageModal({ isOpen, onClose, onInsert }: ImageModalProps) {
                 <div className="journal-upload-prompt">
                   <Upload size={28} className="text-muted" />
                   <strong>Click or drag an image here</strong>
-                  <span>Supports JPG, PNG, WebP, GIF up to 8MB</span>
+                  <span>Supports JPG, PNG, WebP, GIF up to 5MB</span>
                 </div>
               )}
             </div>
