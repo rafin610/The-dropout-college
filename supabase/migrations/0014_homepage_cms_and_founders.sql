@@ -58,8 +58,8 @@ UPDATE public.site_settings SET
   our_story = COALESCE(our_story, 'The DropOut College was founded on the belief that real competence comes from curiosity, hands-on building, and collaborative growth rather than credentials alone. We created a space where self-taught builders can share work, find guidance, and build meaningful things together.'),
   our_vision = COALESCE(our_vision, 'A world where practical skills, creative curiosity, and proof of work matter more than passive credentials — empowering independent builders everywhere.'),
   our_mission = COALESCE(our_mission, 'To provide self-directed learners with the environment, community feedback, editorial platform, and collaborative momentum needed to master modern technology and build lasting careers.'),
-  our_philosophy = COALESCE(our_philosophy, 'Learning is an active pursuit, not a passive spectator sport. Build real things, share your findings, ask genuine questions, and improve continuously.'),
-  discord_link = COALESCE(discord_link, community_invite_link, 'https://discord.gg/rEkkzPbM4p');
+  discord_link = 'https://discord.gg/rEkkzPbM4p',
+  community_invite_link = 'https://discord.gg/rEkkzPbM4p';
 
 -- 4. Upsert Discovery Sections
 INSERT INTO public.site_sections (
@@ -384,6 +384,11 @@ SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
 BEGIN
+  IF NOT public.has_permission(auth.uid(), 'site.manage') THEN
+    RAISE EXCEPTION 'Site management permission is required.'
+      USING ERRCODE = '42501';
+  END IF;
+
   -- 1. Update site_settings if p_settings is provided
   IF p_settings IS NOT NULL AND jsonb_typeof(p_settings) = 'object' THEN
     UPDATE public.site_settings
@@ -506,3 +511,12 @@ END;
 $$;
 
 GRANT EXECUTE ON FUNCTION public.save_site_cms(jsonb, jsonb, jsonb, jsonb, jsonb) TO authenticated, service_role;
+
+-- 6. Sync Discord link in site_social_links
+INSERT INTO public.site_social_links (platform, url, is_active, sort_order)
+VALUES ('discord', 'https://discord.gg/rEkkzPbM4p', true, 1)
+ON CONFLICT (platform) DO UPDATE SET
+  url = EXCLUDED.url,
+  is_active = EXCLUDED.is_active,
+  sort_order = EXCLUDED.sort_order,
+  updated_at = NOW();
