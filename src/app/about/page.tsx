@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { ArrowRight, Compass, Heart, Lightbulb, MessageCircle, Rocket, Shield, Sparkles, Users } from "lucide-react";
+import { ArrowLeft, ArrowRight, Compass, Heart, Lightbulb, MessageCircle, Rocket, Shield, Sparkles, Users } from "lucide-react";
+import { DISCORD_INVITE_URL } from "@/lib/site-cms-types";
 import { getFounders, getSiteSettings } from "@/server/site-content";
 import { FounderProfilesSection } from "@/components/about/founder-profiles";
 
@@ -18,12 +19,16 @@ export default async function AboutPage() {
     getFounders(),
   ]);
 
-  const inviteLink = settings.community_invite_link || "https://discord.gg/3xfu5TMgF";
+  const inviteLink = DISCORD_INVITE_URL;
 
   return (
     <div className="about-page">
       {/* 1. About Hero */}
       <header className="about-hero">
+        <Link href="/" className="about-back-link">
+          <ArrowLeft size={13} aria-hidden="true" />
+          <span>Back to Home</span>
+        </Link>
         <div className="eyebrow about-eyebrow">
           <Sparkles size={11} className="home-hero-sparkle" /> About The DropOut College
         </div>

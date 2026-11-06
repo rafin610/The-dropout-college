@@ -1,4 +1,4 @@
-import { ArrowUpRight, ExternalLink, Sparkles, Terminal } from "lucide-react";
+import { ArrowUpRight, Sparkles, Terminal } from "lucide-react";
 import type { FounderProfile } from "@/server/site-content";
 
 export function FounderProfilesSection({
@@ -100,41 +100,6 @@ export function FounderProfilesSection({
                     <span key={skill} className="founder-skill-pill">
                       {skill}
                     </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Selected Projects */}
-            {founder.projects && founder.projects.length > 0 && (
-              <div className="founder-projects-wrap">
-                <h4 className="founder-subhead">Selected Projects & Initiatives</h4>
-                <div className="founder-projects-list">
-                  {founder.projects.map((proj) => (
-                    <div key={proj.name} className="founder-project-item">
-                      <div className="founder-project-title-row">
-                        <strong>{proj.name}</strong>
-                        {proj.link && (
-                          <a
-                            href={proj.link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="founder-proj-link"
-                            aria-label={`Visit ${proj.name}`}
-                          >
-                            <ExternalLink size={12} />
-                          </a>
-                        )}
-                      </div>
-                      <p>{proj.description}</p>
-                      {proj.tags && proj.tags.length > 0 && (
-                        <div className="founder-proj-tags">
-                          {proj.tags.map((t) => (
-                            <span key={t}>{t}</span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
                   ))}
                 </div>
               </div>

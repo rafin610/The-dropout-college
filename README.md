@@ -12,7 +12,7 @@
 [![Supabase](https://img.shields.io/badge/Supabase-Database%20%26%20Auth-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-C6DA5E?style=for-the-badge)](LICENSE)
 
-[**🌐 Live Website**](https://the-dropout-college.vercel.app) • [**💬 Join Discord**](https://discord.gg/3xfu5TMgF) • [**📖 Reading Platform (ODHYAY)**](https://odhyay.vercel.app)
+[**🌐 Live Website**](https://the-dropout-college.vercel.app) • [**💬 Join Discord**](https://discord.gg/rEkkzPbM4p) • [**📖 Reading Platform (ODHYAY)**](https://odhyay.vercel.app)
 
 ---
 
@@ -312,7 +312,7 @@ Contributions make the community better! We welcome bug fixes, design enhancemen
 
 Stay connected with the DropOut College ecosystem:
 
-- 💬 **Discord:** [Join the Community Server](https://discord.gg/3xfu5TMgF)
+- 💬 **Discord:** [Join the Community Server](https://discord.gg/rEkkzPbM4p)
 - 📺 **YouTube:** [@TheDropOutCollege](https://www.youtube.com/@TheDropOutCollege-v4k)
 - 📘 **Facebook:** [The DropOut College](https://www.facebook.com/profile.php?id=61593723286324)
 - 📸 **Instagram:** [@thedrop0utcollege](https://www.instagram.com/thedrop0utcollege/)

@@ -3,6 +3,7 @@ import { getPublishedArticles } from "@/server/journal/articles";
 import { getAnnouncements, getSiteSections, getSiteSettings } from "@/server/site-content";
 import { HomepageHero } from "@/components/home/hero";
 import { JournalCarousel } from "@/components/home/journal-carousel";
+import { AboutPreviewSection } from "@/components/home/about-preview";
 import { FeaturedProjectsSection } from "@/components/home/featured-projects";
 import { FeaturedMembersSection } from "@/components/home/featured-members";
 import { CommunityActivitySection } from "@/components/home/community-activity";
@@ -10,6 +11,7 @@ import { CommunityStatsSection } from "@/components/home/community-stats";
 import { CommunityNoticeboardSection } from "@/components/home/community-noticeboard";
 import { FinalCommunityCTA } from "@/components/home/final-cta";
 import { StayConnected } from "@/components/social";
+import { DISCORD_INVITE_URL } from "@/lib/site-cms-types";
 
 export const dynamic = "force-dynamic";
 
@@ -176,24 +178,37 @@ export default async function Home() {
     });
   }
 
-  const inviteUrl = settings.community_invite_link || "https://discord.gg/3xfu5TMgF";
+  const inviteUrl = settings.community_invite_link || DISCORD_INVITE_URL;
 
   return (
     <div className="home-discovery-page">
-      {/* 1. Hero Section */}
-      {isSectionEnabled("hero") && <HomepageHero settings={settings} />}
-
-      {/* 2. Featured Journal Carousel */}
+      {/* 1. Featured Journal Carousel */}
       {isSectionEnabled("journal-carousel") && (
         <JournalCarousel
           articles={carouselArticles}
           title={String(getSectionConfig("journal-carousel").title || "The DropOut Journal")}
           eyebrow={String(getSectionConfig("journal-carousel").eyebrow || "Curated Knowledge")}
-          intervalMs={Number(carouselConfig.intervalMs ?? carouselConfig.interval ?? 5500)}
         />
       )}
 
-      {/* 3. Featured Community Projects */}
+      {/* 2. Hero Section */}
+      {isSectionEnabled("hero") && <HomepageHero settings={settings} />}
+
+      {/* 3. Short About Preview — full story lives on /about */}
+      {isSectionEnabled("about-preview") && (
+        <AboutPreviewSection
+          settings={settings}
+          title={String(
+            getSectionConfig("about-preview").title ||
+              "A learning community built around curiosity, not credentials."
+          )}
+          eyebrow={String(
+            getSectionConfig("about-preview").eyebrow || "Who We Are"
+          )}
+        />
+      )}
+
+      {/* 4. Featured Community Projects */}
       {isSectionEnabled("featured-projects") && (
         <FeaturedProjectsSection
           projects={featuredProjects}

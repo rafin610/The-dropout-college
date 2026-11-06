@@ -32,7 +32,7 @@ export function FeaturedProjectsSection({
         </Link>
       </div>
 
-      <div className="home-projects-grid">
+      <div className={`home-projects-grid${projects.length === 1 ? " is-single" : ""}`}>
         {projects.map((project) => {
           const creatorInitial = (project.creatorName || "M").charAt(0).toUpperCase();
 

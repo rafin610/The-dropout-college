@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ArrowDown, ArrowUp, ExternalLink, Eye, EyeOff } from "lucide-react";
-import type { SiteSection, SiteSettingsMap } from "@/lib/site-cms-types";
+import { DISCORD_INVITE_URL, type SiteSection, type SiteSettingsMap } from "@/lib/site-cms-types";
 import type { JournalArticle } from "@/server/journal/types";
 
 export function CmsWebsiteTab({
@@ -64,9 +64,6 @@ export function CmsWebsiteTab({
   // Journal carousel configuration
   const carouselSection = sections.find((s) => s.slug === "journal-carousel");
   const carouselConfig = (carouselSection?.content || {}) as {
-    autoplay?: boolean;
-    intervalMs?: number;
-    interval?: number;
     featuredArticleIds?: string[];
     pinnedArticleIds?: string[];
   };
@@ -91,21 +88,6 @@ export function CmsWebsiteTab({
             content: {
               ...sec.content,
               featuredArticleIds: nextIds,
-            },
-          }
-        : sec
-    );
-    onUpdateSections(updated);
-  };
-
-  const updateCarouselInterval = (ms: number) => {
-    const updated = sections.map((sec) =>
-      sec.slug === "journal-carousel"
-        ? {
-            ...sec,
-            content: {
-              ...sec.content,
-              intervalMs: ms,
             },
           }
         : sec
@@ -306,7 +288,7 @@ export function CmsWebsiteTab({
               <input
                 value={settings.community_invite_link ?? ""}
                 onChange={(e) => onUpdateSettings({ ...settings, community_invite_link: e.target.value })}
-                placeholder="https://discord.gg/3xfu5TMgF"
+                placeholder={DISCORD_INVITE_URL}
               />
             </div>
           </div>
@@ -408,18 +390,8 @@ export function CmsWebsiteTab({
             Select which published articles appear in the homepage editorial carousel. Pinned articles will display first.
           </p>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18, padding: 12, background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 8 }}>
-            <label style={{ fontSize: 13, fontWeight: 600 }}>Autoplay Interval:</label>
-            <select
-              value={carouselConfig.intervalMs || 5500}
-              onChange={(e) => updateCarouselInterval(Number(e.target.value))}
-              style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid var(--line)", background: "var(--bg)", fontSize: 13 }}
-            >
-              <option value={4000}>4.0 seconds</option>
-              <option value={5500}>5.5 seconds (Default)</option>
-              <option value={7000}>7.0 seconds</option>
-              <option value={10000}>10.0 seconds</option>
-            </select>
+          <div style={{ marginBottom: 18, padding: 12, background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 8 }}>
+            <span style={{ fontSize: 13, fontWeight: 600 }}>Autoplay interval: 5 seconds</span>
           </div>
 
           <div style={{ display: "grid", gap: 8 }}>

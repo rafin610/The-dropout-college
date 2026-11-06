@@ -19,6 +19,7 @@ import { Pill } from "@/components/app-shell";
 import type { Event, Member, Project } from "@/lib/supabase-data";
 import { useFollow, useUpvote } from "@/lib/social-client";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { DISCORD_INVITE_URL } from "@/lib/site-cms-types";
 import { AuthPrompt } from "@/components/auth-prompt";
 
 function displayStatus(status?: string | null): string {
@@ -414,9 +415,9 @@ export function EventCard({ event }: { event: Event }) {
                 <CalendarDays size={14} /> Add to calendar (.ics)
               </button>
               <Link
-                href="https://discord.gg/3xfu5TMgF"
+                href={DISCORD_INVITE_URL}
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 className="button button-primary"
                 style={{ fontSize: 11 }}
               >
@@ -429,4 +430,3 @@ export function EventCard({ event }: { event: Event }) {
     </>
   );
 }
-

@@ -7,6 +7,7 @@ import { getProjects } from "@/lib/supabase-data";
 import { notificationHref } from "@/lib/notification-link";
 import { ProjectCard } from "@/components/cards";
 import { SectionHeading } from "@/components/app-shell";
+import { DISCORD_INVITE_URL } from "@/lib/site-cms-types";
 
 export const dynamic = "force-dynamic";
 
@@ -151,7 +152,7 @@ export default async function DashboardPage() {
             <Link href="/explore" className="button button-ghost">
               <Compass size={14} /> Explore Directory
             </Link>
-            <Link href="https://discord.gg/3xfu5TMgF" target="_blank" rel="noreferrer" className="button button-primary">
+            <Link href={DISCORD_INVITE_URL} target="_blank" rel="noopener noreferrer" className="button button-primary">
               Join Discord
             </Link>
           </div>

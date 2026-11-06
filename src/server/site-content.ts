@@ -1,6 +1,8 @@
 import { createSupabaseServerClient } from "@/server/supabase/server";
 
 export {
+  AHMED_RAFIN_PORTFOLIO_URL,
+  DISCORD_INVITE_URL,
   defaultAnnouncements,
   defaultFounders,
   defaultHomepageSections,
@@ -14,6 +16,8 @@ export {
 } from "@/lib/site-cms-types";
 
 import {
+  AHMED_RAFIN_PORTFOLIO_URL,
+  DISCORD_INVITE_URL,
   defaultAnnouncements,
   defaultFounders,
   defaultHomepageSections,
@@ -25,6 +29,10 @@ import {
   type SiteSettingsMap,
   type SocialLink,
 } from "@/lib/site-cms-types";
+
+function canonicalizeDiscordInvite(url: string): string {
+  return url.startsWith("https://discord.gg/") ? DISCORD_INVITE_URL : url;
+}
 
 export async function getSiteSettings(): Promise<SiteSettingsMap> {
   const supabase = await createSupabaseServerClient();
@@ -38,7 +46,7 @@ export async function getSiteSettings(): Promise<SiteSettingsMap> {
 
   for (const [k, v] of Object.entries(row)) {
     if (k in defaultSiteSettings && typeof v === "string" && v) {
-      settings[k as SiteSettingKey] = v;
+      settings[k as SiteSettingKey] = canonicalizeDiscordInvite(v);
     }
   }
   if (typeof row.footer_description === "string" && row.footer_description) {
@@ -61,7 +69,7 @@ export async function getSiteSections(): Promise<SiteSection[]> {
     title: row.title || "",
     description: row.description || "",
     cta_label: row.cta_label || "",
-    cta_href: row.cta_href || "",
+    cta_href: canonicalizeDiscordInvite(row.cta_href || ""),
     enabled: typeof row.enabled === "boolean" ? row.enabled : typeof row.is_enabled === "boolean" ? row.is_enabled : true,
     sort_order: row.sort_order ?? 0,
     content: (typeof row.content === "object" && row.content !== null ? row.content : typeof row.config === "object" && row.config !== null ? row.config : {}) as Record<string, unknown>,
@@ -80,7 +88,7 @@ export async function getSiteSocialLinks(): Promise<SocialLink[]> {
     id: item.id,
     platform: item.platform,
     label: item.label || (item.platform ? item.platform.charAt(0).toUpperCase() + item.platform.slice(1) : "Link"),
-    url: item.url || "",
+    url: canonicalizeDiscordInvite(item.url || ""),
     enabled: typeof item.enabled === "boolean" ? item.enabled : typeof item.is_active === "boolean" ? item.is_active : true,
     sort_order: item.sort_order ?? 0,
   }));
@@ -146,7 +154,12 @@ export async function getFounders(): Promise<FounderProfile[]> {
 
   const contentObj = (typeof data?.content === "object" && data.content !== null ? data.content : typeof data?.config === "object" && data.config !== null ? data.config : {}) as Record<string, unknown>;
   const founders = contentObj.founders;
-  return Array.isArray(founders) && founders.length > 0
+  const profiles = Array.isArray(founders) && founders.length > 0
     ? (founders as FounderProfile[]).sort((a, b) => a.sortOrder - b.sortOrder)
     : defaultFounders;
+  return profiles.map((founder) =>
+    founder.id === "ahmed-rafin"
+      ? { ...founder, portfolioUrl: AHMED_RAFIN_PORTFOLIO_URL }
+      : founder
+  );
 }

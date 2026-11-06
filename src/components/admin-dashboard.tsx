@@ -12,6 +12,7 @@ import {
   defaultFounders,
   defaultHomepageSections,
   defaultSiteSettings,
+  DISCORD_INVITE_URL,
   type Announcement,
   type FounderProfile,
   type SiteSection,
@@ -32,7 +33,7 @@ type UserRow = {
 };
 
 const defaultSocialLinks: SocialLink[] = [
-  { platform: "discord", label: "Discord", url: "https://discord.gg/3xfu5TMgF", enabled: true, sort_order: 1 },
+  { platform: "discord", label: "Discord", url: DISCORD_INVITE_URL, enabled: true, sort_order: 1 },
   { platform: "github", label: "GitHub", url: "", enabled: true, sort_order: 2 },
   { platform: "instagram", label: "Instagram", url: "", enabled: true, sort_order: 3 },
   { platform: "facebook", label: "Facebook", url: "", enabled: true, sort_order: 4 },

@@ -59,7 +59,7 @@ UPDATE public.site_settings SET
   our_vision = COALESCE(our_vision, 'A world where practical skills, creative curiosity, and proof of work matter more than passive credentials — empowering independent builders everywhere.'),
   our_mission = COALESCE(our_mission, 'To provide self-directed learners with the environment, community feedback, editorial platform, and collaborative momentum needed to master modern technology and build lasting careers.'),
   our_philosophy = COALESCE(our_philosophy, 'Learning is an active pursuit, not a passive spectator sport. Build real things, share your findings, ask genuine questions, and improve continuously.'),
-  discord_link = COALESCE(discord_link, community_invite_link, 'https://discord.gg/3xfu5TMgF');
+  discord_link = COALESCE(discord_link, community_invite_link, 'https://discord.gg/rEkkzPbM4p');
 
 -- 4. Upsert Discovery Sections
 INSERT INTO public.site_sections (
@@ -212,7 +212,7 @@ VALUES
     'Join The DropOut College',
     'Whether you are building your first website, designing products, or exploring deep technical domains — you do not have to learn in isolation.',
     'Join Discord Community',
-    'https://discord.gg/3xfu5TMgF',
+    'https://discord.gg/rEkkzPbM4p',
     true,
     true,
     7,
@@ -239,7 +239,7 @@ VALUES
         "portraitUrl": "/images/founders/ahmed-rafin.jpg",
         "bio": "Self-taught developer from Bangladesh building web products, exploring AI, and learning through real-world projects. Rather than waiting to learn everything from conventional lecture halls, Ahmed focuses on rapid prototyping, modern frontend architectures, and autonomous builder workflows.",
         "quote": "I learn best by building real things. Instead of waiting until I know everything, I build, face problems, solve them, and improve along the way.",
-        "portfolioUrl": "https://ahmedrafin.netlify.app/",
+        "portfolioUrl": "https://ahmedrafin.vercel.app/",
         "githubUrl": "https://github.com/rafin610",
         "skills": ["React", "TypeScript", "Next.js", "Tailwind CSS", "Node.js", "Supabase", "PostgreSQL", "Local AI / Ollama", "AI-assisted Dev", "Prompt Engineering"],
         "journey": [
@@ -305,7 +305,7 @@ VALUES
         "portraitUrl": "/images/founders/ahmed-rafin.jpg",
         "bio": "Self-taught developer from Bangladesh building web products, exploring AI, and learning through real-world projects. Rather than waiting to learn everything from conventional lecture halls, Ahmed focuses on rapid prototyping, modern frontend architectures, and autonomous builder workflows.",
         "quote": "I learn best by building real things. Instead of waiting until I know everything, I build, face problems, solve them, and improve along the way.",
-        "portfolioUrl": "https://ahmedrafin.netlify.app/",
+        "portfolioUrl": "https://ahmedrafin.vercel.app/",
         "githubUrl": "https://github.com/rafin610",
         "skills": ["React", "TypeScript", "Next.js", "Tailwind CSS", "Node.js", "Supabase", "PostgreSQL", "Local AI / Ollama", "AI-assisted Dev", "Prompt Engineering"],
         "journey": [

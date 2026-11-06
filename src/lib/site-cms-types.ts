@@ -30,6 +30,9 @@ export type SiteSettingKey =
 
 export type SiteSettingsMap = Partial<Record<SiteSettingKey, string>>;
 
+export const AHMED_RAFIN_PORTFOLIO_URL = "https://ahmedrafin.vercel.app/";
+export const DISCORD_INVITE_URL = "https://discord.gg/rEkkzPbM4p";
+
 export type Announcement = {
   id: string;
   title: string;
@@ -91,7 +94,7 @@ export const defaultFounders: FounderProfile[] = [
     portraitUrl: "/images/founders/ahmed-rafin.jpg",
     bio: "Self-taught developer from Bangladesh building web products, exploring AI, and learning through real-world projects. Rather than waiting to learn everything from conventional lecture halls, Ahmed focuses on rapid prototyping, modern frontend architectures, and autonomous builder workflows.",
     quote: "I learn best by building real things. Instead of waiting until I know everything, I build, face problems, solve them, and improve along the way.",
-    portfolioUrl: "https://ahmedrafin.netlify.app/",
+    portfolioUrl: AHMED_RAFIN_PORTFOLIO_URL,
     githubUrl: "https://github.com/rafin610",
     skills: ["React", "TypeScript", "Next.js", "Tailwind CSS", "Node.js", "Supabase", "PostgreSQL", "Local AI / Ollama", "AI-assisted Dev", "Prompt Engineering"],
     journey: [
@@ -198,10 +201,10 @@ export const defaultSiteSettings: SiteSettingsMap = {
   our_mission: "To provide self-directed learners with the environment, community feedback, editorial platform, and collaborative momentum needed to master modern technology and build lasting careers.",
   our_philosophy: "Learning is active, not passive. You master coding by writing code; you master design by crafting interfaces; you master writing by publishing essays. When curious minds build together in public, growth becomes inevitable.",
   footer_text: "The DropOut College is an editorial community for curious creators who grow together through guidance, sharing, and real collaboration.",
-  community_invite_link: "https://discord.gg/3xfu5TMgF",
+  community_invite_link: DISCORD_INVITE_URL,
   contact_email: "hello@thedropoutcollege.com",
   contact_phone: "+1 (000) 000-0000",
-  discord_link: "https://discord.gg/3xfu5TMgF",
+  discord_link: DISCORD_INVITE_URL,
   github_link: "https://github.com/rafin610/The-dropout-college",
   facebook_link: "https://www.facebook.com/profile.php?id=61593723286324",
   instagram_link: "https://www.instagram.com/thedrop0utcollege/",
@@ -210,10 +213,10 @@ export const defaultSiteSettings: SiteSettingsMap = {
 
 export const defaultHomepageSections: SiteSection[] = [
   { id: "hero", slug: "hero", title: "Hero Discovery", description: "Main community intro, value proposition, and primary call to actions.", cta_label: "Explore Community", cta_href: "/explore", enabled: true, sort_order: 1, content: {} },
-  { id: "journal-carousel", slug: "journal-carousel", title: "Featured Journal Carousel", description: "Editorial carousel highlighting published magazine essays and deep-dives.", cta_label: "Read Journal", cta_href: "/journal", enabled: true, sort_order: 2, content: { autoplay: true, intervalMs: 5500, featuredArticleIds: [] } },
+  { id: "journal-carousel", slug: "journal-carousel", title: "Featured Journal Carousel", description: "Editorial carousel highlighting published magazine essays and deep-dives.", cta_label: "Read Journal", cta_href: "/journal", enabled: true, sort_order: 2, content: { autoplay: true, featuredArticleIds: [] } },
   { id: "featured-projects", slug: "featured-projects", title: "Featured Community Projects", description: "Curated showcase of real projects and prototypes shipped by members.", cta_label: "Explore Projects", cta_href: "/projects", enabled: true, sort_order: 3, content: { featuredProjectIds: [] } },
   { id: "featured-members", slug: "featured-members", title: "Featured Creators & Members", description: "Spotlight on passionate community builders, developers, and creators.", cta_label: "Browse People", cta_href: "/explore", enabled: true, sort_order: 4, content: { featuredMemberIds: [] } },
-  { id: "community-activity", slug: "community-activity", title: "Latest Community Activity", description: "Live feed of recent project launches, journal articles, and community updates.", cta_label: "Join Discord", cta_href: "https://discord.gg/3xfu5TMgF", enabled: true, sort_order: 5, content: {} },
+  { id: "community-activity", slug: "community-activity", title: "Latest Community Activity", description: "Live feed of recent project launches, journal articles, and community updates.", cta_label: "Join Discord", cta_href: DISCORD_INVITE_URL, enabled: true, sort_order: 5, content: {} },
   { id: "community-stats", slug: "community-stats", title: "Community Statistics", description: "Real database-verified metrics celebrating community growth and outputs.", cta_label: "", cta_href: "", enabled: true, sort_order: 6, content: {} },
   { id: "community-noticeboard", slug: "community-noticeboard", title: "Community Noticeboard", description: "Announcements, upcoming sessions, community challenges, and alerts.", cta_label: "View All", cta_href: "#", enabled: true, sort_order: 7, content: { announcements: defaultAnnouncements } },
   { id: "final-cta", slug: "final-cta", title: "Final Community CTA", description: "Compelling closing invitation to join the learning collective.", cta_label: "Join The DropOut College", cta_href: "/login", enabled: true, sort_order: 8, content: {} },

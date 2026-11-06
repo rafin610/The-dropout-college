@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
+import { DISCORD_INVITE_URL } from "@/lib/site-cms-types";
 
 // Single source of truth for every external platform URL used across the
 // sidebar, homepage social section, and footer.
@@ -9,7 +10,7 @@ export const EXTERNAL_LINKS = {
   instagram: "https://www.instagram.com/thedrop0utcollege/",
   x: "https://x.com/TheDropOutBD",
   odhyay: "https://odhyay.vercel.app/",
-  discord: "https://discord.gg/3xfu5TMgF",
+  discord: DISCORD_INVITE_URL,
 } as const;
 
 function BrandSvg({ label, path, size = 20 }: { label: string; path: string; size?: number }) {

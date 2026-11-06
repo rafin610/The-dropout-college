@@ -24,14 +24,14 @@ async function seedDatabase() {
       { key: 'hero_subtitle', value: 'A home for the relentlessly curious', type: 'text' },
       { key: 'hero_description', value: 'The DropOut College is a learning-focused community where people come together to learn, ask questions, share ideas, and grow with like-minded people.', type: 'text' },
       { key: 'hero_cta_text', value: 'Join The DropOut College', type: 'text' },
-      { key: 'hero_cta_href', value: 'https://discord.gg/3xfu5TMgF', type: 'url' },
+      { key: 'hero_cta_href', value: 'https://discord.gg/rEkkzPbM4p', type: 'url' },
       { key: 'who_we_are', value: 'We are creating an environment where people can come together, learn new things, ask questions, share knowledge, help each other, and grow together.', type: 'text' },
       { key: 'our_aim', value: 'To build a positive learning culture where curiosity is encouraged, beginners feel supported, useful knowledge is shared, and members grow through guidance and collaboration.', type: 'text' },
       { key: 'our_goal', value: 'To build a large, supportive ecosystem where anyone with the willingness to learn can find guidance, resources, people to learn with, and opportunities to share and collaborate.', type: 'text' },
       { key: 'footer_text', value: 'The DropOut College is a learning community for curious people who want to grow together through guidance, sharing, and collaboration.', type: 'text' },
-      { key: 'community_invite_link', value: 'https://discord.gg/3xfu5TMgF', type: 'url' },
+      { key: 'community_invite_link', value: 'https://discord.gg/rEkkzPbM4p', type: 'url' },
       { key: 'contact_email', value: 'hello@thedropoutcollege.com', type: 'email' },
-      { key: 'discord_link', value: 'https://discord.gg/3xfu5TMgF', type: 'url' },
+      { key: 'discord_link', value: 'https://discord.gg/rEkkzPbM4p', type: 'url' },
     ];
 
     for (const setting of siteSettings) {
@@ -46,9 +46,9 @@ async function seedDatabase() {
     const siteSections = [
       { slug: 'who-we-are', title: 'Who We Are', description: 'Learning-focused people building a positive environment for curiosity, guidance, and personal growth.', cta_label: 'Learn more', cta_href: '#who-we-are', enabled: true, sort_order: 1, content: { items: ['Curiosity', 'Learning', 'Knowledge sharing', 'Guidance', 'Growth'] } },
       { slug: 'our-aim', title: 'Our Aim', description: 'We want to create a supportive culture where people genuinely want to learn and improve together.', cta_label: 'Explore the community', cta_href: '/explore', enabled: true, sort_order: 2, content: { items: ['Curiosity', 'Beginner support', 'Resource sharing', 'Collaboration', 'Growth'] } },
-      { slug: 'our-goal', title: 'Our Goal', description: 'We want to build a learning ecosystem where everyone can find guidance, resources, and people to learn and collaborate with.', cta_label: 'Join the community', cta_href: 'https://discord.gg/3xfu5TMgF', enabled: true, sort_order: 3, content: { items: ['Guidance', 'Resources', 'Collaboration', 'Motivation', 'Shared learning'] } },
+      { slug: 'our-goal', title: 'Our Goal', description: 'We want to build a learning ecosystem where everyone can find guidance, resources, and people to learn and collaborate with.', cta_label: 'Join the community', cta_href: 'https://discord.gg/rEkkzPbM4p', enabled: true, sort_order: 3, content: { items: ['Guidance', 'Resources', 'Collaboration', 'Motivation', 'Shared learning'] } },
       { slug: 'community-values', title: 'Community Values', description: 'The culture of The DropOut College is centered on curiosity, learning, and helping one another grow.', cta_label: 'Meet the community', cta_href: '/explore', enabled: true, sort_order: 4, content: { cards: ['Curiosity', 'Learning', 'Sharing', 'Helping', 'Collaboration', 'Growth'] } },
-      { slug: 'why-join', title: 'Why Join Us', description: 'Because learning is more rewarding when it happens together with thoughtful, motivated people.', cta_label: 'Join now', cta_href: 'https://discord.gg/3xfu5TMgF', enabled: true, sort_order: 5, content: { cards: ['People to learn with', 'People to ask questions', 'People to share with', 'Supportive culture'] } },
+      { slug: 'why-join', title: 'Why Join Us', description: 'Because learning is more rewarding when it happens together with thoughtful, motivated people.', cta_label: 'Join now', cta_href: 'https://discord.gg/rEkkzPbM4p', enabled: true, sort_order: 5, content: { cards: ['People to learn with', 'People to ask questions', 'People to share with', 'Supportive culture'] } },
     ];
 
     for (const section of siteSections) {
@@ -61,7 +61,7 @@ async function seedDatabase() {
     // 3. Seed Social Links
     console.log('🔗 Seeding social links...');
     const socialLinks = [
-      { platform: 'discord', label: 'Discord', url: 'https://discord.gg/3xfu5TMgF', enabled: true, sort_order: 1 },
+      { platform: 'discord', label: 'Discord', url: 'https://discord.gg/rEkkzPbM4p', enabled: true, sort_order: 1 },
       { platform: 'github', label: 'GitHub', url: '', enabled: false, sort_order: 2 },
       { platform: 'instagram', label: 'Instagram', url: '', enabled: false, sort_order: 3 },
       { platform: 'facebook', label: 'Facebook', url: '', enabled: false, sort_order: 4 },

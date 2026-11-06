@@ -4,6 +4,7 @@ import { CalendarDays, MessageCircle } from "lucide-react";
 import Link from "next/link";
 import { EventCard } from "@/components/cards";
 import type { Event } from "@/lib/supabase-data";
+import { DISCORD_INVITE_URL } from "@/lib/site-cms-types";
 
 export function EventsClient({ events }: { events: Event[] }) {
   function downloadAllIcs() {
@@ -61,9 +62,9 @@ export function EventsClient({ events }: { events: Event[] }) {
             No upcoming events are currently scheduled.
           </p>
           <Link
-            href="https://discord.gg/3xfu5TMgF"
+            href={DISCORD_INVITE_URL}
             target="_blank"
-            rel="noreferrer"
+            rel="noopener noreferrer"
             className="button button-primary"
             style={{ fontSize: 12 }}
           >

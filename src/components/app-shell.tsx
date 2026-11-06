@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { Bell, BookOpen, Compass, Home, Info, LayoutDashboard, Menu, Moon, Search, Sparkles, Sun, UserRound, Users, X } from "lucide-react";
+import { Bell, BookOpen, Compass, Home, Info, LayoutDashboard, LogOut, Menu, Moon, Search, Sparkles, Sun, UserRound, Users, X } from "lucide-react";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { notificationHref } from "@/lib/notification-link";
@@ -351,7 +351,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         )}
         <div className="sidebar-spacer" />
         <div className="sidebar-status" title={collapsed ? "Community online" : undefined}><span className="status-pulse" />{showSidebarLabels && <div><strong>Community online</strong><span>Live network</span></div>}</div>
-        <Link href="https://discord.gg/3xfu5TMgF" target="_blank" rel="noreferrer" className={`discord-mini${collapsed ? " compact" : ""}`} title={collapsed ? "Join Discord" : undefined}><span>{showSidebarLabels ? "Join Discord" : "◎"}</span>{showSidebarLabels && <span>↗</span>}</Link>
+        <Link href={EXTERNAL_LINKS.discord} target="_blank" rel="noopener noreferrer" className={`discord-mini${collapsed ? " compact" : ""}`} title={collapsed ? "Join Discord" : undefined}><span>{showSidebarLabels ? "Join Discord" : "◎"}</span>{showSidebarLabels && <span>↗</span>}</Link>
       </aside>
 
       {/* Mobile overlay drawer — icon-only collapse is desktop-only */}
@@ -381,6 +381,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <Link href="/control-room" className={pathname.startsWith("/control-room") ? "active" : ""} onClick={closeMobileDrawer} style={{ color: "var(--lime)" }}>
                   <Sparkles size={18} /><span>Control Room</span>
                 </Link>
+              )}
+              {userId && (
+                <button
+                  type="button"
+                  className="mobile-drawer-signout"
+                  onClick={() => {
+                    closeMobileDrawer();
+                    void signOut();
+                  }}
+                >
+                  <LogOut size={18} />
+                  <span>Sign out</span>
+                </button>
               )}
             </nav>
           </aside>

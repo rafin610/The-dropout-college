@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { ArrowRight, Compass, MessageCircle, Sparkles } from "lucide-react";
+import { DISCORD_INVITE_URL } from "@/lib/site-cms-types";
 
 export function FinalCommunityCTA({
   title = "Ready to build with relentless learners?",
   description = "Join The DropOut College to connect with self-directed developers, share your projects, read original essays, and build real-world momentum.",
-  inviteUrl = "https://discord.gg/3xfu5TMgF",
+  inviteUrl = DISCORD_INVITE_URL,
 }: {
   title?: string;
   description?: string;
@@ -25,7 +26,7 @@ export function FinalCommunityCTA({
               href={inviteUrl}
               className="button button-primary"
               target={inviteUrl.startsWith("http") ? "_blank" : undefined}
-              rel={inviteUrl.startsWith("http") ? "noreferrer" : undefined}
+              rel={inviteUrl.startsWith("http") ? "noopener noreferrer" : undefined}
             >
               <MessageCircle size={15} />
               <span>Join Discord</span>
