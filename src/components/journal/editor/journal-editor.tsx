@@ -17,16 +17,18 @@ import { ArticleSettingsDrawer } from "./article-settings-drawer";
 import { ArticleRenderer } from "../renderer/article-renderer";
 import { TableOfContents, extractTocFromDoc } from "../renderer/table-of-contents";
 import type { JournalArticle, ArticleStatus } from "@/server/journal/types";
+import type { Category } from "@/lib/supabase-data";
 import type { CalloutVariant } from "../renderer/callout-block";
 import { slugify } from "@/server/journal/validation";
 import { normalizeMathInput } from "../math";
 
 interface JournalEditorProps {
   initialArticle?: JournalArticle | null;
+  categories?: Category[];
   isAdmin?: boolean;
 }
 
-export function JournalEditor({ initialArticle, isAdmin = false }: JournalEditorProps) {
+export function JournalEditor({ initialArticle, categories = [], isAdmin = false }: JournalEditorProps) {
   const router = useRouter();
 
   // Article state
@@ -358,7 +360,7 @@ export function JournalEditor({ initialArticle, isAdmin = false }: JournalEditor
 
       {isPreview ? (
         /* ================= PREVIEW MODE ================= */
-        <main className="journal-reading-layout journal-preview-mode">
+        <div className="journal-reading-layout journal-preview-mode">
           <div className="journal-reading-container">
             <div className="journal-reader-header">
               <div className="journal-meta-row">
@@ -385,7 +387,7 @@ export function JournalEditor({ initialArticle, isAdmin = false }: JournalEditor
               </div>
             </div>
           </div>
-        </main>
+        </div>
       ) : (
         /* ================= EDIT MODE ================= */
         <div className="journal-studio-canvas">
@@ -484,6 +486,7 @@ export function JournalEditor({ initialArticle, isAdmin = false }: JournalEditor
           setCategoryId(val);
           setSaveStatus("unsaved");
         }}
+        categories={categories}
         tags={tags}
         onTagsChange={(val) => {
           setTags(val);

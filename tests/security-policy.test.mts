@@ -20,21 +20,22 @@ test("account status policy only accepts an explicit active account", () => {
 
 test("safe redirects accept only same-origin application paths", () => {
   const safe = [
-    "/dashboard",
+    "/",
+    "/post",
     "/journal/studio?tab=drafts#editor",
-    "/explore?query=hello%20world",
-    "/settings/profile",
+    "/staff?tab=articles",
+    "/profile/tester",
   ];
 
   for (const value of safe) {
     assert.equal(safeRedirect.safeRedirectPath(value), value);
   }
 
-  assert.equal(safeRedirect.safeRedirectPath(undefined), "/dashboard");
-  assert.equal(safeRedirect.safeRedirectPath(null), "/dashboard");
-  assert.equal(safeRedirect.safeRedirectPath(""), "/dashboard");
-  assert.equal(safeRedirect.safeRedirectPath("/dashboard", "/explore"), "/dashboard");
-  assert.equal(safeRedirect.safeRedirectPath("https://evil.example", "/explore"), "/explore");
+  assert.equal(safeRedirect.safeRedirectPath(undefined), "/");
+  assert.equal(safeRedirect.safeRedirectPath(null), "/");
+  assert.equal(safeRedirect.safeRedirectPath(""), "/");
+  assert.equal(safeRedirect.safeRedirectPath("/journal", "/post"), "/journal");
+  assert.equal(safeRedirect.safeRedirectPath("https://evil.example", "/post"), "/post");
 });
 
 test("safe redirects reject open-redirect and control-character payloads", () => {
@@ -50,11 +51,11 @@ test("safe redirects reject open-redirect and control-character payloads", () =>
     "/%2F%2Fevil.example",
     "/..//evil.example",
     "/%2e%2e//evil.example",
-    "/%00dashboard",
-    "/%1fdashboard",
-    "/%7fdashboard",
-    "/dashboard\nLocation: https://evil.example",
-    "/dashboard\r\nSet-Cookie: x=y",
+    "/%00post",
+    "/%1fpost",
+    "/%7fpost",
+    "/post\nLocation: https://evil.example",
+    "/post\r\nSet-Cookie: x=y",
     "javascript:alert(1)",
     "data:text/html,<script>alert(1)</script>",
   ];
@@ -133,7 +134,7 @@ test("journal permissions separate writing, publishing, featuring, moderation, a
   assert.equal(journalAccess.canModerateArticles(manage), true);
 });
 
-test("only managers or authors of drafts may delete an article", () => {
+test("only managers, moderators acting on their own work, or draft authors may delete", () => {
   const draft = { authorId: "author", status: "draft" as const };
   const published = { authorId: "author", status: "published" as const };
   const archived = { authorId: "author", status: "archived" as const };
@@ -146,4 +147,9 @@ test("only managers or authors of drafts may delete an article", () => {
   assert.equal(journalAccess.canDeleteArticle(published, "author", new Set(["articles.delete"])), true);
   assert.equal(journalAccess.canDeleteArticle(published, "other", new Set(["articles.manage"])), true);
   assert.equal(journalAccess.canDeleteArticle(published, "other", new Set(["*"])), true);
+
+  // Moderators can delete their own articles, but not other members' articles.
+  assert.equal(journalAccess.canDeleteArticle(published, "author", new Set(["articles.moderate"])), true);
+  assert.equal(journalAccess.canDeleteArticle(archived, "author", new Set(["articles.moderate"])), true);
+  assert.equal(journalAccess.canDeleteArticle(published, "other", new Set(["articles.moderate"])), false);
 });

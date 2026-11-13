@@ -1,11 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { articles, errors } from "./helpers/modules";
+import { articles } from "./helpers/modules";
 import { collectNodes, textOf, type JsonNode } from "./helpers/json";
 import type { User } from "@supabase/supabase-js";
-
-type TableName = "articles" | "projects";
 
 interface RawRow {
   id: string;
@@ -63,22 +61,23 @@ class FakeReadQuery {
 }
 
 class FakeReadClient {
-  readonly rows: Record<TableName, RawRow[]>;
+  readonly rows: RawRow[];
 
-  constructor(rows: Record<TableName, RawRow[]>) {
+  constructor(rows: RawRow[]) {
     this.rows = rows;
   }
 
   from(table: string) {
+    assert.equal(table, "articles", "journal reads must not fall back to other tables");
     return {
-      select: (selection: string) =>
-        new FakeReadQuery(this.rows[table as TableName] ?? [], selection),
+      select: (selection: string) => new FakeReadQuery(this.rows, selection),
     };
   }
 }
 
 const ARTICLE_ID = "26c883c9-3c09-486a-ba71-259d9a48e0fc";
 const AUTHOR_ID = "11111111-1111-4111-8111-111111111111";
+const OTHER_ID = "22222222-2222-4222-8222-222222222222";
 
 function articleRow(overrides: Partial<RawRow> = {}): RawRow {
   return {
@@ -121,47 +120,17 @@ function articleRow(overrides: Partial<RawRow> = {}): RawRow {
   };
 }
 
-function projectRow(overrides: Partial<RawRow> = {}): RawRow {
-  return {
-    id: ARTICLE_ID,
-    name: "Project fallback",
-    slug: "project-fallback",
-    description: "Project body",
-    cover_image_url: null,
-    status: "launched",
-    category_id: null,
-    created_at: "2026-01-01T00:00:00.000Z",
-    updated_at: "2026-01-02T00:00:00.000Z",
-    owner_id: AUTHOR_ID,
-    deleted_at: null,
-    categories: null,
-    owner: {
-      id: AUTHOR_ID,
-      display_name: "Owner",
-      username: "owner",
-      avatar_url: null,
-      bio: null,
-      user_roles: [],
-    },
-    ...overrides,
-  };
-}
-
-function client(rows: Partial<Record<TableName, RawRow[]>>) {
-  return new FakeReadClient({
-    articles: rows.articles ?? [],
-    projects: rows.projects ?? [],
-  }) as unknown as Parameters<typeof articles.getArticleBySlugOrIdWithClient>[0];
+function client(rows: RawRow[]) {
+  return new FakeReadClient(rows) as unknown as Parameters<
+    typeof articles.getArticleBySlugOrIdWithClient
+  >[0];
 }
 
 const author = { id: AUTHOR_ID } as User;
 
-test("published article rows are read from the articles table first", async () => {
+test("published article rows are read from the articles table", async () => {
   const result = await articles.getArticleBySlugOrIdWithClient(
-    client({
-      articles: [articleRow()],
-      projects: [projectRow()],
-    }),
+    client([articleRow()]),
     "database-article",
     null,
   );
@@ -171,27 +140,37 @@ test("published article rows are read from the articles table first", async () =
   assert.equal(textOf(collectNodes(result.content as JsonNode, "paragraph")[0]), "Database body");
 });
 
+test("article lookup accepts a UUID as well as a slug", async () => {
+  const result = await articles.getArticleBySlugOrIdWithClient(
+    client([articleRow()]),
+    ARTICLE_ID,
+    null,
+  );
+
+  assert.ok(result);
+  assert.equal(result.id, ARTICLE_ID);
+  assert.equal(result.slug, "database-article");
+});
+
 test("draft articles require an authorized user", async () => {
   const draft = articleRow({ status: "draft" });
-  const fake = client({ articles: [draft] });
+  const fake = client([draft]);
 
-  await assert.rejects(
-    articles.getArticleBySlugOrIdWithClient(fake, "database-article", null),
-    (error: unknown) =>
-      error instanceof errors.ApiError && error.status === 404,
+  const guestResult = await articles.getArticleBySlugOrIdWithClient(
+    fake,
+    "database-article",
+    null,
   );
+  assert.equal(guestResult, null);
 
-  const anonymous = { id: "22222222-2222-4222-8222-222222222222" } as User;
-  await assert.rejects(
-    articles.getArticleBySlugOrIdWithClient(
-      fake,
-      "database-article",
-      anonymous,
-      async () => new Set<string>(),
-    ),
-    (error: unknown) =>
-      error instanceof errors.ApiError && error.status === 404,
+  const anonymous = { id: OTHER_ID } as User;
+  const anonymousResult = await articles.getArticleBySlugOrIdWithClient(
+    fake,
+    "database-article",
+    anonymous,
+    async () => new Set<string>(),
   );
+  assert.equal(anonymousResult, null);
 
   const ownDraft = await articles.getArticleBySlugOrIdWithClient(
     fake,
@@ -202,16 +181,24 @@ test("draft articles require an authorized user", async () => {
   assert.equal(ownDraft?.status, "draft");
 });
 
-test("a soft-deleted article tombstone blocks project fallback resurrection", async () => {
-  const deletedArticle = articleRow({
-    deleted_at: "2026-02-01T00:00:00.000Z",
-  });
+test("staff can read drafts authored by other members", async () => {
+  const draft = articleRow({ status: "draft" });
+  const moderator = { id: OTHER_ID } as User;
 
   const result = await articles.getArticleBySlugOrIdWithClient(
-    client({
-      articles: [deletedArticle],
-      projects: [projectRow()],
-    }),
+    client([draft]),
+    "database-article",
+    moderator,
+    async () => new Set<string>(["articles.moderate"]),
+  );
+
+  assert.equal(result?.status, "draft");
+  assert.equal(result?.authorId, AUTHOR_ID);
+});
+
+test("soft-deleted articles resolve to null", async () => {
+  const result = await articles.getArticleBySlugOrIdWithClient(
+    client([articleRow({ deleted_at: "2026-02-01T00:00:00.000Z" })]),
     ARTICLE_ID,
     null,
   );
@@ -219,25 +206,10 @@ test("a soft-deleted article tombstone blocks project fallback resurrection", as
   assert.equal(result, null);
 });
 
-test("project fallback remains available when no article row exists", async () => {
+test("missing articles resolve to null", async () => {
   const result = await articles.getArticleBySlugOrIdWithClient(
-    client({ projects: [projectRow()] }),
+    client([]),
     "project-fallback",
-    null,
-  );
-
-  assert.ok(result);
-  assert.equal(result.title, "Project fallback");
-  assert.equal(result.slug, "project-fallback");
-  assert.equal(result.status, "published");
-});
-
-test("a deleted article with no project row resolves to null", async () => {
-  const result = await articles.getArticleBySlugOrIdWithClient(
-    client({
-      articles: [articleRow({ deleted_at: "2026-02-01T00:00:00.000Z" })],
-    }),
-    ARTICLE_ID,
     null,
   );
 

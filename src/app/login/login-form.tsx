@@ -130,15 +130,15 @@ export function LoginForm({
         <span>The DropOut College</span>
       </div>
 
-      <div className="eyebrow">THE LEARNING COMMUNITY</div>
+      <div className="eyebrow">THE CAMPUS</div>
 
       <h1>
-        Continue with<br />
+        Welcome back to<br />
         <span>your people.</span>
       </h1>
 
       <p className="login-subtitle">
-        Sign in to find collaborators, join projects, and keep your momentum moving.
+        Sign in with Google to share a thought, Love a post, and join the conversation.
       </p>
 
       {errorMessage && (

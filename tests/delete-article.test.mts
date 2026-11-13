@@ -11,7 +11,7 @@ import type {
 } from "../src/server/journal/delete-article";
 import type { JournalArticle } from "../src/server/journal/types";
 
-type TableName = "articles" | "projects";
+type TableName = "articles";
 
 interface FakeRow {
   id: string;
@@ -26,7 +26,6 @@ interface Filter {
 class FakeDatabase {
   readonly rows: Record<TableName, Map<string, FakeRow>> = {
     articles: new Map(),
-    projects: new Map(),
   };
 
   readonly updateCalls: Array<{
@@ -41,6 +40,9 @@ class FakeDatabase {
   readonly nullCounts = new Set<TableName>();
 
   from(table: string): DeletionTable {
+    if (table !== "articles") {
+      throw new Error(`Unexpected table access: ${table}`);
+    }
     return new FakeTable(this, table as TableName);
   }
 
@@ -192,7 +194,7 @@ function makeArticle(id: string, authorId: string): JournalArticle {
       displayName: "Author",
       username: "author",
       avatarUrl: null,
-      role: "writer",
+      role: "member",
     },
   };
 }
@@ -204,7 +206,6 @@ function setup(options: {
   article?: JournalArticle | null;
   permissions?: Set<string>;
   articlesActive?: number;
-  projectsActive?: number;
   userId?: string;
 }) {
   const db = new FakeDatabase();
@@ -213,9 +214,6 @@ function setup(options: {
 
   if (options.articlesActive) {
     db.rows.articles.set(ARTICLE_ID, { id: ARTICLE_ID, deleted_at: null });
-  }
-  if (options.projectsActive) {
-    db.rows.projects.set(ARTICLE_ID, { id: ARTICLE_ID, deleted_at: null });
   }
 
   let clientCalls = 0;
@@ -286,8 +284,9 @@ test("article ID validation and permission checks happen before database work", 
   assert.equal(forbidden.clientCalls, 0);
 });
 
-test("delete permissions allow managers and draft authors only", () => {
+test("delete permissions allow managers and moderators to remove articles", () => {
   const article = makeArticle(ARTICLE_ID, USER_ID);
+
   assert.equal(
     deleteArticleModule.canDeleteArticle(article, USER_ID, new Set(["articles.manage"])),
     true,
@@ -296,6 +295,30 @@ test("delete permissions allow managers and draft authors only", () => {
     deleteArticleModule.canDeleteArticle(article, USER_ID, new Set(["*"])),
     true,
   );
+  assert.equal(
+    deleteArticleModule.canDeleteArticle(
+      article,
+      "22222222-2222-4222-8222-222222222222",
+      new Set(["articles.manage"]),
+    ),
+    true,
+  );
+
+  // Moderators may delete their own articles at any status.
+  assert.equal(
+    deleteArticleModule.canDeleteArticle(article, USER_ID, new Set(["articles.moderate"])),
+    true,
+  );
+  assert.equal(
+    deleteArticleModule.canDeleteArticle(
+      article,
+      "22222222-2222-4222-8222-222222222222",
+      new Set(["articles.moderate"]),
+    ),
+    false,
+  );
+
+  // Authors with only create permission may still remove their own drafts.
   assert.equal(
     deleteArticleModule.canDeleteArticle(
       { ...article, status: "draft" },
@@ -326,8 +349,8 @@ test("delete permissions allow managers and draft authors only", () => {
   );
 });
 
-test("deletion soft-deletes both the article and its mirrored project", async () => {
-  const harness = setup({ articlesActive: 1, projectsActive: 1 });
+test("deletion soft-deletes the article without touching any legacy table", async () => {
+  const harness = setup({ articlesActive: 1 });
 
   const outcome = await deleteArticleModule.deleteArticleWithDependencies(
     ARTICLE_ID,
@@ -337,30 +360,34 @@ test("deletion soft-deletes both the article and its mirrored project", async ()
 
   assert.equal(outcome.alreadyDeleted, false);
   assert.equal(outcome.articlesDeleted, 1);
-  assert.equal(outcome.projectsDeleted, 1);
+  assert.deepEqual(Object.keys(outcome), ["article", "articlesDeleted", "alreadyDeleted"]);
   assert.equal(harness.db.rows.articles.get(ARTICLE_ID)?.deleted_at, "2026-02-03T04:05:06.000Z");
-  assert.equal(harness.db.rows.projects.get(ARTICLE_ID)?.deleted_at, "2026-02-03T04:05:06.000Z");
-  assert.equal(harness.db.updateCalls.length, 2);
+  assert.equal(harness.db.updateCalls.length, 1);
+  assert.equal(harness.db.updateCalls[0]?.table, "articles");
 });
 
-test("project-only rows are deleted without touching a missing article row", async () => {
-  const harness = setup({ projectsActive: 1 });
+test("missing articles are rejected before any write", async () => {
+  const harness = setup({ article: null, articlesActive: 1 });
 
-  const outcome = await deleteArticleModule.deleteArticleWithDependencies(
-    ARTICLE_ID,
-    { id: harness.userId },
-    harness.dependencies,
+  await assert.rejects(
+    deleteArticleModule.deleteArticleWithDependencies(
+      ARTICLE_ID,
+      { id: harness.userId },
+      harness.dependencies,
+    ),
+    (error: unknown) =>
+      error instanceof errors.ApiError &&
+      error.code === "NOT_FOUND" &&
+      error.status === 404,
   );
 
-  assert.equal(outcome.articlesDeleted, 0);
-  assert.equal(outcome.projectsDeleted, 1);
-  assert.equal(harness.db.rows.projects.get(ARTICLE_ID)?.deleted_at, "2026-02-03T04:05:06.000Z");
-  assert.equal(harness.db.updateCalls.length, 1);
+  assert.equal(harness.clientCalls, 0);
+  assert.equal(harness.db.updateCalls.length, 0);
 });
 
-test("RLS-blocked mirror deletion rolls back and reports an honest failure", async () => {
-  const harness = setup({ articlesActive: 1, projectsActive: 1 });
-  harness.db.blockedUpdates.add("projects");
+test("RLS-blocked updates are rolled back and reported honestly", async () => {
+  const harness = setup({ articlesActive: 1 });
+  harness.db.blockedUpdates.add("articles");
 
   await assert.rejects(
     deleteArticleModule.deleteArticleWithDependencies(
@@ -375,12 +402,11 @@ test("RLS-blocked mirror deletion rolls back and reports an honest failure", asy
   );
 
   assert.equal(harness.db.rows.articles.get(ARTICLE_ID)?.deleted_at, null);
-  assert.equal(harness.db.rows.projects.get(ARTICLE_ID)?.deleted_at, null);
 });
 
-test("database update errors roll back previously changed tables", async () => {
-  const harness = setup({ articlesActive: 1, projectsActive: 1 });
-  harness.db.updateErrors.add("projects");
+test("database update errors do not report success", async () => {
+  const harness = setup({ articlesActive: 1 });
+  harness.db.updateErrors.add("articles");
 
   await assert.rejects(
     deleteArticleModule.deleteArticleWithDependencies(
@@ -393,12 +419,11 @@ test("database update errors roll back previously changed tables", async () => {
   );
 
   assert.equal(harness.db.rows.articles.get(ARTICLE_ID)?.deleted_at, null);
-  assert.equal(harness.db.rows.projects.get(ARTICLE_ID)?.deleted_at, null);
 });
 
 test("verification failures and null counts do not report success", async () => {
-  const selectFailure = setup({ articlesActive: 1, projectsActive: 1 });
-  selectFailure.db.selectErrors.add("projects");
+  const selectFailure = setup({ articlesActive: 1 });
+  selectFailure.db.selectErrors.add("articles");
 
   await assert.rejects(
     deleteArticleModule.deleteArticleWithDependencies(
@@ -411,7 +436,7 @@ test("verification failures and null counts do not report success", async () => 
   );
   assert.equal(selectFailure.db.updateCalls.length, 0);
 
-  const nullCount = setup({ articlesActive: 1, projectsActive: 1 });
+  const nullCount = setup({ articlesActive: 1 });
   nullCount.db.nullCounts.add("articles");
 
   await assert.rejects(
@@ -427,7 +452,7 @@ test("verification failures and null counts do not report success", async () => 
 });
 
 test("already-deleted rows return an idempotent alreadyDeleted outcome", async () => {
-  const harness = setup({ articlesActive: 0, projectsActive: 0 });
+  const harness = setup({ articlesActive: 0 });
 
   const outcome = await deleteArticleModule.deleteArticleWithDependencies(
     ARTICLE_ID,
@@ -437,6 +462,5 @@ test("already-deleted rows return an idempotent alreadyDeleted outcome", async (
 
   assert.equal(outcome.alreadyDeleted, true);
   assert.equal(outcome.articlesDeleted, 0);
-  assert.equal(outcome.projectsDeleted, 0);
   assert.equal(harness.db.updateCalls.length, 0);
 });

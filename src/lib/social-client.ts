@@ -191,46 +191,99 @@ export function useComments(projectId: string) {
   return { comments, loading, error, posting, load: fetchComments, post, setComments, setError };
 }
 
-export function useFollow(targetUserId: string | null, viewerId: string | null, options?: { onAuthRequired?: () => void }) {
-  const [isFollowing, setIsFollowing] = useState(false);
+export type FollowMember = {
+  follower_id?: string;
+  following_id?: string;
+  profiles?: FollowProfile | FollowProfile[] | null;
+};
+
+export type FollowProfile = {
+    id: string;
+    display_name: string;
+    username: string;
+    avatar_url: string | null;
+};
+
+type FollowResponse = {
+  followersCount: number;
+  followingCount: number;
+  followers: FollowMember[];
+  following: FollowMember[];
+  followingIds: string[];
+  isFollowing: boolean;
+};
+
+export function useFollow(
+  targetUserId: string | null,
+  viewerId: string | null,
+  options?: {
+    onAuthRequired?: () => void;
+    initialIsFollowing?: boolean;
+    skipInitialFetch?: boolean;
+    onFollowChange?: (isFollowing: boolean) => void;
+  },
+) {
+  const [isFollowing, setIsFollowing] = useState(options?.initialIsFollowing ?? false);
   const [followersCount, setFollowersCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
+  const [followers, setFollowers] = useState<FollowMember[]>([]);
+  const [following, setFollowing] = useState<FollowMember[]>([]);
   const [loading, setLoading] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(Boolean(targetUserId));
+  const [initialLoading, setInitialLoading] = useState(Boolean(targetUserId) && !options?.skipInitialFetch);
   const [error, setError] = useState("");
+  const pending = useRef(false);
+  const [previousFollowInput, setPreviousFollowInput] = useState({
+    targetUserId,
+    initialIsFollowing: options?.initialIsFollowing,
+  });
+  if (
+    options?.skipInitialFetch &&
+    (previousFollowInput.targetUserId !== targetUserId ||
+      previousFollowInput.initialIsFollowing !== options.initialIsFollowing)
+  ) {
+    setPreviousFollowInput({ targetUserId, initialIsFollowing: options.initialIsFollowing });
+    setIsFollowing(Boolean(options.initialIsFollowing));
+  }
 
   const fetchFollowStatus = useCallback(async () => {
     if (!targetUserId) return;
     try {
       const res = await fetch(`/api/v1/follows?userId=${encodeURIComponent(targetUserId)}`);
       const json = await res.json().catch(() => null);
-      if (res.ok && json?.data) {
-        setIsFollowing(Boolean(json.data.isFollowing));
-        setFollowersCount(json.data.followersCount ?? 0);
-        setFollowingCount(json.data.followingCount ?? 0);
-      }
-    } catch {
-      // Keep previous state.
+      if (!res.ok || !json?.data) throw new Error(json?.error?.message || "Could not load follow information.");
+      const data = json.data as FollowResponse;
+      setIsFollowing(targetUserId !== viewerId && Boolean(data.isFollowing));
+      setFollowersCount(data.followersCount);
+      setFollowingCount(data.followingCount);
+      setFollowers(data.followers);
+      setFollowing(data.following);
+      setError("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not load follow information.");
     } finally {
       setInitialLoading(false);
     }
-  }, [targetUserId]);
+  }, [targetUserId, viewerId]);
 
   useEffect(() => {
-    if (!targetUserId) return;
-    const uid = targetUserId;
+    if (!targetUserId || options?.skipInitialFetch) return;
+    const targetId = targetUserId;
     let cancelled = false;
     async function load() {
       try {
-        const res = await fetch(`/api/v1/follows?userId=${encodeURIComponent(uid)}`);
+        const res = await fetch(`/api/v1/follows?userId=${encodeURIComponent(targetId)}`);
         const json = await res.json().catch(() => null);
-        if (!cancelled && res.ok && json?.data) {
-          setIsFollowing(Boolean(json.data.isFollowing));
-          setFollowersCount(json.data.followersCount ?? 0);
-          setFollowingCount(json.data.followingCount ?? 0);
-        }
-      } catch {
-        // Keep previous state.
+        if (!res.ok || !json?.data) throw new Error(json?.error?.message || "Could not load follow information.");
+        if (cancelled) return;
+        const data = json.data as FollowResponse;
+        setIsFollowing(targetId !== viewerId && Boolean(data.isFollowing));
+        setFollowersCount(data.followersCount);
+        setFollowingCount(data.followingCount);
+        setFollowers(data.followers);
+        setFollowing(data.following);
+        setError("");
+      } catch (err) {
+        if (!cancelled) setError(err instanceof Error ? err.message : "Could not load follow information.");
       } finally {
         if (!cancelled) {
           setInitialLoading(false);
@@ -241,37 +294,60 @@ export function useFollow(targetUserId: string | null, viewerId: string | null, 
     return () => {
       cancelled = true;
     };
-  }, [targetUserId]);
+  }, [targetUserId, viewerId, options?.skipInitialFetch]);
 
   const toggle = useCallback(async () => {
     if (!targetUserId) return;
+    const targetId = targetUserId;
     if (!viewerId) {
       options?.onAuthRequired?.();
       return;
     }
-    if (loading || targetUserId === viewerId) return;
+    if (loading || pending.current || targetId === viewerId) return;
+    pending.current = true;
     setLoading(true);
     setError("");
     const prev = isFollowing;
-    setIsFollowing(!prev);
-    setFollowersCount((c) => c + (!prev ? 1 : -1));
+    const next = !prev;
+    setIsFollowing(next);
+    setFollowersCount((c) => Math.max(0, c + (next ? 1 : -1)));
     try {
-      const res = await fetch(`/api/v1/follows?userId=${encodeURIComponent(targetUserId)}`, { method: "POST" });
+      const res = next
+        ? await fetch("/api/v1/follows", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ followingId: targetId }),
+          })
+        : await fetch(`/api/v1/follows?followingId=${encodeURIComponent(targetId)}`, { method: "DELETE" });
       const json = await res.json().catch(() => null);
       if (!res.ok) throw new Error(json?.error?.message || "Could not update follow.");
       setIsFollowing(Boolean(json.data.isFollowing));
-      setFollowersCount(json.data.followersCount ?? 0);
-      setFollowingCount(json.data.followingCount ?? 0);
+      setFollowersCount(json.data.followersCount);
+      setFollowingCount(json.data.followingCount);
+      options?.onFollowChange?.(Boolean(json.data.isFollowing));
+      await fetchFollowStatus();
     } catch (err) {
       setIsFollowing(prev);
-      setFollowersCount((c) => c + (prev ? 1 : -1));
+      setFollowersCount((c) => Math.max(0, c + (prev ? 1 : -1)));
       setError(err instanceof Error ? err.message : "Could not update follow.");
     } finally {
       setLoading(false);
+      pending.current = false;
     }
-  }, [targetUserId, viewerId, loading, isFollowing, options]);
+  }, [targetUserId, viewerId, loading, isFollowing, options, fetchFollowStatus]);
 
-  return { isFollowing, followersCount, followingCount, loading, initialLoading, error, toggle, reload: fetchFollowStatus };
+  return {
+    isFollowing,
+    followersCount,
+    followingCount,
+    followers,
+    following,
+    loading,
+    initialLoading,
+    error,
+    toggle,
+    reload: fetchFollowStatus,
+  };
 }
 
 export function commentAuthor(comment: SocialComment): { name: string; username: string; avatar: string | null } {

@@ -1,130 +1,181 @@
 import { z } from "zod";
 import { getCurrentUser, getOptionalUser } from "@/server/auth/current-user";
-import { toErrorResponse, ApiError } from "@/server/errors";
+import { ApiError, toErrorResponse } from "@/server/errors";
 import { createSupabaseServerClient } from "@/server/supabase/server";
 import { createNotification, throwIfSocialSchemaMissing } from "@/server/social";
 
 export const runtime = "nodejs";
 
-const followSchema = z.object({ followingId: z.string().uuid() });
+const uuidSchema = z.string().uuid();
+const followSchema = z.object({ followingId: uuidSchema });
 
-/** GET /api/v1/follows?userId=xxx -> counts, lists (public, no emails), isFollowing */
+type SupabaseClient = Awaited<ReturnType<typeof createSupabaseServerClient>>;
+
+async function getCounts(supabase: SupabaseClient, userId: string) {
+  const [followers, following] = await Promise.all([
+    supabase.from("follows").select("id", { count: "exact", head: true }).eq("following_id", userId),
+    supabase.from("follows").select("id", { count: "exact", head: true }).eq("follower_id", userId),
+  ]);
+  if (followers.error) throw followers.error;
+  if (following.error) throw following.error;
+  return {
+    followersCount: followers.count ?? 0,
+    followingCount: following.count ?? 0,
+  };
+}
+
+function respond(error: unknown, requestId: string) {
+  try {
+    throwIfSocialSchemaMissing(error);
+  } catch (mapped) {
+    if (mapped instanceof ApiError) return toErrorResponse(mapped, requestId);
+    const code =
+      typeof mapped === "object" && mapped !== null && "code" in mapped
+        ? String(mapped.code)
+        : "";
+    if (code === "42501") {
+      return toErrorResponse(
+        new ApiError("FORBIDDEN", "This follow action is not permitted.", 403),
+        requestId,
+      );
+    }
+    if (code === "23503") {
+      return toErrorResponse(new ApiError("NOT_FOUND", "That member could not be found.", 404), requestId);
+    }
+    return toErrorResponse(mapped, requestId);
+  }
+  return toErrorResponse(error, requestId);
+}
+
+/** GET /api/v1/follows?userId=xxx -> counts, public member lists, and viewer state. */
 export async function GET(request: Request) {
   const requestId = request.headers.get("x-request-id") ?? crypto.randomUUID();
   try {
-    const url = new URL(request.url);
-    const userId = url.searchParams.get("userId");
-    if (!userId) throw new ApiError("VALIDATION_ERROR", "userId is required.", 400);
-    const supabase = await createSupabaseServerClient();
-    const viewer = await getOptionalUser();
+    const userId = new URL(request.url).searchParams.get("userId");
+    if (!userId || !uuidSchema.safeParse(userId).success) {
+      throw new ApiError("VALIDATION_ERROR", "A valid userId is required.", 400);
+    }
 
-    const [followers, following, followersCountRes, followingCountRes] = await Promise.all([
+    const [supabase, viewer] = await Promise.all([
+      createSupabaseServerClient(),
+      getOptionalUser(),
+    ]);
+    const [followers, following, counts, followingIds] = await Promise.all([
       supabase
         .from("follows")
-        .select("follower_id, created_at, profiles!follows_follower_id_fkey(id, display_name, username, avatar_url, bio)")
+        .select("follower_id, created_at, profiles!follows_follower_id_fkey(id, display_name, username, avatar_url)")
         .eq("following_id", userId)
         .order("created_at", { ascending: false })
-        .limit(100),
+        .limit(500),
       supabase
         .from("follows")
-        .select("following_id, created_at, profiles!follows_following_id_fkey(id, display_name, username, avatar_url, bio)")
+        .select("following_id, created_at, profiles!follows_following_id_fkey(id, display_name, username, avatar_url)")
         .eq("follower_id", userId)
         .order("created_at", { ascending: false })
-        .limit(100),
-      supabase.from("follows").select("id", { count: "exact", head: true }).eq("following_id", userId),
-      supabase.from("follows").select("id", { count: "exact", head: true }).eq("follower_id", userId),
+        .limit(500),
+      getCounts(supabase, userId),
+      supabase.from("follows").select("following_id").eq("follower_id", userId).limit(1000),
     ]);
-    // Fallback without profile joins if the FK hint mismatches.
-    let followerRows: Array<Record<string, unknown>> = (followers.data ?? []) as Array<Record<string, unknown>>;
-    let followingRows: Array<Record<string, unknown>> = (following.data ?? []) as Array<Record<string, unknown>>;
-    if (followers.error || following.error) {
-      const [fb, fg] = await Promise.all([
-        supabase.from("follows").select("follower_id, created_at").eq("following_id", userId).order("created_at", { ascending: false }),
-        supabase.from("follows").select("following_id, created_at").eq("follower_id", userId).order("created_at", { ascending: false }),
-      ]);
-      if (fb.error) throw fb.error;
-      if (fg.error) throw fg.error;
-      followerRows = (fb.data ?? []).map((r) => ({ ...r, profiles: null }));
-      followingRows = (fg.data ?? []).map((r) => ({ ...r, profiles: null }));
-    }
+    if (followers.error) throw followers.error;
+    if (following.error) throw following.error;
+    if (followingIds.error) throw followingIds.error;
 
     let isFollowing = false;
     if (viewer && viewer.id !== userId) {
-      const { data } = await supabase.from("follows").select("id").eq("follower_id", viewer.id).eq("following_id", userId).maybeSingle();
+      const { data, error } = await supabase
+        .from("follows")
+        .select("id")
+        .eq("follower_id", viewer.id)
+        .eq("following_id", userId)
+        .maybeSingle();
+      if (error) throw error;
       isFollowing = Boolean(data);
     }
 
     return Response.json({
       data: {
-        followersCount: followersCountRes.count ?? followerRows.length,
-        followingCount: followingCountRes.count ?? followingRows.length,
-        followers: followerRows ?? [],
-        following: followingRows ?? [],
+        ...counts,
+        followers: followers.data ?? [],
+        following: following.data ?? [],
+        followingIds: (followingIds.data ?? []).map((row) => row.following_id),
         isFollowing,
       },
       requestId,
     });
   } catch (error) {
     if (error instanceof ApiError) return toErrorResponse(error, requestId);
-    try {
-      throwIfSocialSchemaMissing(error);
-    } catch (mapped) {
-      return toErrorResponse(mapped, requestId);
-    }
-    return toErrorResponse(error, requestId);
+    return respond(error, requestId);
   }
 }
 
-/** POST: follow a user. Body { followingId }. Cannot follow self. Unique. */
+/** POST: follow a user. RLS enforces active-account and relationship permissions. */
 export async function POST(request: Request) {
   const requestId = request.headers.get("x-request-id") ?? crypto.randomUUID();
   try {
     const user = await getCurrentUser();
-    const parsed = followSchema.safeParse(await request.json());
-    if (!parsed.success) throw new ApiError("VALIDATION_ERROR", "followingId is required.", 400);
-    if (parsed.data.followingId === user.id) throw new ApiError("VALIDATION_ERROR", "You cannot follow yourself.", 400);
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      throw new ApiError("VALIDATION_ERROR", "A valid followingId is required.", 400);
+    }
+    const parsed = followSchema.safeParse(body);
+    if (!parsed.success) throw new ApiError("VALIDATION_ERROR", "A valid followingId is required.", 400);
+    if (parsed.data.followingId === user.id) {
+      throw new ApiError("VALIDATION_ERROR", "You cannot follow yourself.", 400);
+    }
+
     const supabase = await createSupabaseServerClient();
-    const { error } = await supabase.from("follows").insert({ follower_id: user.id, following_id: parsed.data.followingId });
+    const { error } = await supabase
+      .from("follows")
+      .insert({ follower_id: user.id, following_id: parsed.data.followingId });
+    const isNewRelationship = !error;
     if (error && error.code !== "23505") throw error;
-    // Only notify on a genuinely new follow — re-following (or a duplicate
-    // click losing the race) must not spam the recipient.
-    if (!error) {
+
+    if (isNewRelationship) {
       await createNotification({
         recipientId: parsed.data.followingId,
         actorId: user.id,
         type: "FOLLOW",
       });
     }
-    return Response.json({ data: { following: true }, requestId }, { status: 201 });
+
+    return Response.json(
+      { data: { isFollowing: true, ...(await getCounts(supabase, parsed.data.followingId)) }, requestId },
+      { status: 201 },
+    );
   } catch (error) {
     if (error instanceof ApiError) return toErrorResponse(error, requestId);
-    try {
-      throwIfSocialSchemaMissing(error);
-    } catch (mapped) {
-      return toErrorResponse(mapped, requestId);
-    }
-    return toErrorResponse(error, requestId);
+    return respond(error, requestId);
   }
 }
 
-/** DELETE /api/v1/follows?followingId=xxx -> unfollow */
+/** DELETE /api/v1/follows?followingId=xxx -> unfollow the current member. */
 export async function DELETE(request: Request) {
   const requestId = request.headers.get("x-request-id") ?? crypto.randomUUID();
   try {
     const user = await getCurrentUser();
     const followingId = new URL(request.url).searchParams.get("followingId");
-    if (!followingId) throw new ApiError("VALIDATION_ERROR", "followingId is required.", 400);
+    if (!followingId || !uuidSchema.safeParse(followingId).success) {
+      throw new ApiError("VALIDATION_ERROR", "A valid followingId is required.", 400);
+    }
+    if (followingId === user.id) {
+      throw new ApiError("VALIDATION_ERROR", "You cannot follow yourself.", 400);
+    }
+
     const supabase = await createSupabaseServerClient();
-    const { error } = await supabase.from("follows").delete().eq("follower_id", user.id).eq("following_id", followingId);
+    const { error } = await supabase
+      .from("follows")
+      .delete()
+      .eq("follower_id", user.id)
+      .eq("following_id", followingId);
     if (error) throw error;
-    return Response.json({ data: { following: false }, requestId });
+
+    return Response.json(
+      { data: { isFollowing: false, ...(await getCounts(supabase, followingId)) }, requestId },
+    );
   } catch (error) {
     if (error instanceof ApiError) return toErrorResponse(error, requestId);
-    try {
-      throwIfSocialSchemaMissing(error);
-    } catch (mapped) {
-      return toErrorResponse(mapped, requestId);
-    }
-    return toErrorResponse(error, requestId);
+    return respond(error, requestId);
   }
 }

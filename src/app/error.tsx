@@ -1,5 +1,27 @@
 "use client";
 
+import Link from "next/link";
+import { RefreshCw, TriangleAlert } from "lucide-react";
+
 export default function ErrorState({ reset }: { reset: () => void }) {
-  return <main className="page-wrap"><div className="page-title"><div className="eyebrow">Something went sideways</div><h1>This page<br /><span style={{ color: "var(--coral)" }}>did not load.</span></h1><p>We could not load this part of the community. Try again and we will get you back to learning.</p><button className="button button-primary" onClick={reset}>Try again</button></div></main>;
+  return (
+    <div className="c-page-narrow">
+      <div className="c-empty" style={{ marginTop: 24 }}>
+        <div className="c-empty-icon">
+          <TriangleAlert size={20} />
+        </div>
+        <h1>That did not load.</h1>
+        <p>The campus hit a snag. Try again, or head back to the feed.</p>
+        <div className="c-actions-row" style={{ justifyContent: "center" }}>
+          <button type="button" className="c-button c-button-primary" onClick={reset}>
+            <RefreshCw size={15} />
+            <span>Try again</span>
+          </button>
+          <Link href="/" className="c-button">
+            Back home
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
 }

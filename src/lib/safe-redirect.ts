@@ -1,4 +1,4 @@
-export const DEFAULT_REDIRECT_PATH = "/dashboard";
+export const DEFAULT_REDIRECT_PATH = "/";
 
 const INVALID_RAW_CHARACTERS = /[\u0000-\u001f\u007f\\]/;
 const INVALID_ENCODED_CHARACTERS = /%(?:0[0-9a-f]|1[0-9a-f]|7f|2f|5c)/i;

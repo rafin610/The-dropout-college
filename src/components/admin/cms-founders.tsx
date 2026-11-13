@@ -12,7 +12,7 @@ import {
   X,
   ArrowUp,
   ArrowDown,
-  Sparkles,
+  Loader2,
   Eye,
   EyeOff,
   Briefcase,
@@ -165,7 +165,7 @@ export function CmsFoundersTab({
           className="button button-primary"
           style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
         >
-          {saving ? <Sparkles size={14} className="spin" /> : <Check size={14} />}
+          {saving ? <Loader2 size={14} className="spin" /> : <Check size={14} />}
           <span>{saving ? "Saving Changes..." : "Publish Leadership"}</span>
         </button>
       </div>

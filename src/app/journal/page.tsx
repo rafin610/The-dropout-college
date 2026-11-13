@@ -7,11 +7,11 @@ import { JournalClient } from "./journal-client";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "The DropOut Journal | Independent Editorial & Learning Platform",
+  title: "Journal",
   description:
-    "An editorial publication and knowledge platform covering technology, programming, mathematics, AI, science, and independent learning.",
+    "Essays, technical insights, mathematical derivations, and independent learning publications from The DropOut College.",
   openGraph: {
-    title: "The DropOut Journal | The DropOut College",
+    title: "The DropOut Journal",
     description:
       "Essays, technical insights, mathematical derivations, and independent learning publications.",
     type: "website",

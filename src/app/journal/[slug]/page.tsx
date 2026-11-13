@@ -2,8 +2,8 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getArticleBySlugOrId, getRelatedArticles } from "@/server/journal/articles";
 import { getOptionalUser } from "@/server/auth/current-user";
-import { getUserPermissions } from "@/server/auth/permissions";
-import { ArticleReaderClient } from "./article-reader";
+import { getMemberRole, isStaffRole } from "@/server/auth/roles";
+import { JournalReader } from "@/components/journal/journal-reader";
 
 export const dynamic = "force-dynamic";
 
@@ -61,18 +61,14 @@ export default async function ArticlePage({ params }: PageProps) {
 
   let canEdit = false;
   if (user) {
-    const permissions = await getUserPermissions(user.id);
-    const isAdmin = permissions.has("*") || permissions.has("articles.manage");
-    const isAuthorModerator =
-      (permissions.has("articles.create") || permissions.has("articles.moderate")) &&
-      article.authorId === user.id;
-    canEdit = isAdmin || isAuthorModerator;
+    const role = await getMemberRole(user.id);
+    canEdit = isStaffRole(role) && (role === "admin" || article.authorId === user.id);
   }
 
   const related = await getRelatedArticles(article.id, article.categoryId, 3);
 
   return (
-    <ArticleReaderClient
+    <JournalReader
       article={article}
       relatedArticles={related}
       canEdit={canEdit}

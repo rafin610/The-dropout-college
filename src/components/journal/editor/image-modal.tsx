@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { X, Upload, ImageIcon, Loader2, AlertCircle } from "lucide-react";
+import { compressImage, validateImageSize } from "@/lib/compress-image";
 
 interface ImageModalProps {
   isOpen: boolean;
@@ -23,22 +24,22 @@ export function ImageModal({ isOpen, onClose, onInsert }: ImageModalProps) {
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     setError("");
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (!file) return;
 
-    if (!["image/jpeg", "image/png", "image/webp", "image/gif", "image/svg+xml"].includes(file.type)) {
-      setError("Please select a JPEG, PNG, WebP, GIF, or SVG image.");
-      return;
-    }
-
-    if (file.size > 8 * 1024 * 1024) {
-      setError("Image must be smaller than 5MB.");
+    if (!["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.type)) {
+      setError("Please select a JPEG, PNG, WebP, or GIF image.");
       return;
     }
 
     setUploading(true);
     try {
+      const optimized = await compressImage(file);
+      const sizeError = validateImageSize(optimized);
+      if (sizeError) throw new Error(sizeError);
+
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", optimized);
 
       const res = await fetch("/api/v1/journal/upload", {
         method: "POST",
@@ -113,7 +114,7 @@ export function ImageModal({ isOpen, onClose, onInsert }: ImageModalProps) {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/png,image/webp,image/gif"
                 onChange={handleFileUpload}
                 style={{ display: "none" }}
               />

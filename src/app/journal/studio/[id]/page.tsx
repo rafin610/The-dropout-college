@@ -1,7 +1,8 @@
 import { notFound, redirect } from "next/navigation";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { getArticleBySlugOrId } from "@/server/journal/articles";
-import { getUserPermissions } from "@/server/auth/permissions";
+import { getMemberRole, isStaffRole } from "@/server/auth/roles";
+import { getCategories } from "@/lib/supabase-data";
 import { JournalEditor } from "@/components/journal/editor/journal-editor";
 
 export const dynamic = "force-dynamic";
@@ -20,11 +21,12 @@ export default async function EditArticleStudioPage({
     redirect(`/login?next=/journal/studio/${id}`);
   }
 
-  const permissions = await getUserPermissions(user.id);
-  const isAdmin = permissions.has("*") || permissions.has("articles.manage");
-  const isModerator = permissions.has("articles.create") || permissions.has("articles.moderate");
+  const [role, categories] = await Promise.all([
+    getMemberRole(user.id),
+    getCategories().catch(() => []),
+  ]);
 
-  if (!isAdmin && !isModerator) {
+  if (!isStaffRole(role)) {
     redirect("/journal?error=unauthorized");
   }
 
@@ -33,9 +35,9 @@ export default async function EditArticleStudioPage({
     notFound();
   }
 
-  if (!isAdmin && article.authorId !== user.id) {
+  if (role !== "admin" && article.authorId !== user.id) {
     redirect("/journal?error=unauthorized");
   }
 
-  return <JournalEditor initialArticle={article} isAdmin={isAdmin} />;
+  return <JournalEditor initialArticle={article} categories={categories} isAdmin={role === "admin"} />;
 }

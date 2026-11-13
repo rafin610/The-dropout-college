@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Search, PenLine, BookOpen, X } from "lucide-react";
+import { Search, PenLine, BookOpen, X, Settings2 } from "lucide-react";
 import { JournalCard } from "@/components/journal/journal-card";
 import { FeaturedArticleBanner } from "@/components/journal/featured-article";
 import type { JournalArticle } from "@/server/journal/types";
@@ -26,7 +26,6 @@ export function JournalClient({
   const filteredArticles = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     return articles.filter((art) => {
-      // Category filter
       if (selectedCategory !== "all") {
         const matchesCategory =
           (art.categoryName || "").toLowerCase() === selectedCategory.toLowerCase() ||
@@ -34,7 +33,6 @@ export function JournalClient({
         if (!matchesCategory) return false;
       }
 
-      // Search query
       if (q) {
         const titleMatch = art.title.toLowerCase().includes(q);
         const excerptMatch = (art.excerpt || "").toLowerCase().includes(q);
@@ -53,7 +51,6 @@ export function JournalClient({
 
   const nonFeaturedArticles = useMemo(() => {
     if (!featuredArticle) return filteredArticles;
-    // When no search filter is active, avoid duplicating the featured one
     if (selectedCategory === "all" && !searchQuery.trim()) {
       return filteredArticles.filter((a) => a.id !== featuredArticle.id);
     }
@@ -62,99 +59,98 @@ export function JournalClient({
 
   return (
     <div className="journal-page-wrapper">
-      {/* Editorial Masthead */}
-      <header className="journal-masthead">
-        <div className="journal-masthead-top">
-          <div className="journal-masthead-eyebrow">
-            <span>The DropOut Journal</span>
-            <span className="journal-masthead-dot">·</span>
-            <span>Est. 2026</span>
-          </div>
+      <header className="app-page-head journal-app-head">
+        <div>
+          <p className="c-kicker">The DropOut Journal</p>
+          <h1 className="app-page-title">Journal</h1>
+          <p className="app-page-sub">
+            Independent thinking, technical clarity, and ideas worth keeping.
+          </p>
+        </div>
 
-          {canWrite && (
-            <Link href="/journal/studio" className="button button-primary journal-write-btn">
+        {canWrite && (
+          <div className="journal-head-actions">
+            <Link href="/staff" className="c-button">
+              <Settings2 size={15} />
+              <span>Manage</span>
+            </Link>
+            <Link href="/journal/studio" className="c-button c-button-primary">
               <PenLine size={15} />
               <span>Write article</span>
             </Link>
-          )}
-        </div>
-
-        <h1 className="journal-masthead-title">
-          Knowledge without <span className="text-accent">boundaries.</span>
-        </h1>
-        <p className="journal-masthead-desc">
-          Independent thinking, self-directed learning, and technical clarity. Essays, equations, code, and guides published by The DropOut College community.
-        </p>
+          </div>
+        )}
       </header>
 
-      {/* Featured Banner (only when viewing all categories and no active search) */}
       {selectedCategory === "all" && !searchQuery.trim() && featuredArticle && (
         <FeaturedArticleBanner article={featuredArticle} />
       )}
 
-      {/* Filter and Search Bar */}
-      <section className="journal-filter-section" aria-label="Article Filters">
-        <div className="journal-filter-bar">
-          <div className="journal-search-wrap">
-            <Search size={16} className="journal-search-icon" />
-            <input
-              type="text"
-              placeholder="Search essays, topics, formulas, or authors..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="journal-search-input"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                className="journal-search-clear"
-                onClick={() => setSearchQuery("")}
-                aria-label="Clear search"
-              >
-                <X size={14} />
-              </button>
-            )}
-          </div>
-
-          <div className="journal-categories-scroll">
+      <section className="journal-filter-section" aria-label="Article filters">
+        <div className="journal-search-wrap">
+          <Search size={17} className="journal-search-icon" />
+          <input
+            type="search"
+            placeholder="Search essays, topics, or authors…"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="journal-search-input"
+            aria-label="Search journal articles"
+          />
+          {searchQuery && (
             <button
               type="button"
-              className={`journal-filter-chip ${selectedCategory === "all" ? "active" : ""}`}
-              onClick={() => setSelectedCategory("all")}
+              className="journal-search-clear"
+              onClick={() => setSearchQuery("")}
+              aria-label="Clear search"
             >
-              All Topics
+              <X size={15} />
             </button>
-            {categories.map((cat) => (
-              <button
-                key={cat.id}
-                type="button"
-                className={`journal-filter-chip ${
-                  selectedCategory.toLowerCase() === cat.name.toLowerCase() ? "active" : ""
-                }`}
-                onClick={() => setSelectedCategory(cat.name)}
-              >
-                {cat.name}
-              </button>
-            ))}
-          </div>
+          )}
+        </div>
+
+        <div className="journal-categories-scroll" aria-label="Journal topics">
+          <button
+            type="button"
+            className={`journal-filter-chip ${selectedCategory === "all" ? "active" : ""}`}
+            onClick={() => setSelectedCategory("all")}
+          >
+            All topics
+          </button>
+          {categories.map((cat) => (
+            <button
+              key={cat.id}
+              type="button"
+              className={`journal-filter-chip ${
+                selectedCategory.toLowerCase() === cat.name.toLowerCase() ? "active" : ""
+              }`}
+              onClick={() => setSelectedCategory(cat.name)}
+            >
+              {cat.name}
+            </button>
+          ))}
         </div>
       </section>
 
-      {/* Articles Feed */}
-      <main className="journal-feed-section">
+      <div className="journal-feed-section">
+        <div className="journal-results-head">
+          <span>{searchQuery || selectedCategory !== "all" ? "Results" : "Recent publications"}</span>
+          <span>{filteredArticles.length}</span>
+        </div>
+
         {filteredArticles.length === 0 ? (
           <div className="journal-empty-state">
-            <BookOpen size={36} className="text-muted" />
+            <BookOpen size={30} />
             <h3>No articles found</h3>
-            <p className="text-muted">
+            <p>
               {searchQuery || selectedCategory !== "all"
-                ? "Try adjusting your search terms or selecting a different category."
-                : "No published articles are available at this time."}
+                ? "Try a different search or topic."
+                : "No published articles are available yet."}
             </p>
             {(searchQuery || selectedCategory !== "all") && (
               <button
                 type="button"
-                className="button button-ghost"
+                className="c-button"
                 onClick={() => {
                   setSearchQuery("");
                   setSelectedCategory("all");
@@ -171,7 +167,7 @@ export function JournalClient({
             ))}
           </div>
         )}
-      </main>
+      </div>
     </div>
   );
 }

@@ -4,7 +4,8 @@ export function canCreateArticles(permissions: Set<string>): boolean {
   return (
     permissions.has("*") ||
     permissions.has("articles.create") ||
-    permissions.has("articles.manage")
+    permissions.has("articles.manage") ||
+    permissions.has("articles.moderate")
   );
 }
 
@@ -12,7 +13,8 @@ export function canPublishArticles(permissions: Set<string>): boolean {
   return (
     permissions.has("*") ||
     permissions.has("articles.publish") ||
-    permissions.has("articles.manage")
+    permissions.has("articles.manage") ||
+    permissions.has("articles.moderate")
   );
 }
 
@@ -41,9 +43,12 @@ export function canDeleteArticle(
     return true;
   }
 
-  return (
-    permissions.has("articles.create") &&
-    article.authorId === userId &&
-    article.status === "draft"
-  );
+  // Moderators can delete their own articles at any status. Authors with only
+  // create permission can still remove their own drafts.
+  if (article.authorId === userId) {
+    if (permissions.has("articles.moderate")) return true;
+    return permissions.has("articles.create") && article.status === "draft";
+  }
+
+  return false;
 }

@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Keep the app-like mobile navigation unobstructed during development.
+  devIndicators: false,
 };
 
 export default nextConfig;

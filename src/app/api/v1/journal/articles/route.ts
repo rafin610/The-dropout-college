@@ -2,7 +2,7 @@ import { getCurrentUser } from "@/server/auth/current-user";
 import { toErrorResponse, ApiError } from "@/server/errors";
 import { getPublishedArticles, saveArticle, getStaffArticles } from "@/server/journal/articles";
 import { articleSchema } from "@/server/journal/validation";
-import { getUserPermissions } from "@/server/auth/permissions";
+import { getMemberRole, isStaffRole } from "@/server/auth/roles";
 
 export const runtime = "nodejs";
 
@@ -35,9 +35,9 @@ export async function POST(request: Request) {
 
   try {
     const user = await getCurrentUser();
-    const permissions = await getUserPermissions(user.id);
+    const role = await getMemberRole(user.id);
 
-    if (!permissions.has("*") && !permissions.has("articles.create") && !permissions.has("articles.manage")) {
+    if (!isStaffRole(role)) {
       throw new ApiError("FORBIDDEN", "Only Admins and Moderators can create articles.", 403);
     }
 

@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
-import { X, ImageIcon, Loader2, Sparkles, RefreshCw } from "lucide-react";
+import { useState, useRef } from "react";
+import { X, ImageIcon, Loader2, RefreshCw } from "lucide-react";
 import { slugify } from "@/server/journal/validation";
+import { compressImage, validateImageSize } from "@/lib/compress-image";
 import type { Category } from "@/lib/supabase-data";
 
 interface ArticleSettingsDrawerProps {
@@ -15,6 +16,7 @@ interface ArticleSettingsDrawerProps {
   onExcerptChange: (excerpt: string) => void;
   categoryId: string;
   onCategoryChange: (catId: string) => void;
+  categories: Category[];
   tags: string[];
   onTagsChange: (tags: string[]) => void;
   coverImageUrl: string;
@@ -38,6 +40,7 @@ export function ArticleSettingsDrawer({
   onExcerptChange,
   categoryId,
   onCategoryChange,
+  categories,
   tags,
   onTagsChange,
   coverImageUrl,
@@ -50,20 +53,10 @@ export function ArticleSettingsDrawer({
   onSeoDescriptionChange,
   isAdmin = false,
 }: ArticleSettingsDrawerProps) {
-  const [categories, setCategories] = useState<Category[]>([]);
   const [tagInput, setTagInput] = useState("");
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    fetch("/api/v1/categories")
-      .then((res) => res.json())
-      .then((json) => {
-        if (json?.data) setCategories(json.data);
-      })
-      .catch(() => {});
-  }, []);
 
   if (!isOpen) return null;
 
@@ -91,6 +84,7 @@ export function ArticleSettingsDrawer({
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     setUploadError("");
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (!file) return;
 
     if (!["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.type)) {
@@ -100,8 +94,12 @@ export function ArticleSettingsDrawer({
 
     setUploading(true);
     try {
+      const optimized = await compressImage(file, { maxWidth: 1600, maxHeight: 900, quality: 0.84 });
+      const sizeError = validateImageSize(optimized);
+      if (sizeError) throw new Error(sizeError);
+
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", optimized);
 
       const res = await fetch("/api/v1/journal/upload", {
         method: "POST",
@@ -127,7 +125,6 @@ export function ArticleSettingsDrawer({
       <aside className="journal-drawer-panel" onClick={(e) => e.stopPropagation()}>
         <div className="journal-drawer-header">
           <div className="journal-drawer-title">
-            <Sparkles size={16} className="text-accent" />
             <span>Article Settings</span>
           </div>
           <button type="button" className="journal-drawer-close" onClick={onClose} aria-label="Close">
@@ -224,7 +221,7 @@ export function ArticleSettingsDrawer({
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/png,image/webp,image/gif"
                 onChange={handleFileUpload}
                 style={{ display: "none" }}
               />

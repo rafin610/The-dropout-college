@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowUpRight, Clock, Calendar, Sparkles } from "lucide-react";
+import { ArrowUpRight, Clock, Calendar } from "lucide-react";
 import type { JournalArticle } from "@/server/journal/types";
 
 export function FeaturedArticleBanner({ article }: { article: JournalArticle }) {
@@ -46,9 +46,7 @@ export function FeaturedArticleBanner({ article }: { article: JournalArticle }) 
 
         <div className="journal-featured-content">
           <div className="journal-featured-meta-row">
-            <span className="journal-pill journal-pill-featured">
-              <Sparkles size={12} /> Featured Publication
-            </span>
+            <span className="journal-featured-label">Featured story</span>
             <span className="journal-pill journal-pill-category">
               {article.categoryName || "General"}
             </span>

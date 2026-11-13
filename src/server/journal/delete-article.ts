@@ -2,9 +2,6 @@ import { ApiError } from "@/server/errors";
 import { canDeleteArticle } from "./access";
 import type { JournalArticle } from "./types";
 
-const ARTICLE_TABLES = ["articles", "projects"] as const;
-type ArticleTable = (typeof ARTICLE_TABLES)[number];
-
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -50,7 +47,6 @@ export interface DeleteArticleDependencies {
 export interface DeleteArticleOutcome {
   article: JournalArticle;
   articlesDeleted: number;
-  projectsDeleted: number;
   alreadyDeleted: boolean;
 }
 
@@ -62,11 +58,10 @@ export { canDeleteArticle } from "./access";
 
 async function countActiveRows(
   client: DeletionClient,
-  table: ArticleTable,
   id: string,
 ): Promise<number> {
   const { count, error } = await client
-    .from(table)
+    .from("articles")
     .select("id", { count: "exact", head: true })
     .eq("id", id)
     .is("deleted_at", null);
@@ -74,7 +69,7 @@ async function countActiveRows(
   if (error || typeof count !== "number") {
     throw new ApiError(
       "INTERNAL_ERROR",
-      `Could not verify the article deletion in ${table}.`,
+      "Could not verify the article before deleting it.",
       500,
     );
   }
@@ -82,16 +77,15 @@ async function countActiveRows(
   return count;
 }
 
-async function softDeleteRows(
+async function softDeleteArticle(
   client: DeletionClient,
-  table: ArticleTable,
   id: string,
   deletedAt: string,
 ): Promise<{ affected: number; error: string | null }> {
   try {
     const { data, error } = await client
-      .from(table)
-      .update({ deleted_at: deletedAt })
+      .from("articles")
+      .update({ deleted_at: deletedAt, updated_at: deletedAt })
       .eq("id", id)
       .is("deleted_at", null)
       .select("id");
@@ -111,27 +105,26 @@ async function softDeleteRows(
 
 async function rollbackSoftDelete(
   client: DeletionClient,
-  table: ArticleTable,
   id: string,
   deletedAt: string,
 ): Promise<void> {
   try {
     await client
-      .from(table)
+      .from("articles")
       .update({ deleted_at: null })
       .eq("id", id)
       .eq("deleted_at", deletedAt)
       .select("id");
   } catch {
-    // The final verification error is the honest result. A failed rollback is
-    // logged by the caller if it needs more detail.
+    // The caller reports the failed verification; rollback is best effort.
   }
 }
 
 /**
- * Core deletion flow with injectable dependencies so authorization, row-count
- * verification, mirror cleanup, and failure handling can be tested without a
- * live Supabase instance.
+ * Soft-delete a journal article. The old implementation mirrored deletions into
+ * the legacy projects table, which made published articles depend on an
+ * unrelated row and caused delete failures. Articles are the only source of
+ * truth now.
  */
 export async function deleteArticleWithDependencies(
   id: string,
@@ -160,77 +153,29 @@ export async function deleteArticleWithDependencies(
   const client = await dependencies.getClient();
   const logger = dependencies.log ?? (() => undefined);
 
-  const activeBefore: Record<ArticleTable, number> = {
-    articles: await countActiveRows(client, "articles", id),
-    projects: await countActiveRows(client, "projects", id),
-  };
-
-  if (activeBefore.articles === 0 && activeBefore.projects === 0) {
-    return {
-      article,
-      articlesDeleted: 0,
-      projectsDeleted: 0,
-      alreadyDeleted: true,
-    };
+  const activeBefore = await countActiveRows(client, id);
+  if (activeBefore === 0) {
+    return { article, articlesDeleted: 0, alreadyDeleted: true };
   }
 
   const deletedAt = (dependencies.now?.() ?? new Date()).toISOString();
-  const results: Record<ArticleTable, { affected: number; error: string | null }> = {
-    articles: { affected: 0, error: null },
-    projects: { affected: 0, error: null },
-  };
-  const changedTables: ArticleTable[] = [];
+  const result = await softDeleteArticle(client, id, deletedAt);
 
-  for (const table of ARTICLE_TABLES) {
-    if (activeBefore[table] === 0) continue;
-
-    results[table] = await softDeleteRows(client, table, id, deletedAt);
-    if (results[table].error) {
-      logger("[deleteArticle] table soft-delete failed", {
-        table,
-        error: results[table].error,
-      });
-    } else if (results[table].affected > 0) {
-      changedTables.push(table);
-    }
+  if (result.error) {
+    logger("[deleteArticle] soft-delete failed", { error: result.error });
+    throw new ApiError("INTERNAL_ERROR", "The article could not be deleted.", 500);
   }
 
-  let remaining: Record<ArticleTable, number>;
-  try {
-    remaining = {
-      articles: await countActiveRows(client, "articles", id),
-      projects: await countActiveRows(client, "projects", id),
-    };
-  } catch (error) {
-    for (const table of changedTables) {
-      await rollbackSoftDelete(client, table, id, deletedAt);
-    }
-    throw error;
-  }
-
-  if (remaining.articles > 0 || remaining.projects > 0) {
-    for (const table of changedTables) {
-      await rollbackSoftDelete(client, table, id, deletedAt);
-    }
-
-    const failedTables = ARTICLE_TABLES.filter((table) => remaining[table] > 0);
-    logger("[deleteArticle] deletion could not be confirmed", {
-      failedTables,
-      results,
-      remaining,
-    });
-
-    throw new ApiError(
-      "INTERNAL_ERROR",
-      "The article could not be removed from every data source. Please try again, or make sure the service role key is configured.",
-      500,
-    );
+  const remaining = await countActiveRows(client, id);
+  if (remaining > 0) {
+    await rollbackSoftDelete(client, id, deletedAt);
+    logger("[deleteArticle] deletion could not be confirmed", { remaining });
+    throw new ApiError("INTERNAL_ERROR", "The article could not be deleted.", 500);
   }
 
   return {
     article,
-    articlesDeleted: results.articles.affected,
-    projectsDeleted: results.projects.affected,
+    articlesDeleted: result.affected,
     alreadyDeleted: false,
   };
 }

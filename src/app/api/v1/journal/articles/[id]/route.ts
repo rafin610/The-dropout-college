@@ -3,7 +3,7 @@ import { toErrorResponse, ApiError } from "@/server/errors";
 import { getArticleBySlugOrId, saveArticle, deleteArticle } from "@/server/journal/articles";
 import { isValidArticleId } from "@/server/journal/delete-article";
 import { articleSchema } from "@/server/journal/validation";
-import { getUserPermissions } from "@/server/auth/permissions";
+import { getMemberRole, isStaffRole } from "@/server/auth/roles";
 
 export const runtime = "nodejs";
 
@@ -39,9 +39,9 @@ export async function PATCH(
   try {
     const id = await getId(context);
     const user = await getCurrentUser();
-    const permissions = await getUserPermissions(user.id);
+    const role = await getMemberRole(user.id);
 
-    if (!permissions.has("*") && !permissions.has("articles.create") && !permissions.has("articles.manage")) {
+    if (!isStaffRole(role)) {
       throw new ApiError("FORBIDDEN", "Only Admins and Moderators can edit articles.", 403);
     }
 
@@ -61,8 +61,7 @@ export async function PATCH(
     }
 
     // Role check: Admins can edit any; Moderators can only edit their own
-    const canManageAll = permissions.has("*") || permissions.has("articles.manage");
-    if (!canManageAll && existing.authorId !== user.id) {
+    if (role !== "admin" && existing.authorId !== user.id) {
       throw new ApiError("FORBIDDEN", "You can only edit your own articles.", 403);
     }
 

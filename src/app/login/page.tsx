@@ -1,10 +1,16 @@
 import { redirect } from "next/navigation";
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { getOptionalUser } from "@/server/auth/current-user";
 import { safeRedirectPath } from "@/lib/safe-redirect";
 import { LoginForm } from "@/app/login/login-form";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Sign in",
+  description: "Sign in to The DropOut College campus.",
+};
 
 export default async function LoginPage({
   searchParams,
@@ -21,10 +27,10 @@ export default async function LoginPage({
   }
 
   return (
-    <main className="login-page">
+    <div className="login-page">
       <Suspense fallback={<div className="login-panel"><p className="loading">Loading…</p></div>}>
         <LoginForm initialError={params.error || params.error_description} nextUrl={safeNext} />
       </Suspense>
-    </main>
+    </div>
   );
 }

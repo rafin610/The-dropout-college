@@ -12,14 +12,14 @@ export async function proxy(request: NextRequest) {
       callbackUrl.searchParams.set(key, val);
     });
     if (!callbackUrl.searchParams.has("next")) {
-      callbackUrl.searchParams.set("next", "/dashboard");
+      callbackUrl.searchParams.set("next", "/");
     }
     return NextResponse.redirect(callbackUrl);
   }
 
   try {
     const { response, user } = await updateSession(request);
-    const protectedPrefixes = ["/dashboard", "/control-room", "/journal/studio"];
+    const protectedPrefixes = ["/staff", "/journal/studio"];
     const isProtected = protectedPrefixes.some(
       (prefix) =>
         request.nextUrl.pathname === prefix ||

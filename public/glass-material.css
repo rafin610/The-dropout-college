@@ -1,0 +1,33 @@
+.app-sidebar,
+.app-header,
+.app-mobile-nav,
+.c-composer,
+.c-post-card,
+.c-comments,
+.c-profile-card,
+.c-staff-card,
+.c-empty,
+.c-detail-note,
+.c-notice,
+.member-directory-card,
+.journal-card,
+.journal-featured-banner,
+.journal-empty-state,
+.login-panel,
+.profile-connection-group,
+.members-search,
+.journal-search-input,
+.profile-tabs,
+.panel,
+.notification-panel,
+.pf-menu,
+.pf-tabs {
+  backdrop-filter: blur(32px) saturate(125%) !important;
+  -webkit-backdrop-filter: blur(32px) saturate(125%) !important;
+}
+
+.app-sidebar,
+.app-mobile-nav {
+  backdrop-filter: blur(36px) saturate(125%) !important;
+  -webkit-backdrop-filter: blur(36px) saturate(125%) !important;
+}

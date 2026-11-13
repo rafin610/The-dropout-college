@@ -2,13 +2,10 @@
 @import "tailwindcss";
 
 /* ==========================================================================
-   The DropOut College — theme tokens
-   Daylight: warm paper ("morning study"). Dark: warm charcoal ("late-night
-   learning"). One accent (muted olive), shared across both moods.
-   --lime is kept as the accent alias so existing components keep working.
+   The DropOut College — Midnight Teal theme tokens
    ========================================================================== */
 :root {
-  color-scheme: light;
+  color-scheme: dark;
   --step-1: 10px;
   --step-2: 11px;
   --step-3: 12px;
@@ -18,58 +15,110 @@
   --step-7: 24px;
   --step-8: 32px;
   --step-9: 40px;
-  --bg: #F4F1E8;
-  --surface: #FAF8F2;
-  --surface-2: #EAE7DC;
-  --panel: #FAF8F2;
-  --text: #20231F;
-  --muted: #666861;
-  --line: #D8D6CC;
-  --accent: #4F5E33;
-  --accent-ink: #FAF8F2;
-  --accent-soft: rgba(79, 94, 51, .1);
-  --lime: #4F5E33;
-  --cyan: #2E7B77;
-  --coral: #B85741;
-  --violet: #6A5AA6;
-  --teal: #2E7B77;
-  --clay: #B85741;
-  --ink: #F4F1E8;
-  --popover: #FAF8F2;
-  --overlay: rgba(32, 35, 31, .45);
-  --shadow-sm: 0 1px 2px rgba(32, 35, 31, .06);
-  --shadow-md: 0 10px 30px rgba(32, 35, 31, .12);
-  --shadow-lg: 0 24px 60px rgba(32, 35, 31, .18);
-  --sidebar-bg: rgba(250, 248, 242, .9);
-  --topbar-bg: rgba(244, 241, 232, .88);
+
+  --midnight: #0F2027;
+  --teal-deep: #2C5364;
+  --cool-teal: #A9C9D2;
+  --cool-white: #F3F8FA;
+  --accent-light: #A9C9D2;
+
+  --bg: #0F2027;
+  --bg-2: #2C5364;
+  --bg-deep: #09171C;
+  --surface: rgba(28, 57, 67, .84);
+  --surface-2: rgba(44, 83, 100, .44);
+  --panel: rgba(18, 40, 48, .94);
+  --field-bg: rgba(9, 25, 31, .82);
+  --text: #F3F8FA;
+  --muted: #B7CBD1;
+  --line: rgba(199, 224, 230, .17);
+  --line-strong: rgba(199, 224, 230, .3);
+  --accent: #A9C9D2;
+  --accent-ink: #0F2027;
+  --accent-soft: rgba(44, 83, 100, .52);
+  --lime: #A9C9D2;
+  --cyan: #A9C9D2;
+  --coral: #D9B4B8;
+  --violet: #A9C9D2;
+  --teal: #A9C9D2;
+  --clay: #D9B4B8;
+  --ink: #0F2027;
+  --popover: rgba(16, 36, 44, .97);
+  --overlay: rgba(4, 13, 17, .78);
+
+  /* Glass system */
+  --glass: rgba(22, 46, 55, .84);
+  --glass-strong: rgba(25, 55, 66, .94);
+  --glass-soft: rgba(44, 83, 100, .35);
+  --glass-border: rgba(199, 224, 230, .18);
+  --glass-border-strong: rgba(199, 224, 230, .34);
+  --glass-highlight: rgba(235, 248, 250, .15);
+  --glass-shadow: 0 26px 64px rgba(3, 14, 18, .42);
+  --glass-blur: blur(34px) saturate(125%);
+  --shadow-sm: 0 3px 10px rgba(3, 14, 18, .22);
+  --shadow-md: 0 18px 44px rgba(3, 14, 18, .34);
+  --shadow-lg: 0 32px 80px rgba(3, 14, 18, .46);
+  --sidebar-bg: rgba(15, 32, 39, .86);
+  --topbar-bg: rgba(15, 32, 39, .9);
+
+  --paper-bg: #E7F0F2;
+  --paper-bg-2: #DCE9ED;
+  --paper-text: #0F2027;
+  --paper-muted: #45616C;
+  --paper-line: rgba(44, 83, 100, .2);
+  --paper-shadow: 0 30px 80px rgba(15, 32, 39, .2);
+  --code-bg: #10232B;
 }
 
 [data-theme="dark"] {
   color-scheme: dark;
-  --bg: #0B0E0C;
-  --surface: #121714;
-  --surface-2: #161D18;
-  --panel: #121714;
-  --text: #F3F5EF;
-  --muted: #8E9C91;
-  --line: #1F2821;
-  --accent: #B4F042;
-  --accent-ink: #0B0E0C;
-  --accent-soft: rgba(180, 240, 66, 0.1);
-  --lime: #B4F042;
-  --cyan: #5DE2DB;
-  --coral: #FF755B;
-  --violet: #BFA0FF;
-  --teal: #5DE2DB;
-  --clay: #FF755B;
-  --ink: #0B0E0C;
-  --popover: #141A16;
-  --overlay: rgba(6, 9, 7, 0.82);
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, .4);
-  --shadow-md: 0 10px 30px rgba(0, 0, 0, .6);
-  --shadow-lg: 0 24px 60px rgba(0, 0, 0, .8);
-  --sidebar-bg: rgba(11, 14, 12, .96);
-  --topbar-bg: rgba(11, 14, 12, .92);
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+  --bg: #EAF2F4;
+  --bg-2: #DCE9ED;
+  --bg-deep: #F5F9FA;
+  --surface: rgba(242, 248, 249, .92);
+  --surface-2: rgba(44, 83, 100, .09);
+  --panel: rgba(246, 250, 251, .96);
+  --field-bg: rgba(226, 238, 241, .88);
+  --text: #0F2027;
+  --muted: #45616C;
+  --line: rgba(44, 83, 100, .18);
+  --line-strong: rgba(44, 83, 100, .3);
+  --accent: #2C5364;
+  --accent-ink: #F3F8FA;
+  --accent-soft: rgba(44, 83, 100, .13);
+  --lime: #2C5364;
+  --cyan: #2C5364;
+  --coral: #8E5E65;
+  --violet: #2C5364;
+  --teal: #2C5364;
+  --clay: #8E5E65;
+  --ink: #0F2027;
+  --popover: rgba(246, 250, 251, .98);
+  --overlay: rgba(15, 32, 39, .5);
+  --glass: rgba(237, 245, 247, .86);
+  --glass-strong: rgba(246, 250, 251, .95);
+  --glass-soft: rgba(44, 83, 100, .06);
+  --glass-border: rgba(44, 83, 100, .17);
+  --glass-border-strong: rgba(44, 83, 100, .3);
+  --glass-highlight: rgba(255, 255, 255, .68);
+  --glass-shadow: 0 24px 58px rgba(15, 32, 39, .14);
+  --glass-blur: blur(30px) saturate(125%);
+  --shadow-sm: 0 3px 10px rgba(15, 32, 39, .08);
+  --shadow-md: 0 18px 42px rgba(15, 32, 39, .14);
+  --shadow-lg: 0 32px 78px rgba(15, 32, 39, .2);
+  --sidebar-bg: rgba(231, 241, 244, .86);
+  --topbar-bg: rgba(239, 246, 248, .92);
+  --paper-bg: #F8FBFC;
+  --paper-bg-2: #EAF2F4;
+  --paper-text: #0F2027;
+  --paper-muted: #45616C;
+  --paper-line: rgba(44, 83, 100, .18);
+  --paper-shadow: 0 30px 80px rgba(15, 32, 39, .16);
+  --code-bg: #10232B;
 }
 
 * { box-sizing: border-box; }
