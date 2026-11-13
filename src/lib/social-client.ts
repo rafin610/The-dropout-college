@@ -209,7 +209,6 @@ type FollowResponse = {
   followingCount: number;
   followers: FollowMember[];
   following: FollowMember[];
-  followingIds: string[];
   isFollowing: boolean;
 };
 
@@ -245,55 +244,35 @@ export function useFollow(
     setIsFollowing(Boolean(options.initialIsFollowing));
   }
 
-  const fetchFollowStatus = useCallback(async () => {
-    if (!targetUserId) return;
-    try {
-      const res = await fetch(`/api/v1/follows?userId=${encodeURIComponent(targetUserId)}`);
-      const json = await res.json().catch(() => null);
-      if (!res.ok || !json?.data) throw new Error(json?.error?.message || "Could not load follow information.");
-      const data = json.data as FollowResponse;
-      setIsFollowing(targetUserId !== viewerId && Boolean(data.isFollowing));
-      setFollowersCount(data.followersCount);
-      setFollowingCount(data.followingCount);
-      setFollowers(data.followers);
-      setFollowing(data.following);
-      setError("");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not load follow information.");
-    } finally {
-      setInitialLoading(false);
-    }
-  }, [targetUserId, viewerId]);
-
   useEffect(() => {
     if (!targetUserId || options?.skipInitialFetch) return;
-    const targetId = targetUserId;
-    let cancelled = false;
-    async function load() {
-      try {
-        const res = await fetch(`/api/v1/follows?userId=${encodeURIComponent(targetId)}`);
+    const controller = new AbortController();
+    fetch(`/api/v1/follows?userId=${encodeURIComponent(targetUserId)}`, { signal: controller.signal })
+      .then(async (res) => {
         const json = await res.json().catch(() => null);
-        if (!res.ok || !json?.data) throw new Error(json?.error?.message || "Could not load follow information.");
-        if (cancelled) return;
-        const data = json.data as FollowResponse;
-        setIsFollowing(targetId !== viewerId && Boolean(data.isFollowing));
+        if (!res.ok || !json?.data) {
+          throw new Error(json?.error?.message || "Could not load follow information.");
+        }
+        return json.data as FollowResponse;
+      })
+      .then((data) => {
+        if (controller.signal.aborted) return;
+        setIsFollowing(targetUserId !== viewerId && Boolean(data.isFollowing));
         setFollowersCount(data.followersCount);
         setFollowingCount(data.followingCount);
         setFollowers(data.followers);
         setFollowing(data.following);
         setError("");
-      } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Could not load follow information.");
-      } finally {
-        if (!cancelled) {
-          setInitialLoading(false);
+      })
+      .catch((err: unknown) => {
+        if (!controller.signal.aborted) {
+          setError(err instanceof Error ? err.message : "Could not load follow information.");
         }
-      }
-    }
-    void load();
-    return () => {
-      cancelled = true;
-    };
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setInitialLoading(false);
+      });
+    return () => controller.abort();
   }, [targetUserId, viewerId, options?.skipInitialFetch]);
 
   const toggle = useCallback(async () => {
@@ -325,7 +304,6 @@ export function useFollow(
       setFollowersCount(json.data.followersCount);
       setFollowingCount(json.data.followingCount);
       options?.onFollowChange?.(Boolean(json.data.isFollowing));
-      await fetchFollowStatus();
     } catch (err) {
       setIsFollowing(prev);
       setFollowersCount((c) => Math.max(0, c + (prev ? 1 : -1)));
@@ -334,7 +312,7 @@ export function useFollow(
       setLoading(false);
       pending.current = false;
     }
-  }, [targetUserId, viewerId, loading, isFollowing, options, fetchFollowStatus]);
+  }, [targetUserId, viewerId, loading, isFollowing, options]);
 
   return {
     isFollowing,
@@ -346,7 +324,6 @@ export function useFollow(
     initialLoading,
     error,
     toggle,
-    reload: fetchFollowStatus,
   };
 }
 

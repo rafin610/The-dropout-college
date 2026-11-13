@@ -116,11 +116,13 @@ export async function checkUserCanWriteArticles(userId: string): Promise<boolean
 export async function getPublishedArticles({
   categorySlug,
   query,
+  authorId,
   limit = 20,
   page = 1,
 }: {
   categorySlug?: string;
   query?: string;
+  authorId?: string;
   limit?: number;
   page?: number;
 }): Promise<{ articles: JournalArticle[]; total: number }> {
@@ -134,6 +136,10 @@ export async function getPublishedArticles({
       .is("deleted_at", null)
       .order("featured", { ascending: false })
       .order("published_at", { ascending: false });
+
+    if (authorId) {
+      request = request.eq("author_id", authorId);
+    }
 
     if (query?.trim()) {
       const search = `%${query.trim()}%`;

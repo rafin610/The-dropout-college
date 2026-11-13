@@ -1,19 +1,26 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { BookOpen, Camera, Loader2, Pencil, UserPlus, UserRoundCheck, X } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Avatar } from "@/components/avatar";
 import { JournalCard } from "@/components/journal/journal-card";
 import { PostCard } from "@/components/posts/post-card";
+import { ConnectionPreview } from "@/components/profile/connection-preview";
 import { timeAgo } from "@/lib/time";
 import { compressImage, validateImageSize } from "@/lib/compress-image";
 import type { Post } from "@/server/posts/posts";
 import type { JournalArticle } from "@/server/journal/types";
 import type { MemberRole } from "@/server/auth/roles";
 import { AuthPrompt } from "@/components/auth-prompt";
-import { useFollow, type FollowMember } from "@/lib/social-client";
+import { useFollow } from "@/lib/social-client";
+
+const FollowListDialog = dynamic(
+  () => import("@/components/profile/follow-list-dialog").then((module) => module.FollowListDialog),
+  { loading: () => null },
+);
 
 export interface MemberProfileData {
   id: string;
@@ -26,6 +33,7 @@ export interface MemberProfileData {
 }
 
 type ProfileTab = "posts" | "journals";
+type FollowRelationship = "followers" | "following";
 
 export function MemberProfile({
   profile,
@@ -54,8 +62,10 @@ export function MemberProfile({
   const [error, setError] = useState("");
   const [posts, setPosts] = useState(initialPosts);
   const [authPrompt, setAuthPrompt] = useState(false);
+  const [followList, setFollowList] = useState<FollowRelationship | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const preview = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
+  const closeFollowList = useCallback(() => setFollowList(null), []);
   const follow = useFollow(profile.id, viewerId, {
     onAuthRequired: () => setAuthPrompt(true),
   });
@@ -135,24 +145,6 @@ export function MemberProfile({
   }
 
   const shownAvatar = preview || avatarUrl;
-  const relationshipRows = (rows: FollowMember[], relationship: "follower_id" | "following_id") =>
-    rows.map((row) => {
-      const person = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles;
-      const id = person?.id ?? row[relationship];
-      if (!id) return null;
-      const name = person?.display_name || "Campus member";
-      const usernameOrId = person?.username || id;
-      return (
-        <Link key={id} href={`/profile/${encodeURIComponent(usernameOrId)}`} className="profile-connection-person">
-          <Avatar src={person?.avatar_url ?? null} name={name} size={30} />
-          <span>
-            <strong>{name}</strong>
-            <small>@{person?.username || "member"}</small>
-          </span>
-        </Link>
-      );
-    });
-
   return (
     <div className="c-page c-profile-page">
       <section className="c-profile-card">
@@ -290,33 +282,32 @@ export function MemberProfile({
 
       <section className="profile-connections" aria-label="Member connections">
         <div className="profile-connection-group">
-          <div className="profile-connection-heading">
-            <h2>Followers</h2>
-            <span>{follow.initialLoading ? "…" : follow.followersCount}</span>
-          </div>
+          <ConnectionPreview
+            label="Followers"
+            count={follow.followersCount}
+            people={follow.followers}
+            loading={follow.initialLoading}
+            onClick={() => setFollowList("followers")}
+          />
           {follow.error && <p className="member-follow-error" role="alert">{follow.error}</p>}
-          {follow.initialLoading ? (
-            <p className="profile-connections-empty">Loading followers…</p>
-          ) : follow.followers.length ? (
-            <div className="profile-connection-list">{relationshipRows(follow.followers, "follower_id")}</div>
-          ) : (
-            <p className="profile-connections-empty">No followers yet.</p>
-          )}
         </div>
         <div className="profile-connection-group">
-          <div className="profile-connection-heading">
-            <h2>Following</h2>
-            <span>{follow.initialLoading ? "…" : follow.followingCount}</span>
-          </div>
-          {follow.initialLoading ? (
-            <p className="profile-connections-empty">Loading following…</p>
-          ) : follow.following.length ? (
-            <div className="profile-connection-list">{relationshipRows(follow.following, "following_id")}</div>
-          ) : (
-            <p className="profile-connections-empty">Not following anyone yet.</p>
-          )}
+          <ConnectionPreview
+            label="Following"
+            count={follow.followingCount}
+            people={follow.following}
+            loading={follow.initialLoading}
+            onClick={() => setFollowList("following")}
+          />
         </div>
       </section>
+      {followList && (
+        <FollowListDialog
+          userId={profile.id}
+          relationship={followList}
+          onClose={closeFollowList}
+        />
+      )}
 
       <div className="profile-tabs" role="tablist" aria-label="Profile content">
         <button

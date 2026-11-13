@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import { cache } from "react";
 import { notFound } from "next/navigation";
 import { getViewerProfile } from "@/server/auth/viewer";
-import { getMemberRole } from "@/server/auth/roles";
+import { normalizeMemberRole } from "@/server/auth/roles";
 import { createSupabaseServerClient } from "@/server/supabase/server";
 import { listPosts } from "@/server/posts/posts";
 import { getPublishedArticles } from "@/server/journal/articles";
@@ -13,7 +14,7 @@ interface PageProps {
   params: Promise<{ username: string }>;
 }
 
-async function loadProfile(username: string) {
+const loadProfile = cache(async (username: string) => {
   const supabase = await createSupabaseServerClient();
   const clean = username.trim().slice(0, 80);
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(clean);
@@ -22,12 +23,12 @@ async function loadProfile(username: string) {
 
   const { data } = await supabase
     .from("profiles")
-    .select("id, username, display_name, avatar_url, bio, created_at")
+    .select("id, username, display_name, avatar_url, bio, created_at, user_roles(role)")
     .eq(isUuid ? "id" : "username", clean)
     .maybeSingle();
 
   return data;
-}
+});
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { username } = await params;
@@ -45,14 +46,21 @@ export default async function MemberProfilePage({ params }: PageProps) {
   if (!profile) notFound();
 
   const viewer = await getViewerProfile();
-  const role = await getMemberRole(profile.id);
-  const posts = await listPosts({ authorId: profile.id, viewerId: viewer?.id, limit: 10 });
-  const journals =
+  const rawRoles = Array.isArray(profile.user_roles)
+    ? profile.user_roles
+    : profile.user_roles
+      ? [profile.user_roles]
+      : [];
+  const role = normalizeMemberRole(
+    rawRoles.map((entry: { role?: string | null }) => String(entry?.role ?? "")).filter(Boolean),
+  );
+  const [posts, journalResult] = await Promise.all([
+    listPosts({ authorId: profile.id, viewerId: viewer?.id, limit: 10 }),
     role === "member"
-      ? []
-      : (await getPublishedArticles({ limit: 50 })).articles.filter(
-          (article) => article.authorId === profile.id,
-        );
+      ? Promise.resolve({ articles: [] })
+      : getPublishedArticles({ authorId: profile.id, limit: 50 }),
+  ]);
+  const journals = journalResult.articles;
 
   return (
     <MemberProfile

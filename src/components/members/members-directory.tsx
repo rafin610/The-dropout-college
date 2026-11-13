@@ -1,82 +1,159 @@
 "use client";
 
 import { Search, UsersRound, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AuthPrompt } from "@/components/auth-prompt";
 import { MemberCard } from "@/components/members/member-card";
 import type { DirectoryMember } from "@/components/members/types";
 
+type DirectoryResponse = {
+  data?: {
+    members?: DirectoryMember[];
+    followingIds?: string[];
+    total?: number;
+    hasMore?: boolean;
+  };
+  error?: { message?: string };
+};
+
 export function MembersDirectory({
   members,
   viewerId,
+  initialFollowingIds,
+  initialTotal,
 }: {
   members: DirectoryMember[];
   viewerId: string | null;
+  initialFollowingIds: string[];
+  initialTotal: number;
 }) {
   const [query, setQuery] = useState("");
-  const [followState, setFollowState] = useState<{ viewerId: string; ids: Set<string> } | null>(null);
-  const [followLoadFailure, setFollowLoadFailure] = useState<{ viewerId: string; message: string } | null>(null);
+  const [visibleMembers, setVisibleMembers] = useState(members);
+  const [total, setTotal] = useState(initialTotal);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(members.length < initialTotal);
+  const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [directoryError, setDirectoryError] = useState("");
+  const [retrySearch, setRetrySearch] = useState(0);
+  const [followState, setFollowState] = useState<{ viewerId: string | null; ids: Set<string> }>(() => ({
+    viewerId,
+    ids: new Set(initialFollowingIds),
+  }));
   const [authPrompt, setAuthPrompt] = useState(false);
-  const [reloadKey, setReloadKey] = useState(0);
+  const moreController = useRef<AbortController | null>(null);
+  const morePending = useRef(false);
 
   useEffect(() => {
-    if (!viewerId) return;
-    const currentViewerId = viewerId;
-
-    let cancelled = false;
-
-    async function loadFollowing() {
+    const search = query.trim();
+    if (!search) return;
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      setDirectoryError("");
+      const params = new URLSearchParams({ page: "1", search });
       try {
-        const response = await fetch(`/api/v1/follows?userId=${encodeURIComponent(currentViewerId)}`);
-        const payload = await response.json().catch(() => null);
-        if (!response.ok || !Array.isArray(payload?.data?.followingIds)) {
-          throw new Error(payload?.error?.message || "Could not load following information.");
+        const response = await fetch(`/api/v1/members?${params}`, { signal: controller.signal });
+        const payload = (await response.json().catch(() => null)) as DirectoryResponse | null;
+        if (!response.ok || !payload?.data) {
+          throw new Error(payload?.error?.message || "Could not search members.");
         }
-        if (!cancelled) {
-          setFollowState({ viewerId: currentViewerId, ids: new Set(payload.data.followingIds as string[]) });
-          setFollowLoadFailure(null);
-        }
+        if (controller.signal.aborted) return;
+        const pageMembers = payload.data.members ?? [];
+        setVisibleMembers(pageMembers);
+        setFollowState((current) => {
+          const ids = new Set(current.viewerId === viewerId ? current.ids : initialFollowingIds);
+          for (const member of pageMembers) ids.delete(member.id);
+          for (const id of payload.data?.followingIds ?? []) ids.add(id);
+          return { viewerId, ids };
+        });
+        setTotal(payload.data.total ?? 0);
+        setPage(1);
+        setHasMore(Boolean(payload.data.hasMore));
       } catch (error) {
-        if (!cancelled) {
-          setFollowLoadFailure({
-            viewerId: currentViewerId,
-            message: error instanceof Error ? error.message : "Could not load following information.",
-          });
+        if (!controller.signal.aborted) {
+          setDirectoryError(error instanceof Error ? error.message : "Could not search members.");
         }
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
       }
-    }
+    }, 200);
 
-    void loadFollowing();
     return () => {
-      cancelled = true;
+      window.clearTimeout(timer);
+      controller.abort();
     };
-  }, [viewerId, reloadKey]);
+  }, [initialFollowingIds, query, retrySearch, viewerId]);
 
   const handleFollowChange = useCallback((memberId: string, isFollowing: boolean) => {
     setFollowState((current) => {
-      if (!current) return current;
-      const next = new Set(current.ids);
+      const next = new Set(
+        current.viewerId === viewerId ? current.ids : initialFollowingIds,
+      );
       if (isFollowing) next.add(memberId);
       else next.delete(memberId);
-      return { ...current, ids: next };
+      return { viewerId, ids: next };
     });
-  }, []);
-  const followingIds = followState?.viewerId === viewerId ? followState.ids : new Set<string>();
-  const followStatesLoading = Boolean(viewerId) && followState?.viewerId !== viewerId &&
-    followLoadFailure?.viewerId !== viewerId;
-  const followStatesError = followLoadFailure?.viewerId === viewerId ? followLoadFailure.message : "";
+  }, [initialFollowingIds, viewerId]);
+  const followingIds = followState.viewerId === viewerId
+    ? followState.ids
+    : new Set(initialFollowingIds);
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return members;
+  const loadMore = useCallback(async () => {
+    if (loading || loadingMore || !hasMore || morePending.current) return;
+    morePending.current = true;
+    const controller = new AbortController();
+    moreController.current = controller;
+    setLoadingMore(true);
+    setDirectoryError("");
+    const nextPage = page + 1;
+    const params = new URLSearchParams({ page: String(nextPage) });
+    if (query.trim()) params.set("search", query.trim());
+    try {
+      const response = await fetch(`/api/v1/members?${params}`, { signal: controller.signal });
+      const payload = (await response.json().catch(() => null)) as DirectoryResponse | null;
+      if (!response.ok || !payload?.data) {
+        throw new Error(payload?.error?.message || "Could not load more members.");
+      }
+      if (controller.signal.aborted) return;
+      const pageMembers = payload.data.members ?? [];
+      setVisibleMembers((current) => [...current, ...pageMembers]);
+      setFollowState((current) => {
+        const ids = new Set(current.viewerId === viewerId ? current.ids : initialFollowingIds);
+        for (const member of pageMembers) ids.delete(member.id);
+        for (const id of payload.data?.followingIds ?? []) ids.add(id);
+        return { viewerId, ids };
+      });
+      setTotal(payload.data.total ?? 0);
+      setPage(nextPage);
+      setHasMore(Boolean(payload.data.hasMore));
+    } catch (error) {
+      if (!controller.signal.aborted) {
+        setDirectoryError(error instanceof Error ? error.message : "Could not load more members.");
+      }
+    } finally {
+      morePending.current = false;
+      if (moreController.current === controller) moreController.current = null;
+      setLoadingMore(false);
+    }
+  }, [hasMore, initialFollowingIds, loading, loadingMore, page, query, viewerId]);
 
-    return members.filter((member) => {
-      const haystack = [member.displayName, member.username, member.bio || "", member.role]
-        .join(" ")
-        .toLowerCase();
-      return haystack.includes(q);
-    });
-  }, [members, query]);
+  function updateSearch(value: string) {
+    moreController.current?.abort();
+    setQuery(value);
+    setDirectoryError("");
+    setVisibleMembers([]);
+    setTotal(0);
+    setPage(1);
+    setHasMore(false);
+    if (value.trim()) {
+      setLoading(true);
+    } else {
+      setVisibleMembers(members);
+      setTotal(initialTotal);
+      setHasMore(members.length < initialTotal);
+      setLoading(false);
+    }
+  }
 
   return (
     <div className="members-directory">
@@ -85,13 +162,13 @@ export function MembersDirectory({
         <input
           type="search"
           value={query}
-          onChange={(event) => setQuery(event.target.value)}
+          onChange={(event) => updateSearch(event.target.value)}
           placeholder="Search by name, username, or interest…"
           aria-label="Search members"
           autoComplete="off"
         />
         {query && (
-          <button type="button" onClick={() => setQuery("")} aria-label="Clear member search">
+          <button type="button" onClick={() => updateSearch("")} aria-label="Clear member search">
             <X size={15} />
           </button>
         )}
@@ -99,34 +176,45 @@ export function MembersDirectory({
 
       <div className="members-results-meta" aria-live="polite">
         <span>
-          {filtered.length} {filtered.length === 1 ? "member" : "members"}
+          {total.toLocaleString()} {total === 1 ? "member" : "members"}
         </span>
-        {query && <span>Matching “{query.trim()}”</span>}
+        {query.trim() && <span>Matching “{query.trim()}”</span>}
       </div>
 
-      {followStatesError && (
+      {directoryError && (
         <div className="c-error" role="alert">
-          <span>{followStatesError}</span>
-          <button type="button" className="c-button" onClick={() => setReloadKey((key) => key + 1)}>
-            Try again
-          </button>
+          <span>{directoryError}</span>
+          {query.trim() ? (
+            <button type="button" className="c-button" onClick={() => {
+              setLoading(true);
+              setRetrySearch((key) => key + 1);
+            }}>
+              Try again
+            </button>
+          ) : hasMore ? (
+            <button type="button" className="c-button" onClick={() => void loadMore()}>
+              Try again
+            </button>
+          ) : null}
         </div>
       )}
 
-      {filtered.length > 0 ? (
+      {visibleMembers.length > 0 ? (
         <div className="members-grid">
-          {filtered.map((member) => (
+          {visibleMembers.map((member) => (
             <MemberCard
               key={member.id}
               member={member}
               viewerId={viewerId}
               isFollowing={followingIds.has(member.id)}
-              followStateLoading={followStatesLoading || Boolean(followStatesError)}
+              followStateLoading={false}
               onFollowChange={(isFollowing) => handleFollowChange(member.id, isFollowing)}
               onAuthRequired={() => setAuthPrompt(true)}
             />
           ))}
         </div>
+      ) : loading ? (
+        <p className="members-loading" role="status">Loading members…</p>
       ) : (
         <div className="c-empty">
           <div className="c-empty-icon">
@@ -134,10 +222,20 @@ export function MembersDirectory({
           </div>
           <h2>No members found</h2>
           <p>Try a different name, username, or a broader phrase.</p>
-          <button type="button" className="c-button" onClick={() => setQuery("")}>
+          <button type="button" className="c-button" onClick={() => updateSearch("")}>
             Clear search
           </button>
         </div>
+      )}
+      {hasMore && visibleMembers.length > 0 && (
+        <button
+          type="button"
+          className="members-load-more c-button"
+          onClick={() => void loadMore()}
+          disabled={loadingMore || loading}
+        >
+          {loadingMore ? "Loading…" : "Load more members"}
+        </button>
       )}
       <AuthPrompt open={authPrompt} action="follow" onClose={() => setAuthPrompt(false)} />
     </div>

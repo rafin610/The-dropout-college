@@ -11,6 +11,13 @@ const followSchema = z.object({ followingId: uuidSchema });
 
 type SupabaseClient = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 
+function privateJson(data: unknown, requestId: string) {
+  return Response.json(
+    { data, requestId },
+    { headers: { "Cache-Control": "private, no-store" } },
+  );
+}
+
 async function getCounts(supabase: SupabaseClient, userId: string) {
   const [followers, following] = await Promise.all([
     supabase.from("follows").select("id", { count: "exact", head: true }).eq("following_id", userId),
@@ -47,38 +54,95 @@ function respond(error: unknown, requestId: string) {
   return toErrorResponse(error, requestId);
 }
 
-/** GET /api/v1/follows?userId=xxx -> counts, public member lists, and viewer state. */
+/** GET /api/v1/follows?userId=xxx -> counts and two profile previews per direction. */
 export async function GET(request: Request) {
   const requestId = request.headers.get("x-request-id") ?? crypto.randomUUID();
   try {
-    const userId = new URL(request.url).searchParams.get("userId");
+    const url = new URL(request.url);
+    const userId = url.searchParams.get("userId");
     if (!userId || !uuidSchema.safeParse(userId).success) {
       throw new ApiError("VALIDATION_ERROR", "A valid userId is required.", 400);
     }
 
-    const [supabase, viewer] = await Promise.all([
-      createSupabaseServerClient(),
+    const supabase = await createSupabaseServerClient();
+    const view = url.searchParams.get("view") ?? "summary";
+
+    if (view === "list") {
+      const relationship = url.searchParams.get("relationship");
+      if (relationship !== "followers" && relationship !== "following") {
+        throw new ApiError("VALIDATION_ERROR", "A valid relationship is required.", 400);
+      }
+
+      const parsedPage = Number.parseInt(url.searchParams.get("page") ?? "1", 10);
+      const parsedLimit = Number.parseInt(url.searchParams.get("limit") ?? "30", 10);
+      const page = Number.isFinite(parsedPage) ? Math.min(1_000_000, Math.max(1, parsedPage)) : 1;
+      const limit = Number.isFinite(parsedLimit) ? Math.min(50, Math.max(1, parsedLimit)) : 30;
+      const search = (url.searchParams.get("search") ?? "")
+        .trim()
+        .slice(0, 80)
+        .replace(/[,%()\\*]/g, "");
+      const isFollowers = relationship === "followers";
+      const relation = isFollowers
+        ? "follower_id, profiles!follows_follower_id_fkey!inner(id, display_name, username, avatar_url)"
+        : "following_id, profiles!follows_following_id_fkey!inner(id, display_name, username, avatar_url)";
+      let query = supabase
+        .from("follows")
+        .select(relation, { count: "exact" })
+        .eq(isFollowers ? "following_id" : "follower_id", userId);
+
+      if (search) {
+        query = query.or(
+          `display_name.ilike.%${search}%,username.ilike.%${search}%`,
+          { foreignTable: "profiles" },
+        );
+      }
+
+      const from = (page - 1) * limit;
+      const { data, error, count } = await query
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: false })
+        .range(from, from + limit - 1);
+      if (error) throw error;
+
+      return privateJson(
+        {
+          members: data ?? [],
+          total: count ?? 0,
+          page,
+          limit,
+          hasMore: from + (data?.length ?? 0) < (count ?? 0),
+        },
+        requestId,
+      );
+    }
+
+    if (view !== "summary") {
+      throw new ApiError("VALIDATION_ERROR", "A valid follow view is required.", 400);
+    }
+
+    const [viewer, followers, following] = await Promise.all([
       getOptionalUser(),
-    ]);
-    const [followers, following, counts, followingIds] = await Promise.all([
       supabase
         .from("follows")
-        .select("follower_id, created_at, profiles!follows_follower_id_fkey(id, display_name, username, avatar_url)")
+        .select(
+          "follower_id, profiles!follows_follower_id_fkey(id, display_name, username, avatar_url)",
+          { count: "exact" },
+        )
         .eq("following_id", userId)
         .order("created_at", { ascending: false })
-        .limit(500),
+        .limit(2),
       supabase
         .from("follows")
-        .select("following_id, created_at, profiles!follows_following_id_fkey(id, display_name, username, avatar_url)")
+        .select(
+          "following_id, profiles!follows_following_id_fkey(id, display_name, username, avatar_url)",
+          { count: "exact" },
+        )
         .eq("follower_id", userId)
         .order("created_at", { ascending: false })
-        .limit(500),
-      getCounts(supabase, userId),
-      supabase.from("follows").select("following_id").eq("follower_id", userId).limit(1000),
+        .limit(2),
     ]);
     if (followers.error) throw followers.error;
     if (following.error) throw following.error;
-    if (followingIds.error) throw followingIds.error;
 
     let isFollowing = false;
     if (viewer && viewer.id !== userId) {
@@ -92,16 +156,16 @@ export async function GET(request: Request) {
       isFollowing = Boolean(data);
     }
 
-    return Response.json({
-      data: {
-        ...counts,
+    return privateJson(
+      {
+        followersCount: followers.count ?? 0,
+        followingCount: following.count ?? 0,
         followers: followers.data ?? [],
         following: following.data ?? [],
-        followingIds: (followingIds.data ?? []).map((row) => row.following_id),
         isFollowing,
       },
       requestId,
-    });
+    );
   } catch (error) {
     if (error instanceof ApiError) return toErrorResponse(error, requestId);
     return respond(error, requestId);
