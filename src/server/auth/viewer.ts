@@ -17,11 +17,14 @@ export const getViewerProfile = cache(async (): Promise<ViewerProfile | null> =>
 
   try {
     const supabase = await createSupabaseServerClient();
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("display_name, username, avatar_url")
-      .eq("id", user.id)
-      .maybeSingle();
+    const [{ data: profile }, role] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("display_name, username, avatar_url")
+        .eq("id", user.id)
+        .maybeSingle(),
+      getMemberRole(user.id),
+    ]);
 
     return {
       id: user.id,
@@ -32,7 +35,7 @@ export const getViewerProfile = cache(async (): Promise<ViewerProfile | null> =>
         "Member",
       username: profile?.username || "",
       avatarUrl: profile?.avatar_url || null,
-      role: await getMemberRole(user.id),
+      role,
     };
   } catch {
     return {

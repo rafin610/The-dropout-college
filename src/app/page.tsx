@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getOptionalUser } from "@/server/auth/current-user";
 import { getViewerProfile } from "@/server/auth/viewer";
 import { listPosts } from "@/server/posts/posts";
 import { Feed } from "@/components/posts/feed";
@@ -11,8 +12,13 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const viewer = await getViewerProfile();
-  const result = await listPosts({ page: 1, limit: 10, viewerId: viewer?.id });
+  // Resolve the session once, then let the posts query run while the
+  // profile/role details are loading instead of waiting on them in series.
+  const user = await getOptionalUser();
+  const [viewer, result] = await Promise.all([
+    getViewerProfile(),
+    listPosts({ page: 1, limit: 10, viewerId: user?.id }),
+  ]);
 
   return (
     <div className="c-page">
