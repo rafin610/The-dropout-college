@@ -1,15 +1,17 @@
 <div align="center">
 
-# 🎓 The DropOut College
+# 🎓 The DropOut College Campus
 
-**A Home for the Relentlessly Curious**
+**A Social Community Web Application for Self-Driven Creators, Learners & Builders**
 
 *“We don’t drop out of learning. We drop out of the limits placed on it. Learn differently. Build relentlessly.”*
 
-[![Next.js](https://img.shields.io/badge/Next.js-16.3.4-black?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-16.4.3-black?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19.2.8-blue?style=for-the-badge&logo=react&logoColor=61DAFB)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 [![Supabase](https://img.shields.io/badge/Supabase-Database%20%26%20Auth-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
+[![KaTeX](https://img.shields.io/badge/KaTeX-Math_Typesetting-329894?style=for-the-badge)](https://katex.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-C6DA5E?style=for-the-badge)](LICENSE)
 
 [**🌐 Live Website**](https://the-dropout-college.vercel.app) • [**💬 Join Discord**](https://discord.gg/rEkkzPbM4p) • [**📖 Reading Platform (ODHYAY)**](https://odhyay.vercel.app)
@@ -21,8 +23,14 @@
 ## 📌 Table of Contents
 
 - [Overview](#-overview)
-- [Key Features](#-key-features)
-- [Design Aesthetics](#-design-aesthetics)
+- [Core Campus Features](#-core-campus-features)
+  - [1. Campus Social Feed](#1-campus-social-feed)
+  - [2. The DropOut Journal & Studio](#2-the-dropout-journal--studio)
+  - [3. Members Directory & Follow Network](#3-members-directory--follow-network)
+  - [4. Member Profiles](#4-member-profiles)
+  - [5. Staff Administration Panel](#5-staff-administration-panel)
+  - [6. Robust Role-Based Access Control (RBAC)](#6-robust-role-based-access-control-rbac)
+- [Design System & Aesthetics](#-design-system--aesthetics)
 - [Tech Stack](#-tech-stack)
 - [Project Architecture](#-project-architecture)
 - [Getting Started](#-getting-started)
@@ -30,9 +38,12 @@
   - [Installation](#installation)
   - [Environment Variables](#environment-variables)
   - [Running the App](#running-the-app)
-- [Supabase Configuration & Schema](#-supabase-configuration--schema)
-- [API & Health Endpoints](#-api--health-endpoints)
-- [Contributing](#-contributing)
+- [Database & Storage Architecture](#-database--storage-architecture)
+  - [Core Database Schema](#core-database-schema)
+  - [Storage Buckets](#storage-buckets)
+  - [Database Backups](#database-backups)
+- [Testing Suite](#-testing-suite)
+- [API Endpoints Reference](#-api-endpoints-reference)
 - [Community & Socials](#-community--socials)
 - [License](#-license)
 
@@ -40,96 +51,93 @@
 
 ## 🌟 Overview
 
-**The DropOut College** is a modern, community-first talent and learning network built for self-directed learners, builders, developers, designers, and creators.
+**The DropOut College Campus** is a modern social community platform designed for independent developers, designers, mathematicians, writers, and curious builders. 
 
-Traditional education often confines curiosity to rigid curricula and arbitrary credentials. The DropOut College flips the paradigm:
-- Connect with people building real projects across disciplines.
-- Share work in progress and receive constructive feedback.
-- Find collaborators, mentors, and accountability partners.
-- Learn by building, shipping, and sharing openly.
+The platform connects members through micro-posts, comprehensive long-form technical publications via **The DropOut Journal**, an open member network, and a decentralized editorial hierarchy.
 
 ---
 
-## ⚡ Key Features
+## ⚡ Core Campus Features
 
-### 👥 Community Members Directory (`/explore`)
-- **Fast Search & Filter:** Search by name, `@handle`, bio keywords, or project disciplines.
-- **Category Filter Chips:** Seamlessly browse members by paths like *Learn*, *Build*, and *Connect*.
-- **Interactive Member Cards:**
-  - Dynamic avatar badges with fallback monogram circles.
-  - Active presence indicator (`● Online / Member`) with role-based styling.
-  - Quick skill pills.
-  - One-click profile inspection and **instant Follow/Unfollow** action with optimistic UI updates.
-  - Quick action 3-dot dropdown menu for sharing and copying links.
+### 1. Campus Social Feed (`/`, `/post`, `/p/[id]`)
+- **Micro-Posts Feed:** Real-time chronological thoughts feed with server-side pagination.
+- **Post Composer:** Expressive posts capped at 300 characters with client-side image compression.
+- **Photo Attachments:** Upload a single image per post with automatic WebP optimization.
+- **Love Reactions:** Dedicated 1-click Love reaction system with optimistic UI state and duplicate prevention.
+- **Discussion Threads:** Inline post comments with instant deletion privileges for authors and staff.
+- **Shareable Post URLs:** Direct deep-linking via clean `/p/[id]` routes with OpenGraph card previews.
 
-### 👤 Rich Public & Personal Profiles (`/profile`)
-- **Custom Identity:** Dynamic banner cover, overlapping avatar, verified badges, username, and role labels.
-- **Stats Dashboard:** Live counters for Followers, Following, Projects, and Community Contributions.
-- **Sectioned Profile Cards:**
-  - **About:** Personal bio, location, and student/professional status.
-  - **Skills & Interests:** Tagged capability chips with quick edit access for profile owners.
-  - **Selected Projects:** Portfolio showcase linking directly to project cases.
-  - **Activity Timeline:** Chronological community milestones (projects shared, discussions, badges earned).
-  - **Social Links:** Connected GitHub, LinkedIn, portfolio, and social channels.
-- **Followers & Following Dialogs:** Realtime inspection of the member's follower network.
+### 2. The DropOut Journal & Studio (`/journal`, `/journal/[slug]`, `/journal/studio`)
+- **Editorial Reading Experience:** Long-form essays, mathematical derivations, and technical breakdowns.
+- **TipTap WYSIWYG Studio:** Rich block editor with headings, tables, blockquotes, code blocks, and media embeds.
+- **KaTeX Mathematical Typesetting:** Native compile-time and runtime LaTeX rendering for mathematical formulas and proofs.
+- **Prism Syntax Highlighting:** Syntax highlighted code blocks across 50+ languages.
+- **Publishing Lifecycle:** Multi-stage status pipeline:
+  - `draft`: Work-in-progress, accessible only by author and authorized staff.
+  - `published`: Publicly accessible with calculated reading time and auto-generated Table of Contents.
+  - `unpublished` / soft-deleted: Archived safely without permanently removing content.
+- **Category Taxonomy:** Organize publications under tracks (*Software Development*, *Design & Creative*, *Community*).
 
-### 🚀 Projects Showcase (`/projects`)
-- **Project Cards:** Visual covers, category tags, project status pills (*Building*, *Launched*, *Recruiting*), and team member stacks.
-- **Interactive Social Features:**
-  - Upvote system with realtime Postgres change synchronization.
-  - Comment threads with threaded discussions.
-  - Modal quick-view and full detail routes (`/projects/[id]`).
+### 3. Members Directory & Follow Network (`/members`)
+- **Fast Search & Filter:** Instant member search by display name, `@username`, or bio keywords.
+- **One-Click Follow System:** Asynchronous follow/unfollow actions with optimistic count updates.
+- **Relationship Integrity:** Database-level constraints prevent self-following and duplicate follower links.
 
-### 📅 Events & Workshops (`/events`)
-- **Calendar Schedule:** Upcoming community sessions, workshops, build sprints, and guest lectures.
-- **Calendar Export:** Instant download of standard `.ics` calendar files.
-- **Discord Integration:** Direct link to live Discord stages and voice channels.
+### 4. Member Profiles (`/profile`, `/profile/[username]`)
+- **Identity Header:** Dynamic banner cover, avatar uploads with fallback monogram generation, verified role badges, and join dates.
+- **Followers & Following Dialogs:** Interactive modal inspecting a member's follower and following lists.
+- **Content Tabs:**
+  - **Posts:** Chronological feed of posts created by the member.
+  - **Journals:** Publicly listed journal articles authored by the member (for editorial contributors and staff).
+- **Profile Self-Management:** In-place profile editing for username, display name, bio, and avatar.
 
-### 🔔 Real-Time Notifications
-- Bell counter with animated unread badge.
-- Instant delivery of interactions (new followers, upvotes, project comments, event updates) via **Supabase Realtime**.
-- Mark-all-read capability and direct resource navigation.
+### 5. Staff Administration Panel (`/staff`)
+- **Community Analytics Overview:** Live counter cards tracking total members, active accounts, suspended accounts, new registrations (30 days), and published journals.
+- **Member Management:** Paginated member directory with live search, account status switching (`active`, `suspended`, `deleted`), and role assignments (`member`, `moderator`, `admin`).
+- **Moderator Permissions Management:** Granular assignment of permissions to moderators (dashboard access, member moderation, journal creation, publishing, and report resolution).
+- **Journal Editorial Control:** Centralized staff dashboard to review drafts, feature publications, toggle published status, or remove inappropriate submissions.
 
-### 🎛️ Control Room (`/control-room`)
-- Dedicated administrative suite for platform moderators.
-- Overview analytics and metrics.
-- Member role management and event curation.
+### 6. Robust Role-Based Access Control (RBAC)
+- **Role Hierarchy:**
+  - `admin` / `super_admin`: Full system control, role assignment, account status modification, and editorial override.
+  - `moderator`: Configurable permissions for reviewing content, creating journals, and community moderation.
+  - `member`: Standard authenticated member privileges (create posts, react, comment, follow, manage profile).
+- **Defense in Depth:** Suspended and inactive accounts are blocked at both database RLS policies and server-side RPC validation.
 
 ---
 
-## 🎨 Design Aesthetics
+## 🎨 Design System & Aesthetics
 
-The DropOut College features a curated, editorial visual language built from first principles:
+The Campus uses the **Midnight Glass** editorial design language:
 
-- **Deep Obsidian Forest Palette:**
-  - Background: `#0B0E0C`
-  - Cards & Panels: `#121714`
-  - Elevated Surfaces: `#161D18`
-  - Border Lines: Subdued, low-contrast `#1F2821`
-- **Neon Lime Accents:**
-  - Vibrant `#B4F042` / `#C6DA5E` for primary interactive elements, active navigation bars, and glowing status dots.
-- **Typography:**
-  - Body & Headings: Modern, clean geometric sans-serif via **Manrope**.
-  - Code & Metadata: Technical monospace precision via **DM Mono**.
-- **Mobile-First Layout:**
-  - Responsive bottom navigation bar with active indicators.
-  - Slide-out mobile drawer menu.
-  - Horizontally swipeable filter pill bars.
+- **Obsidian Dark Surface Palette:**
+  - Canvas Background: `#070a08`
+  - Elevated Cards & Dialogs: `#0d120f` with frosted backdrop blur (`rgba(13, 18, 15, 0.7)`)
+  - Subdued Borders: `#1a231d`
+- **Emerald & Lime Neon Accents:**
+  - Primary Glow Accent: `#34d399` (Emerald) and `#B4F042` / `#C6DA5E` (Volt Lime) for badges, buttons, and active tabs.
+- **Editorial Typography:**
+  - Primary Body & Display: **Inter** / **Manrope**
+  - Code & Math Annotations: **JetBrains Mono** / **DM Mono**
+- **Mobile-Responsive Framework:**
+  - Adaptive header with viewer profile pill and quick sign-out.
+  - Mobile bottom navigation bar with active indicators and quick post composer launcher.
 
 ---
 
 ## 🛠️ Tech Stack
 
-| Layer | Technology |
-|---|---|
-| **Framework** | [Next.js 16 (App Router)](https://nextjs.org/) with Turbopack |
-| **Runtime** | [React 19](https://react.dev/) + [Node.js](https://nodejs.org/) |
-| **Language** | [TypeScript](https://www.typescriptlang.org/) |
-| **Styling** | Vanilla CSS Design Tokens (Custom Theme Engine) |
-| **Database & Auth** | [Supabase](https://supabase.com/) (PostgreSQL, RLS, Storage) |
-| **Realtime** | Supabase Postgres Changes |
-| **Icons** | [Lucide React](https://lucide.dev/) |
-| **Deployment** | [Vercel](https://vercel.com/) |
+| Layer | Technology | Description |
+|---|---|---|
+| **Framework** | [Next.js 16.4.3](https://nextjs.org/) | App Router with Turbopack & React Server Components |
+| **Runtime** | [React 19.2.8](https://react.dev/) + [Node.js 24](https://nodejs.org/) | Server Actions, Streaming SSR, Optimistic UI |
+| **Language** | [TypeScript 5](https://www.typescriptlang.org/) | Strict end-to-end type safety |
+| **Styling** | [Tailwind CSS v4](https://tailwindcss.com/) + Custom CSS | CSS design tokens (`campus.css`, `midnight-glass.css`) |
+| **Database & Auth** | [Supabase](https://supabase.com/) | PostgreSQL 17, Row Level Security (RLS), Supabase Auth |
+| **Rich Text Editor** | [TipTap 3](https://tiptap.dev/) | Headless block editor with custom extensions |
+| **Math & Code** | [KaTeX](https://katex.org/) + [PrismJS](https://prismjs.com/) | Mathematical typesetting and syntax highlighting |
+| **Icons** | [Lucide React](https://lucide.dev/) | Clean, consistent SVG icon set |
+| **Testing** | Node.js Test Runner + tsx | Zero-dependency native unit and RLS integration testing |
 
 ---
 
@@ -137,34 +145,59 @@ The DropOut College features a curated, editorial visual language built from fir
 
 ```text
 The drop out college/
-├── public/                     # Static assets (logo.svg, icons, graphics)
+├── public/                         # Static assets (favicons, logos)
+├── scripts/                        # Database verification, security runners, backups
+│   ├── export-database-backup.mjs  # Complete JSON & schema data exporter
+│   ├── test-db-security.mjs        # Dockerized RLS security test runner
+│   └── test-journal.mjs            # Journal & KaTeX unit test suite
 ├── src/
-│   ├── app/                    # Next.js App Router (Pages & API routes)
-│   │   ├── admin/              # Admin dashboard
-│   │   ├── api/v1/             # REST API endpoints (auth, projects, events, follows, etc.)
-│   │   ├── control-room/       # Moderator control room
-│   │   ├── dashboard/          # User personal dashboard
-│   │   ├── events/             # Events directory & detail pages
-│   │   ├── explore/            # Community members directory
-│   │   ├── login/              # Authentication & Google OAuth
-│   │   ├── profile/            # Public & owner profile view
-│   │   ├── projects/           # Projects hub & project details
-│   │   ├── globals.css         # Complete design system & custom CSS tokens
-│   │   ├── layout.tsx          # Root layout with pre-hydration theme script
-│   │   └── page.tsx            # Community homepage
-│   ├── components/             # Reusable UI components
-│   │   ├── app-shell.tsx       # Sidebar, Topbar, Mobile Nav, Theme Switcher
-│   │   ├── cards.tsx           # MemberCard, ProjectCard, EventCard
-│   │   ├── learning-network.tsx# Hero collaboration visual animation
-│   │   └── social.tsx          # Community links, footer, social cards
-│   ├── lib/                    # Client libraries & Supabase helpers
-│   │   ├── social-client.ts    # useUpvote, useComments, useFollow hooks
-│   │   ├── supabase-data.ts    # Typed data access layer
-│   │   └── supabase/           # Browser & server Supabase clients
-│   └── server/                 # Server-side business logic & validation
-├── .env.example                # Example environment configuration
-├── package.json                # Project dependencies and npm scripts
-└── tsconfig.json               # TypeScript compiler configuration
+│   ├── app/                        # Next.js App Router
+│   │   ├── api/v1/                 # Backend RESTful endpoints
+│   │   │   ├── auth/me/            # Authentication & session resolution
+│   │   │   ├── follows/            # Follower graph mutations
+│   │   │   ├── health/             # System health status
+│   │   │   ├── journal/            # Articles CRUD, permissions, upload
+│   │   │   ├── members/            # Paginated members directory
+│   │   │   ├── posts/              # Posts CRUD, comments, Love reactions
+│   │   │   ├── profile/avatar/     # Profile avatar upload
+│   │   │   ├── staff/              # Staff overview, members, roles, permissions
+│   │   │   └── users/me/           # Member profile self-updates
+│   │   ├── journal/                # Journal directory & /[slug] article reader
+│   │   │   └── studio/             # TipTap journal authoring editor
+│   │   ├── login/                  # Authentication page
+│   │   ├── members/                # Members directory
+│   │   ├── p/[id]/                 # Standalone single post view
+│   │   ├── post/                   # Post composer route
+│   │   ├── profile/                # Current user profile & /[username] routes
+│   │   ├── staff/                  # Staff admin & moderator control panel
+│   │   ├── campus.css              # Campus social feed & components CSS
+│   │   ├── globals.css             # Base CSS tokens & typography
+│   │   ├── layout.tsx              # Root app layout & frame
+│   │   ├── midnight-glass.css      # Dark glassmorphic theme styling
+│   │   └── page.tsx                # Campus Home Feed
+│   ├── components/                 # React UI Components
+│   │   ├── app/                    # AppHeader, AppSidebar, MobileBottomNav
+│   │   ├── journal/                # JournalCard, JournalReader, TipTap editor
+│   │   ├── members/                # MemberCard, MembersDirectory
+│   │   ├── posts/                  # PostCard, Feed, PostComposer, LoveReaction, Comments
+│   │   ├── profile/                # MemberProfile, FollowListDialog
+│   │   └── avatar.tsx              # Avatar component with initials fallback
+│   ├── lib/                        # Client utilities, image compression, time formatting
+│   └── server/                     # Server-side business logic & Supabase queries
+│       ├── admin/                  # Staff admin access & member policies
+│       ├── auth/                   # Roles, permissions, account status guards
+│       ├── journal/                # Articles CRUD, sanitization, validation
+│       ├── media/                  # Image upload handlers & size validation
+│       ├── members/                # Directory search & pagination
+│       ├── posts/                  # Posts, loves, and comments operations
+│       └── supabase/               # Supabase SSR client factories
+├── supabase/
+│   ├── backups/pre-cleanup/        # Exported JSON backups for all 37 tables
+│   ├── migrations/                 # Versioned SQL migrations (0001 - 0017)
+│   └── tests/                      # PostgreSQL test suites (security_rls.sql)
+├── tests/                          # Automated unit test files (*.test.mts)
+├── package.json
+└── tsconfig.json
 ```
 
 ---
@@ -173,9 +206,10 @@ The drop out college/
 
 ### Prerequisites
 
-Ensure you have the following installed on your machine:
+Ensure you have the following installed:
 - **Node.js**: `v20.x` or later (tested on Node `v24.x`)
-- **Package Manager**: `npm`, `pnpm`, or `bun`
+- **Docker** *(optional, for running local PostgreSQL RLS tests)*
+- **npm**, **pnpm**, or **bun**
 
 ### Installation
 
@@ -192,25 +226,27 @@ Ensure you have the following installed on your machine:
 
 ### Environment Variables
 
-Copy the example environment file and fill in your Supabase credentials:
+Create a `.env.local` file in the root directory:
 
 ```bash
 cp .env.example .env.local
 ```
 
-Edit `.env.local`:
+Populate the required credentials:
 
 ```env
 # Supabase Configuration
 NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-public-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key # Server-only, never expose to client
 
-# Site URL (optional for local development)
+# Server-side Administrative Key (Used only in trusted server contexts & migrations)
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+# Site URL
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
-> **Security Note:** Never commit `.env.local` to version control. The `NEXT_PUBLIC_SUPABASE_ANON_KEY` is safe for browser use only when Row Level Security (RLS) is enabled.
+> **Security Guardrail:** Never expose `SUPABASE_SERVICE_ROLE_KEY` to client-side bundles. The client relies strictly on `NEXT_PUBLIC_SUPABASE_ANON_KEY` combined with PostgreSQL Row Level Security (RLS).
 
 ### Running the App
 
@@ -224,93 +260,127 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
-## 🗄️ Supabase Configuration & Schema
+## 🗄️ Database & Storage Architecture
 
-The application connects to a Supabase PostgreSQL instance with the following primary tables:
+### Core Database Schema
 
-- **`profiles`**: User information, display names, `@handle`, bio, avatars, roles (`member`, `moderator`, `admin`, `super_admin`).
-- **`projects`**: Project titles, descriptions, cover images, status, metrics, external URLs.
-- **`project_upvotes`**: Unique user upvotes per project.
-- **`project_comments`**: User comments on projects.
-- **`events`**: Scheduled events, dates, locations, calendar information.
-- **`follows`**: Social follower/following graph (`follower_id` ↔ `following_id`).
-- **`categories`**: Tracks (*Learn*, *Build*, *Connect*).
-- **`skills`**: Skill taxonomy and member assignments.
-- **`notifications`**: User notifications for social interactions.
+The Campus platform is built on PostgreSQL with Row Level Security (RLS) enabled on all tables:
 
-### Applying Supabase migrations
+- **`profiles`**: Member identity, username, display name, avatar URL, bio, and account status (`active`, `suspended`, `deleted`).
+- **`posts`**: Community thoughts and micro-posts (maximum 300 characters, optional photo attachment).
+- **`post_loves`**: Unique member-post Love reactions (`post_id`, `user_id`).
+- **`post_comments`**: Threaded comments on posts (`post_id`, `author_id`, `content`).
+- **`articles`**: Long-form journal essays, TipTap JSON document content, cover image, category, and publication status (`draft`, `published`, `unpublished`).
+- **`follows`**: Directed member follow graph (`follower_id` ↔ `following_id`).
+- **`categories`**: Editorial categories for journal publications.
+- **`user_roles`**: Role assignments (`admin`, `moderator`, `member`).
+- **`admin_roles` & `permissions`**: Granular role-based capability mapping for the staff panel.
+- **`audit_logs`**: Administrative activity audit records.
 
-The migration history currently contains two different `0005` files, and the
-database test runner applies migrations in an explicit order. Do not rename
-historical migrations or run `supabase db push` against production until you
-have compared the repository with that project's migration history.
+### Storage Buckets
 
-The latest additions are `supabase/migrations/0014_homepage_cms_and_founders.sql`
-and `supabase/migrations/0015_team_and_project_relationships.sql`. Before
-applying them, confirm that the target project has the prerequisite schema and
-security functions from migrations `0001` through `0013`. Connect using the
-database connection string from the existing Supabase project's dashboard
-(never put it in a committed file), then apply only migrations that are not
-already present:
+Media assets are segregated into folder-scoped Supabase Storage buckets:
 
-```bash
-psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -X \
-  -f supabase/migrations/0014_homepage_cms_and_founders.sql
-psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -X \
-  -f supabase/migrations/0015_team_and_project_relationships.sql
+- **`post-media`**: Member-uploaded images for campus posts (JPEG, PNG, WebP, GIF; ≤ 5MB).
+- **`journal-media`**: Cover images and embedded figures for Journal publications.
+- **`profile-media`**: Custom member avatar uploads.
+- **`project-covers`**: Legacy bucket maintained for backwards compatibility with existing journal cover image URLs.
+
+### Database Backups
+
+A complete, verified pre-cleanup backup of all production data is preserved in:
+```text
+supabase/backups/pre-cleanup/
+├── users.json
+├── profiles.json
+├── articles.json
+├── follows.json
+├── user_roles.json
+├── permissions.json
+├── categories.json
+├── policies.json       # 92 RLS policies
+├── functions.json      # 92 Postgres functions & RPCs
+├── indexes.json        # 88 database indexes
+└── storage_objects.json# 15 live storage files
 ```
 
-Set `SUPABASE_DB_URL` in the shell from the existing project's database
-connection details. These commands apply SQL directly and do not update
-Supabase CLI migration history. Do not run a later `db push` until migration
-history has been reconciled. The SQL test suite can be run locally with
-`npm run test:db`; it uses a disposable PostgreSQL container and does not
-connect to production.
+---
 
-The current storage configuration is the public `project-covers` bucket for
-public project covers and published journal media. It allows JPEG, PNG, WebP,
-and GIF files up to 5 MiB. Upload writes are scoped to the authenticated
-uploader's folder; public reads are intentional for this bucket. Do not store
-private or draft-only media there.
+## 🧪 Testing Suite
+
+Run the complete automated test suite:
+
+```bash
+# Run all unit tests & Journal suite (42 tests)
+npm test
+
+# Run Journal & KaTeX compilation tests specifically
+npm run test:journal
+
+# Run Unit tests specifically
+npm run test:unit
+
+# Run full PostgreSQL RLS security test in a Docker container
+npm run test:db
+```
+
+All 42 core tests verify:
+- TipTap HTML sanitization and XSS prevention.
+- KaTeX equation compilation.
+- Prism syntax highlighting.
+- Article deletion permissions and soft-deletion behavior.
+- RLS policy isolation for drafts, comments, and reactions.
+- Safe redirect sanitization and open-redirect defenses.
 
 ---
 
-## 📡 API & Health Endpoints
+## 📡 API Endpoints Reference
 
-You can verify your backend and database connection using the built-in REST endpoints:
+### Campus Posts
+- `GET /api/v1/posts?page=1&limit=10` — Retrieve paginated campus feed.
+- `POST /api/v1/posts` — Create a new post (max 300 characters).
+- `GET /api/v1/posts/:id` — Get single post with author and love status.
+- `PATCH /api/v1/posts/:id` — Edit an existing post.
+- `DELETE /api/v1/posts/:id` — Delete a post (author or staff).
+- `POST /api/v1/posts/:id/love` — Toggle Love reaction on a post.
+- `GET /api/v1/posts/:id/comments` — Fetch comments for a post.
+- `POST /api/v1/posts/:id/comments` — Add a comment to a post.
+- `DELETE /api/v1/posts/:id/comments/:commentId` — Delete a comment.
+- `POST /api/v1/posts/upload` — Upload an image for a post.
 
-- `GET /api/v1/health` — Service health status check.
-- `GET /api/v1/categories` — Returns available community category tracks.
-- `GET /api/v1/projects` — Fetches approved community projects.
-- `GET /api/v1/events` — Returns upcoming community events.
-- `GET /api/v1/follows?userId=<id>` — Returns follower counts and relationship status.
+### The DropOut Journal
+- `GET /api/v1/journal/articles` — Fetch published journal articles.
+- `POST /api/v1/journal/articles` — Create a new article draft.
+- `GET /api/v1/journal/articles/:id` — Fetch article draft or detail.
+- `PATCH /api/v1/journal/articles/:id` — Update article content or publishing status.
+- `DELETE /api/v1/journal/articles/:id` — Soft-delete an article.
+- `GET /api/v1/journal/permissions` — Check current user's journal permissions.
+- `POST /api/v1/journal/upload` — Upload journal cover or embedded figure.
 
----
+### Members & Network
+- `GET /api/v1/members?page=1&search=...` — Search & list community members.
+- `GET /api/v1/follows?userId=...` — Fetch follower/following counts and relationship.
+- `POST /api/v1/follows` — Follow a member.
+- `DELETE /api/v1/follows` — Unfollow a member.
+- `GET /api/v1/users/me` — Retrieve current member profile.
+- `PATCH /api/v1/users/me` — Update display name, bio, and username.
+- `POST /api/v1/profile/avatar` — Upload and update member avatar.
 
-## 🤝 Contributing
+### Staff Administration
+- `GET /api/v1/staff/overview` — Fetch community health and activity metrics.
+- `GET /api/v1/staff/members` — Paginated member management list with filters.
+- `PATCH /api/v1/staff/roles` — Update member account status or role.
+- `GET /api/v1/staff/moderator-permissions` — Inspect assigned moderator permissions.
 
-Contributions make the community better! We welcome bug fixes, design enhancements, and documentation improvements.
-
-1. **Fork the Project**
-2. **Create your Feature Branch:**
-   ```bash
-   git checkout -b feature/amazing-feature
-   ```
-3. **Commit your Changes:**
-   ```bash
-   git commit -m 'feat: Add amazing feature'
-   ```
-4. **Push to the Branch:**
-   ```bash
-   git push origin feature/amazing-feature
-   ```
-5. **Open a Pull Request**
+### System & Auth
+- `GET /api/v1/auth/me` — Current authenticated user state.
+- `GET /api/v1/health` — Platform health check.
 
 ---
 
 ## 🌐 Community & Socials
 
-Stay connected with the DropOut College ecosystem:
+Stay connected with The DropOut College community:
 
 - 💬 **Discord:** [Join the Community Server](https://discord.gg/rEkkzPbM4p)
 - 📺 **YouTube:** [@TheDropOutCollege](https://www.youtube.com/@TheDropOutCollege-v4k)
