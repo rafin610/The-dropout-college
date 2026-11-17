@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { getOptionalUser } from "@/server/auth/current-user";
 import { getMemberRole, type MemberRole } from "@/server/auth/roles";
 import { createSupabaseServerClient } from "@/server/supabase/server";
@@ -10,7 +11,7 @@ export interface ViewerProfile {
   role: MemberRole;
 }
 
-export async function getViewerProfile(): Promise<ViewerProfile | null> {
+export const getViewerProfile = cache(async (): Promise<ViewerProfile | null> => {
   const user = await getOptionalUser();
   if (!user) return null;
 
@@ -45,4 +46,4 @@ export async function getViewerProfile(): Promise<ViewerProfile | null> {
       role: "member",
     };
   }
-}
+});

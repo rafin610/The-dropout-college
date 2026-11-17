@@ -1,8 +1,8 @@
+import { cache } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { getViewerProfile } from "@/server/auth/viewer";
-import { getMemberRole } from "@/server/auth/roles";
 import { createSupabaseServerClient } from "@/server/supabase/server";
 import { listPosts } from "@/server/posts/posts";
 import { getPublishedArticles } from "@/server/journal/articles";
@@ -11,7 +11,7 @@ import { MemberProfile } from "@/components/profile/member-profile";
 
 export const dynamic = "force-dynamic";
 
-async function loadProfile(userId: string) {
+const loadProfile = cache(async (userId: string) => {
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from("profiles")
@@ -19,7 +19,7 @@ async function loadProfile(userId: string) {
     .eq("id", userId)
     .maybeSingle();
   return data;
-}
+});
 
 export default async function MyProfilePage({
   searchParams,
@@ -75,14 +75,14 @@ export default async function MyProfilePage({
     );
   }
 
-  const role = await getMemberRole(profile.id);
-  const posts = await listPosts({ authorId: profile.id, viewerId: viewer.id, limit: 10 });
-  const journals =
+  const role = viewer.role;
+  const [posts, journalResult] = await Promise.all([
+    listPosts({ authorId: profile.id, viewerId: viewer.id, limit: 10 }),
     role === "member"
-      ? []
-      : (await getPublishedArticles({ limit: 50 })).articles.filter(
-          (article) => article.authorId === profile.id,
-        );
+      ? Promise.resolve({ articles: [] })
+      : getPublishedArticles({ authorId: profile.id, limit: 50 }),
+  ]);
+  const journals = journalResult.articles;
 
   return (
     <MemberProfile

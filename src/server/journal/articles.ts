@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createSupabaseServerClient } from "@/server/supabase/server";
 import { ApiError } from "@/server/errors";
 import { getUserPermissions } from "@/server/auth/permissions";
@@ -173,13 +174,13 @@ export async function getPublishedArticles({
   }
 }
 
-export async function getArticleBySlugOrId(
+export const getArticleBySlugOrId = cache(async (
   slugOrId: string,
   user?: User | null,
-): Promise<JournalArticle | null> {
+): Promise<JournalArticle | null> => {
   const supabase = await createSupabaseServerClient();
   return getArticleBySlugOrIdWithClient(supabase, slugOrId, user);
-}
+});
 
 export async function getArticleBySlugOrIdWithClient(
   supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,

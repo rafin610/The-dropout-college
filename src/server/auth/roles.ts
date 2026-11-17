@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { createSupabaseServerClient } from "@/server/supabase/server";
 import { ApiError } from "@/server/errors";
@@ -20,7 +21,7 @@ export function roleLabel(role: MemberRole | string | null | undefined): string 
   return clean.charAt(0).toUpperCase() + clean.slice(1);
 }
 
-export async function getMemberRole(userId: string): Promise<MemberRole> {
+export const getMemberRole = cache(async (userId: string): Promise<MemberRole> => {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("user_roles")
@@ -29,7 +30,7 @@ export async function getMemberRole(userId: string): Promise<MemberRole> {
 
   if (error) return "member";
   return normalizeMemberRole((data ?? []).map((row) => String(row.role)));
-}
+});
 
 export async function requireStaff(): Promise<{ id: string; role: MemberRole }> {
   const user = await getCurrentUser();

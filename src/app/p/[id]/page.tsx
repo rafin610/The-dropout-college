@@ -14,7 +14,8 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
-  const result = await getPostById(id);
+  const viewer = await getViewerProfile();
+  const result = await getPostById(id, viewer?.id);
   if (!result.post) return { title: "Post not found" };
 
   const description = result.post.content.slice(0, 180);

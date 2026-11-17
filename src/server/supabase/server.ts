@@ -1,9 +1,10 @@
+import { cache } from "react";
 import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { getPublicEnv } from "@/server/env";
 
-export async function createSupabaseServerClient() {
+export const createSupabaseServerClient = cache(async () => {
   const env = getPublicEnv();
 
   try {
@@ -31,7 +32,7 @@ export async function createSupabaseServerClient() {
       },
     });
   }
-}
+});
 
 export function createSupabaseAdminClient() {
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;

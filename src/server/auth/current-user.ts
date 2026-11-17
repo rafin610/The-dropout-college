@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createSupabaseServerClient, createSupabaseAdminClient } from "@/server/supabase/server";
 import { ApiError } from "@/server/errors";
 import { isActiveAccountStatus } from "@/server/auth/account-status";
@@ -19,7 +20,7 @@ function isMissingAccountTable(error: { code?: string; message?: string } | null
  * sign-in can finish provisioning. A real database failure is surfaced rather
  * than silently granting access.
  */
-export async function getAccountStatus(userId: string): Promise<string | null> {
+export const getAccountStatus = cache(async (userId: string): Promise<string | null> => {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("users")
@@ -37,14 +38,14 @@ export async function getAccountStatus(userId: string): Promise<string | null> {
   }
 
   return data?.account_status ?? null;
-}
+});
 
 export async function isUserActive(userId: string): Promise<boolean> {
   const status = await getAccountStatus(userId);
   return status === null || isActiveAccountStatus(status);
 }
 
-export async function getCurrentUser(): Promise<User> {
+export const getCurrentUser = cache(async (): Promise<User> => {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.auth.getUser();
 
@@ -62,9 +63,9 @@ export async function getCurrentUser(): Promise<User> {
   }
 
   return data.user;
-}
+});
 
-export async function getOptionalUser(): Promise<User | null> {
+export const getOptionalUser = cache(async (): Promise<User | null> => {
   try {
     return await getCurrentUser();
   } catch {
@@ -72,7 +73,7 @@ export async function getOptionalUser(): Promise<User | null> {
     // on public pages. Never grant draft or staff access from a stale session.
     return null;
   }
-}
+});
 
 export async function ensureUserProfile(user: User) {
   try {

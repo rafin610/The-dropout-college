@@ -66,8 +66,9 @@ export function MemberProfile({
   const inputRef = useRef<HTMLInputElement>(null);
   const preview = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
   const closeFollowList = useCallback(() => setFollowList(null), []);
+  const handleAuthRequired = useCallback(() => setAuthPrompt(true), []);
   const follow = useFollow(profile.id, viewerId, {
-    onAuthRequired: () => setAuthPrompt(true),
+    onAuthRequired: handleAuthRequired,
   });
 
   const canShowJournals = profile.role === "admin" || profile.role === "moderator";

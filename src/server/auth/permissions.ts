@@ -1,9 +1,10 @@
+import { cache } from "react";
 import { getCurrentUser, getAccountStatus } from "@/server/auth/current-user";
 import { isActiveAccountStatus } from "@/server/auth/account-status";
 import { ApiError } from "@/server/errors";
 import { createSupabaseServerClient } from "@/server/supabase/server";
 
-export async function getUserPermissions(userId: string): Promise<Set<string>> {
+export const getUserPermissions = cache(async (userId: string): Promise<Set<string>> => {
   const permissions = new Set<string>();
 
   // Defence in depth: a suspended account must not inherit staff permissions
@@ -123,7 +124,7 @@ export async function getUserPermissions(userId: string): Promise<Set<string>> {
   }
 
   return permissions;
-}
+});
 
 export async function hasPermission(permission: string): Promise<boolean> {
   try {

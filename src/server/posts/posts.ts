@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createSupabaseServerClient } from "@/server/supabase/server";
 import { getPublicEnv } from "@/server/env";
 import { ApiError } from "@/server/errors";
@@ -190,10 +191,10 @@ export async function listPosts(options: {
   };
 }
 
-export async function getPostById(
+export const getPostById = cache(async (
   postId: string,
   viewerId?: string | null,
-): Promise<{ post: Post | null; unavailable: boolean }> {
+): Promise<{ post: Post | null; unavailable: boolean }> => {
   if (!UUID_PATTERN.test(postId)) {
     return { post: null, unavailable: false };
   }
@@ -217,7 +218,7 @@ export async function getPostById(
     post: mapPostRow(data as unknown as PostRow, loved.has(postId)),
     unavailable: false,
   };
-}
+});
 
 export function isSafePostImageUrl(value: string | null | undefined): boolean {
   if (!value) return true;

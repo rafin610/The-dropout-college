@@ -1,39 +1,8 @@
-import { getOptionalUser } from "@/server/auth/current-user";
-import { getMemberRole } from "@/server/auth/roles";
-import { createSupabaseServerClient } from "@/server/supabase/server";
+import { getViewerProfile } from "@/server/auth/viewer";
 import { AppFrame } from "@/components/app/app-frame";
-import type { AppViewer } from "@/components/app/viewer";
 
 export async function AppShell({ children }: { children: React.ReactNode }) {
-  let viewer: AppViewer | null = null;
-
-  try {
-    const user = await getOptionalUser();
-    if (user) {
-      const supabase = await createSupabaseServerClient();
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("display_name, username, avatar_url")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      viewer = {
-        id: user.id,
-        displayName:
-          profile?.display_name ||
-          (user.user_metadata?.full_name as string | undefined) ||
-          (user.user_metadata?.name as string | undefined) ||
-          "Member",
-        username: profile?.username || "",
-        avatarUrl: profile?.avatar_url || null,
-        role: await getMemberRole(user.id),
-      };
-    }
-  } catch {
-    // Public pages remain usable if Supabase is temporarily unavailable or the
-    // new migration has not been applied yet.
-  }
-
+  const viewer = await getViewerProfile();
   return <AppFrame viewer={viewer}>{children}</AppFrame>;
 }
 
