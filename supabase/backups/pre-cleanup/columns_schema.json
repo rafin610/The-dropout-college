@@ -1,0 +1,2756 @@
+[
+  {
+    "table_name": "admin_role_permissions",
+    "column_name": "role_id",
+    "ordinal_position": 1,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "admin_role_permissions",
+    "column_name": "permission_id",
+    "ordinal_position": 2,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "admin_roles",
+    "column_name": "id",
+    "ordinal_position": 1,
+    "column_default": "gen_random_uuid()",
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "admin_roles",
+    "column_name": "name",
+    "ordinal_position": 2,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "admin_roles",
+    "column_name": "slug",
+    "ordinal_position": 3,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "admin_roles",
+    "column_name": "description",
+    "ordinal_position": 4,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "admin_roles",
+    "column_name": "created_at",
+    "ordinal_position": 5,
+    "column_default": "now()",
+    "is_nullable": "NO",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "articles",
+    "column_name": "id",
+    "ordinal_position": 1,
+    "column_default": "gen_random_uuid()",
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "articles",
+    "column_name": "title",
+    "ordinal_position": 2,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "articles",
+    "column_name": "slug",
+    "ordinal_position": 3,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "USER-DEFINED",
+    "udt_name": "citext"
+  },
+  {
+    "table_name": "articles",
+    "column_name": "excerpt",
+    "ordinal_position": 4,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "articles",
+    "column_name": "cover_image_url",
+    "ordinal_position": 5,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "articles",
+    "column_name": "content",
+    "ordinal_position": 6,
+    "column_default": "'{\"type\": \"doc\", \"content\": []}'::jsonb",
+    "is_nullable": "NO",
+    "data_type": "jsonb",
+    "udt_name": "jsonb"
+  },
+  {
+    "table_name": "articles",
+    "column_name": "author_id",
+    "ordinal_position": 7,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "articles",
+    "column_name": "category_id",
+    "ordinal_position": 8,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "articles",
+    "column_name": "tags",
+    "ordinal_position": 9,
+    "column_default": "'{}'::text[]",
+    "is_nullable": "NO",
+    "data_type": "ARRAY",
+    "udt_name": "_text"
+  },
+  {
+    "table_name": "articles",
+    "column_name": "status",
+    "ordinal_position": 10,
+    "column_default": "'draft'::text",
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "articles",
+    "column_name": "reading_time_minutes",
+    "ordinal_position": 11,
+    "column_default": "1",
+    "is_nullable": "NO",
+    "data_type": "integer",
+    "udt_name": "int4"
+  },
+  {
+    "table_name": "articles",
+    "column_name": "featured",
+    "ordinal_position": 12,
+    "column_default": "false",
+    "is_nullable": "NO",
+    "data_type": "boolean",
+    "udt_name": "bool"
+  },
+  {
+    "table_name": "articles",
+    "column_name": "published_at",
+    "ordinal_position": 13,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "articles",
+    "column_name": "seo_title",
+    "ordinal_position": 14,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "articles",
+    "column_name": "seo_description",
+    "ordinal_position": 15,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "articles",
+    "column_name": "created_at",
+    "ordinal_position": 16,
+    "column_default": "now()",
+    "is_nullable": "NO",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "articles",
+    "column_name": "updated_at",
+    "ordinal_position": 17,
+    "column_default": "now()",
+    "is_nullable": "NO",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "articles",
+    "column_name": "deleted_at",
+    "ordinal_position": 18,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "audit_logs",
+    "column_name": "id",
+    "ordinal_position": 1,
+    "column_default": "gen_random_uuid()",
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "audit_logs",
+    "column_name": "actor_id",
+    "ordinal_position": 2,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "audit_logs",
+    "column_name": "action",
+    "ordinal_position": 3,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "audit_logs",
+    "column_name": "resource_type",
+    "ordinal_position": 4,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "audit_logs",
+    "column_name": "resource_id",
+    "ordinal_position": 5,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "audit_logs",
+    "column_name": "before_data",
+    "ordinal_position": 6,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "jsonb",
+    "udt_name": "jsonb"
+  },
+  {
+    "table_name": "audit_logs",
+    "column_name": "after_data",
+    "ordinal_position": 7,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "jsonb",
+    "udt_name": "jsonb"
+  },
+  {
+    "table_name": "audit_logs",
+    "column_name": "request_id",
+    "ordinal_position": 8,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "audit_logs",
+    "column_name": "created_at",
+    "ordinal_position": 9,
+    "column_default": "now()",
+    "is_nullable": "NO",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "badges",
+    "column_name": "id",
+    "ordinal_position": 1,
+    "column_default": "gen_random_uuid()",
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "badges",
+    "column_name": "slug",
+    "ordinal_position": 2,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "badges",
+    "column_name": "name",
+    "ordinal_position": 3,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "badges",
+    "column_name": "description",
+    "ordinal_position": 4,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "badges",
+    "column_name": "icon",
+    "ordinal_position": 5,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "badges",
+    "column_name": "criteria_type",
+    "ordinal_position": 6,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "badges",
+    "column_name": "is_active",
+    "ordinal_position": 7,
+    "column_default": "true",
+    "is_nullable": "NO",
+    "data_type": "boolean",
+    "udt_name": "bool"
+  },
+  {
+    "table_name": "categories",
+    "column_name": "id",
+    "ordinal_position": 1,
+    "column_default": "gen_random_uuid()",
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "categories",
+    "column_name": "slug",
+    "ordinal_position": 2,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "categories",
+    "column_name": "name",
+    "ordinal_position": 3,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "categories",
+    "column_name": "description",
+    "ordinal_position": 4,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "categories",
+    "column_name": "icon",
+    "ordinal_position": 5,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "categories",
+    "column_name": "color",
+    "ordinal_position": 6,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "categories",
+    "column_name": "is_active",
+    "ordinal_position": 7,
+    "column_default": "true",
+    "is_nullable": "NO",
+    "data_type": "boolean",
+    "udt_name": "bool"
+  },
+  {
+    "table_name": "categories",
+    "column_name": "sort_order",
+    "ordinal_position": 8,
+    "column_default": "0",
+    "is_nullable": "NO",
+    "data_type": "integer",
+    "udt_name": "int4"
+  },
+  {
+    "table_name": "categories",
+    "column_name": "created_at",
+    "ordinal_position": 9,
+    "column_default": "now()",
+    "is_nullable": "NO",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "categories",
+    "column_name": "updated_at",
+    "ordinal_position": 10,
+    "column_default": "now()",
+    "is_nullable": "NO",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "discord_connections",
+    "column_name": "profile_id",
+    "ordinal_position": 1,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "discord_connections",
+    "column_name": "discord_user_id",
+    "ordinal_position": 2,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "discord_connections",
+    "column_name": "discord_username",
+    "ordinal_position": 3,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "discord_connections",
+    "column_name": "access_token_encrypted",
+    "ordinal_position": 4,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "discord_connections",
+    "column_name": "refresh_token_encrypted",
+    "ordinal_position": 5,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "discord_connections",
+    "column_name": "token_expires_at",
+    "ordinal_position": 6,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "discord_connections",
+    "column_name": "last_verified_at",
+    "ordinal_position": 7,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "discord_connections",
+    "column_name": "connected_at",
+    "ordinal_position": 8,
+    "column_default": "now()",
+    "is_nullable": "NO",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "event_participants",
+    "column_name": "event_id",
+    "ordinal_position": 1,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "event_participants",
+    "column_name": "profile_id",
+    "ordinal_position": 2,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "event_participants",
+    "column_name": "status",
+    "ordinal_position": 3,
+    "column_default": "'registered'::text",
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "event_participants",
+    "column_name": "registered_at",
+    "ordinal_position": 4,
+    "column_default": "now()",
+    "is_nullable": "NO",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "events",
+    "column_name": "id",
+    "ordinal_position": 1,
+    "column_default": "gen_random_uuid()",
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "events",
+    "column_name": "created_by",
+    "ordinal_position": 2,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "events",
+    "column_name": "title",
+    "ordinal_position": 3,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "events",
+    "column_name": "slug",
+    "ordinal_position": 4,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "events",
+    "column_name": "description",
+    "ordinal_position": 5,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "events",
+    "column_name": "event_type",
+    "ordinal_position": 6,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "events",
+    "column_name": "starts_at",
+    "ordinal_position": 7,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "events",
+    "column_name": "ends_at",
+    "ordinal_position": 8,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "events",
+    "column_name": "capacity",
+    "ordinal_position": 9,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "integer",
+    "udt_name": "int4"
+  },
+  {
+    "table_name": "events",
+    "column_name": "location",
+    "ordinal_position": 10,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "events",
+    "column_name": "discord_channel_id",
+    "ordinal_position": 11,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "events",
+    "column_name": "status",
+    "ordinal_position": 12,
+    "column_default": "'draft'::event_status",
+    "is_nullable": "NO",
+    "data_type": "USER-DEFINED",
+    "udt_name": "event_status"
+  },
+  {
+    "table_name": "events",
+    "column_name": "created_at",
+    "ordinal_position": 13,
+    "column_default": "now()",
+    "is_nullable": "NO",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "events",
+    "column_name": "updated_at",
+    "ordinal_position": 14,
+    "column_default": "now()",
+    "is_nullable": "NO",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "events",
+    "column_name": "category_id",
+    "ordinal_position": 15,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "events",
+    "column_name": "event_url",
+    "ordinal_position": 16,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "events",
+    "column_name": "cover_image_url",
+    "ordinal_position": 17,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "follows",
+    "column_name": "id",
+    "ordinal_position": 1,
+    "column_default": "gen_random_uuid()",
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "follows",
+    "column_name": "follower_id",
+    "ordinal_position": 2,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "follows",
+    "column_name": "following_id",
+    "ordinal_position": 3,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "follows",
+    "column_name": "created_at",
+    "ordinal_position": 4,
+    "column_default": "now()",
+    "is_nullable": "NO",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "moderation_reports",
+    "column_name": "id",
+    "ordinal_position": 1,
+    "column_default": "gen_random_uuid()",
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "moderation_reports",
+    "column_name": "reporter_id",
+    "ordinal_position": 2,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "moderation_reports",
+    "column_name": "resource_type",
+    "ordinal_position": 3,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "moderation_reports",
+    "column_name": "resource_id",
+    "ordinal_position": 4,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "moderation_reports",
+    "column_name": "reason",
+    "ordinal_position": 5,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "moderation_reports",
+    "column_name": "description",
+    "ordinal_position": 6,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "moderation_reports",
+    "column_name": "status",
+    "ordinal_position": 7,
+    "column_default": "'open'::text",
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "moderation_reports",
+    "column_name": "assigned_to",
+    "ordinal_position": 8,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "moderation_reports",
+    "column_name": "resolution",
+    "ordinal_position": 9,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "moderation_reports",
+    "column_name": "created_at",
+    "ordinal_position": 10,
+    "column_default": "now()",
+    "is_nullable": "NO",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "moderation_reports",
+    "column_name": "resolved_at",
+    "ordinal_position": 11,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "navigation_items",
+    "column_name": "id",
+    "ordinal_position": 1,
+    "column_default": "gen_random_uuid()",
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "navigation_items",
+    "column_name": "label",
+    "ordinal_position": 2,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "navigation_items",
+    "column_name": "href",
+    "ordinal_position": 3,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "navigation_items",
+    "column_name": "sort_order",
+    "ordinal_position": 4,
+    "column_default": "0",
+    "is_nullable": "NO",
+    "data_type": "integer",
+    "udt_name": "int4"
+  },
+  {
+    "table_name": "navigation_items",
+    "column_name": "is_enabled",
+    "ordinal_position": 5,
+    "column_default": "true",
+    "is_nullable": "NO",
+    "data_type": "boolean",
+    "udt_name": "bool"
+  },
+  {
+    "table_name": "navigation_items",
+    "column_name": "is_external",
+    "ordinal_position": 6,
+    "column_default": "false",
+    "is_nullable": "NO",
+    "data_type": "boolean",
+    "udt_name": "bool"
+  },
+  {
+    "table_name": "navigation_items",
+    "column_name": "parent_id",
+    "ordinal_position": 7,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "navigation_items",
+    "column_name": "created_at",
+    "ordinal_position": 8,
+    "column_default": "now()",
+    "is_nullable": "NO",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "navigation_items",
+    "column_name": "updated_at",
+    "ordinal_position": 9,
+    "column_default": "now()",
+    "is_nullable": "NO",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "navigation_items",
+    "column_name": "title",
+    "ordinal_position": 10,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "navigation_items",
+    "column_name": "url",
+    "ordinal_position": 11,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "navigation_items",
+    "column_name": "location",
+    "ordinal_position": 12,
+    "column_default": "'header'::text",
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "navigation_items",
+    "column_name": "display_order",
+    "ordinal_position": 13,
+    "column_default": "0",
+    "is_nullable": "YES",
+    "data_type": "integer",
+    "udt_name": "int4"
+  },
+  {
+    "table_name": "navigation_items",
+    "column_name": "is_visible",
+    "ordinal_position": 14,
+    "column_default": "true",
+    "is_nullable": "YES",
+    "data_type": "boolean",
+    "udt_name": "bool"
+  },
+  {
+    "table_name": "navigation_items",
+    "column_name": "open_in_new_tab",
+    "ordinal_position": 15,
+    "column_default": "false",
+    "is_nullable": "YES",
+    "data_type": "boolean",
+    "udt_name": "bool"
+  },
+  {
+    "table_name": "notifications",
+    "column_name": "id",
+    "ordinal_position": 1,
+    "column_default": "gen_random_uuid()",
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "notifications",
+    "column_name": "profile_id",
+    "ordinal_position": 2,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "notifications",
+    "column_name": "type",
+    "ordinal_position": 3,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "notifications",
+    "column_name": "title",
+    "ordinal_position": 4,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "notifications",
+    "column_name": "body",
+    "ordinal_position": 5,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "notifications",
+    "column_name": "resource_type",
+    "ordinal_position": 6,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "notifications",
+    "column_name": "resource_id",
+    "ordinal_position": 7,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "notifications",
+    "column_name": "read_at",
+    "ordinal_position": 8,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "notifications",
+    "column_name": "created_at",
+    "ordinal_position": 9,
+    "column_default": "now()",
+    "is_nullable": "NO",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "notifications",
+    "column_name": "actor_id",
+    "ordinal_position": 10,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "notifications",
+    "column_name": "project_id",
+    "ordinal_position": 11,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "notifications",
+    "column_name": "comment_id",
+    "ordinal_position": 12,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "permissions",
+    "column_name": "id",
+    "ordinal_position": 1,
+    "column_default": "gen_random_uuid()",
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "permissions",
+    "column_name": "key",
+    "ordinal_position": 2,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "permissions",
+    "column_name": "description",
+    "ordinal_position": 3,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "profile_badges",
+    "column_name": "profile_id",
+    "ordinal_position": 1,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "profile_badges",
+    "column_name": "badge_id",
+    "ordinal_position": 2,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "profile_badges",
+    "column_name": "awarded_by",
+    "ordinal_position": 3,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "profile_badges",
+    "column_name": "awarded_at",
+    "ordinal_position": 4,
+    "column_default": "now()",
+    "is_nullable": "NO",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "profile_badges",
+    "column_name": "metadata",
+    "ordinal_position": 5,
+    "column_default": "'{}'::jsonb",
+    "is_nullable": "NO",
+    "data_type": "jsonb",
+    "udt_name": "jsonb"
+  },
+  {
+    "table_name": "profile_categories",
+    "column_name": "profile_id",
+    "ordinal_position": 1,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "profile_categories",
+    "column_name": "category_id",
+    "ordinal_position": 2,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "profile_skills",
+    "column_name": "profile_id",
+    "ordinal_position": 1,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "profile_skills",
+    "column_name": "skill_id",
+    "ordinal_position": 2,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "profile_skills",
+    "column_name": "level",
+    "ordinal_position": 3,
+    "column_default": "'beginner'::skill_level",
+    "is_nullable": "NO",
+    "data_type": "USER-DEFINED",
+    "udt_name": "skill_level"
+  },
+  {
+    "table_name": "profile_skills",
+    "column_name": "years_experience",
+    "ordinal_position": 4,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "numeric",
+    "udt_name": "numeric"
+  },
+  {
+    "table_name": "profile_skills",
+    "column_name": "created_at",
+    "ordinal_position": 5,
+    "column_default": "now()",
+    "is_nullable": "NO",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "profile_skills",
+    "column_name": "updated_at",
+    "ordinal_position": 6,
+    "column_default": "now()",
+    "is_nullable": "NO",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "profiles",
+    "column_name": "id",
+    "ordinal_position": 1,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "profiles",
+    "column_name": "username",
+    "ordinal_position": 2,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "USER-DEFINED",
+    "udt_name": "citext"
+  },
+  {
+    "table_name": "profiles",
+    "column_name": "display_name",
+    "ordinal_position": 3,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "profiles",
+    "column_name": "avatar_url",
+    "ordinal_position": 4,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "profiles",
+    "column_name": "bio",
+    "ordinal_position": 5,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "profiles",
+    "column_name": "status",
+    "ordinal_position": 6,
+    "column_default": "'active'::member_status",
+    "is_nullable": "NO",
+    "data_type": "USER-DEFINED",
+    "udt_name": "member_status"
+  },
+  {
+    "table_name": "profiles",
+    "column_name": "created_at",
+    "ordinal_position": 7,
+    "column_default": "now()",
+    "is_nullable": "NO",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "profiles",
+    "column_name": "updated_at",
+    "ordinal_position": 8,
+    "column_default": "now()",
+    "is_nullable": "NO",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "profiles",
+    "column_name": "last_active_at",
+    "ordinal_position": 9,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "profiles",
+    "column_name": "headline",
+    "ordinal_position": 10,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "profiles",
+    "column_name": "location",
+    "ordinal_position": 11,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "project_comments",
+    "column_name": "id",
+    "ordinal_position": 1,
+    "column_default": "gen_random_uuid()",
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "project_comments",
+    "column_name": "project_id",
+    "ordinal_position": 2,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "project_comments",
+    "column_name": "user_id",
+    "ordinal_position": 3,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "project_comments",
+    "column_name": "content",
+    "ordinal_position": 4,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "project_comments",
+    "column_name": "created_at",
+    "ordinal_position": 5,
+    "column_default": "now()",
+    "is_nullable": "NO",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "project_comments",
+    "column_name": "updated_at",
+    "ordinal_position": 6,
+    "column_default": "now()",
+    "is_nullable": "NO",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "project_links",
+    "column_name": "id",
+    "ordinal_position": 1,
+    "column_default": "gen_random_uuid()",
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "project_links",
+    "column_name": "project_id",
+    "ordinal_position": 2,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "project_links",
+    "column_name": "label",
+    "ordinal_position": 3,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "project_links",
+    "column_name": "url",
+    "ordinal_position": 4,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "project_members",
+    "column_name": "project_id",
+    "ordinal_position": 1,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "project_members",
+    "column_name": "profile_id",
+    "ordinal_position": 2,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "project_members",
+    "column_name": "role",
+    "ordinal_position": 3,
+    "column_default": "'contributor'::text",
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "project_members",
+    "column_name": "joined_at",
+    "ordinal_position": 4,
+    "column_default": "now()",
+    "is_nullable": "NO",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "project_technologies",
+    "column_name": "project_id",
+    "ordinal_position": 1,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "project_technologies",
+    "column_name": "technology",
+    "ordinal_position": 2,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "project_upvotes",
+    "column_name": "id",
+    "ordinal_position": 1,
+    "column_default": "gen_random_uuid()",
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "project_upvotes",
+    "column_name": "project_id",
+    "ordinal_position": 2,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "project_upvotes",
+    "column_name": "user_id",
+    "ordinal_position": 3,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "project_upvotes",
+    "column_name": "created_at",
+    "ordinal_position": 4,
+    "column_default": "now()",
+    "is_nullable": "NO",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "projects",
+    "column_name": "id",
+    "ordinal_position": 1,
+    "column_default": "gen_random_uuid()",
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "projects",
+    "column_name": "owner_id",
+    "ordinal_position": 2,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "projects",
+    "column_name": "category_id",
+    "ordinal_position": 3,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "projects",
+    "column_name": "name",
+    "ordinal_position": 4,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "projects",
+    "column_name": "slug",
+    "ordinal_position": 5,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "projects",
+    "column_name": "description",
+    "ordinal_position": 6,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "projects",
+    "column_name": "cover_image_url",
+    "ordinal_position": 7,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "projects",
+    "column_name": "status",
+    "ordinal_position": 8,
+    "column_default": "'idea'::project_status",
+    "is_nullable": "NO",
+    "data_type": "USER-DEFINED",
+    "udt_name": "project_status"
+  },
+  {
+    "table_name": "projects",
+    "column_name": "visibility",
+    "ordinal_position": 9,
+    "column_default": "'public'::visibility",
+    "is_nullable": "NO",
+    "data_type": "USER-DEFINED",
+    "udt_name": "visibility"
+  },
+  {
+    "table_name": "projects",
+    "column_name": "created_at",
+    "ordinal_position": 10,
+    "column_default": "now()",
+    "is_nullable": "NO",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "projects",
+    "column_name": "updated_at",
+    "ordinal_position": 11,
+    "column_default": "now()",
+    "is_nullable": "NO",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "projects",
+    "column_name": "deleted_at",
+    "ordinal_position": 12,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "projects",
+    "column_name": "demo_url",
+    "ordinal_position": 13,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "projects",
+    "column_name": "github_url",
+    "ordinal_position": 14,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "projects",
+    "column_name": "upvote_count",
+    "ordinal_position": 15,
+    "column_default": "0",
+    "is_nullable": "NO",
+    "data_type": "integer",
+    "udt_name": "int4"
+  },
+  {
+    "table_name": "projects",
+    "column_name": "comment_count",
+    "ordinal_position": 16,
+    "column_default": "0",
+    "is_nullable": "NO",
+    "data_type": "integer",
+    "udt_name": "int4"
+  },
+  {
+    "table_name": "site_content",
+    "column_name": "id",
+    "ordinal_position": 1,
+    "column_default": "gen_random_uuid()",
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "site_content",
+    "column_name": "key",
+    "ordinal_position": 2,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "site_content",
+    "column_name": "title",
+    "ordinal_position": 3,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "site_content",
+    "column_name": "content",
+    "ordinal_position": 4,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "site_content",
+    "column_name": "metadata",
+    "ordinal_position": 5,
+    "column_default": "'{}'::jsonb",
+    "is_nullable": "YES",
+    "data_type": "jsonb",
+    "udt_name": "jsonb"
+  },
+  {
+    "table_name": "site_content",
+    "column_name": "is_active",
+    "ordinal_position": 6,
+    "column_default": "true",
+    "is_nullable": "NO",
+    "data_type": "boolean",
+    "udt_name": "bool"
+  },
+  {
+    "table_name": "site_content",
+    "column_name": "sort_order",
+    "ordinal_position": 7,
+    "column_default": "0",
+    "is_nullable": "NO",
+    "data_type": "integer",
+    "udt_name": "int4"
+  },
+  {
+    "table_name": "site_content",
+    "column_name": "updated_at",
+    "ordinal_position": 8,
+    "column_default": "now()",
+    "is_nullable": "NO",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "site_content",
+    "column_name": "updated_by",
+    "ordinal_position": 9,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "site_sections",
+    "column_name": "id",
+    "ordinal_position": 1,
+    "column_default": "gen_random_uuid()",
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "site_sections",
+    "column_name": "key",
+    "ordinal_position": 2,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "site_sections",
+    "column_name": "title",
+    "ordinal_position": 3,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "site_sections",
+    "column_name": "is_enabled",
+    "ordinal_position": 4,
+    "column_default": "true",
+    "is_nullable": "NO",
+    "data_type": "boolean",
+    "udt_name": "bool"
+  },
+  {
+    "table_name": "site_sections",
+    "column_name": "sort_order",
+    "ordinal_position": 5,
+    "column_default": "0",
+    "is_nullable": "NO",
+    "data_type": "integer",
+    "udt_name": "int4"
+  },
+  {
+    "table_name": "site_sections",
+    "column_name": "config",
+    "ordinal_position": 6,
+    "column_default": "'{}'::jsonb",
+    "is_nullable": "YES",
+    "data_type": "jsonb",
+    "udt_name": "jsonb"
+  },
+  {
+    "table_name": "site_sections",
+    "column_name": "updated_at",
+    "ordinal_position": 7,
+    "column_default": "now()",
+    "is_nullable": "NO",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "site_sections",
+    "column_name": "section_key",
+    "ordinal_position": 8,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "site_sections",
+    "column_name": "display_order",
+    "ordinal_position": 9,
+    "column_default": "0",
+    "is_nullable": "YES",
+    "data_type": "integer",
+    "udt_name": "int4"
+  },
+  {
+    "table_name": "site_sections",
+    "column_name": "slug",
+    "ordinal_position": 10,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "site_sections",
+    "column_name": "description",
+    "ordinal_position": 11,
+    "column_default": "''::text",
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "site_sections",
+    "column_name": "cta_label",
+    "ordinal_position": 12,
+    "column_default": "''::text",
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "site_sections",
+    "column_name": "cta_href",
+    "ordinal_position": 13,
+    "column_default": "''::text",
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "site_sections",
+    "column_name": "enabled",
+    "ordinal_position": 14,
+    "column_default": "true",
+    "is_nullable": "YES",
+    "data_type": "boolean",
+    "udt_name": "bool"
+  },
+  {
+    "table_name": "site_sections",
+    "column_name": "content",
+    "ordinal_position": 15,
+    "column_default": "'{}'::jsonb",
+    "is_nullable": "YES",
+    "data_type": "jsonb",
+    "udt_name": "jsonb"
+  },
+  {
+    "table_name": "site_settings",
+    "column_name": "id",
+    "ordinal_position": 1,
+    "column_default": "gen_random_uuid()",
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "site_settings",
+    "column_name": "site_name",
+    "ordinal_position": 2,
+    "column_default": "'The DropOut College'::text",
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "site_settings",
+    "column_name": "site_description",
+    "ordinal_position": 3,
+    "column_default": "'A learning-focused community built around curiosity, knowledge sharing, guidance, collaboration, and personal growth.'::text",
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "site_settings",
+    "column_name": "logo_url",
+    "ordinal_position": 4,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "site_settings",
+    "column_name": "favicon_url",
+    "ordinal_position": 5,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "site_settings",
+    "column_name": "seo_title",
+    "ordinal_position": 6,
+    "column_default": "'The DropOut College | Learn, Share, Grow Together'::text",
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "site_settings",
+    "column_name": "seo_description",
+    "ordinal_position": 7,
+    "column_default": "'The DropOut College is a learning-focused community where curious people come together to share knowledge, find guidance, collaborate, and grow.'::text",
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "site_settings",
+    "column_name": "community_invite_link",
+    "ordinal_position": 8,
+    "column_default": "'https://discord.gg/3xfu5TMgF'::text",
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "site_settings",
+    "column_name": "contact_email",
+    "ordinal_position": 9,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "site_settings",
+    "column_name": "footer_description",
+    "ordinal_position": 10,
+    "column_default": "'A learning-focused community built around curiosity, knowledge sharing, and personal growth. Come learn, share, and grow with us.'::text",
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "site_settings",
+    "column_name": "updated_at",
+    "ordinal_position": 11,
+    "column_default": "now()",
+    "is_nullable": "NO",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "site_settings",
+    "column_name": "updated_by",
+    "ordinal_position": 12,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "site_settings",
+    "column_name": "hero_title",
+    "ordinal_position": 13,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "site_settings",
+    "column_name": "hero_subtitle",
+    "ordinal_position": 14,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "site_settings",
+    "column_name": "hero_description",
+    "ordinal_position": 15,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "site_settings",
+    "column_name": "hero_badge_text",
+    "ordinal_position": 16,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "site_settings",
+    "column_name": "hero_primary_cta_label",
+    "ordinal_position": 17,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "site_settings",
+    "column_name": "hero_primary_cta_href",
+    "ordinal_position": 18,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "site_settings",
+    "column_name": "hero_secondary_cta_label",
+    "ordinal_position": 19,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "site_settings",
+    "column_name": "hero_secondary_cta_href",
+    "ordinal_position": 20,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "site_settings",
+    "column_name": "who_we_are",
+    "ordinal_position": 21,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "site_settings",
+    "column_name": "our_aim",
+    "ordinal_position": 22,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "site_settings",
+    "column_name": "our_goal",
+    "ordinal_position": 23,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "site_settings",
+    "column_name": "our_story",
+    "ordinal_position": 24,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "site_settings",
+    "column_name": "our_vision",
+    "ordinal_position": 25,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "site_settings",
+    "column_name": "our_mission",
+    "ordinal_position": 26,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "site_settings",
+    "column_name": "our_philosophy",
+    "ordinal_position": 27,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "site_settings",
+    "column_name": "discord_link",
+    "ordinal_position": 28,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "site_settings",
+    "column_name": "github_link",
+    "ordinal_position": 29,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "site_settings",
+    "column_name": "facebook_link",
+    "ordinal_position": 30,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "site_settings",
+    "column_name": "instagram_link",
+    "ordinal_position": 31,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "site_settings",
+    "column_name": "youtube_link",
+    "ordinal_position": 32,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "site_settings",
+    "column_name": "contact_phone",
+    "ordinal_position": 33,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "site_social_links",
+    "column_name": "id",
+    "ordinal_position": 1,
+    "column_default": "gen_random_uuid()",
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "site_social_links",
+    "column_name": "platform",
+    "ordinal_position": 2,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "site_social_links",
+    "column_name": "url",
+    "ordinal_position": 3,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "site_social_links",
+    "column_name": "icon",
+    "ordinal_position": 4,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "site_social_links",
+    "column_name": "is_active",
+    "ordinal_position": 5,
+    "column_default": "true",
+    "is_nullable": "NO",
+    "data_type": "boolean",
+    "udt_name": "bool"
+  },
+  {
+    "table_name": "site_social_links",
+    "column_name": "sort_order",
+    "ordinal_position": 6,
+    "column_default": "0",
+    "is_nullable": "NO",
+    "data_type": "integer",
+    "udt_name": "int4"
+  },
+  {
+    "table_name": "site_social_links",
+    "column_name": "created_at",
+    "ordinal_position": 7,
+    "column_default": "now()",
+    "is_nullable": "NO",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "site_social_links",
+    "column_name": "updated_at",
+    "ordinal_position": 8,
+    "column_default": "now()",
+    "is_nullable": "NO",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "site_social_links",
+    "column_name": "icon_name",
+    "ordinal_position": 9,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "site_social_links",
+    "column_name": "display_order",
+    "ordinal_position": 10,
+    "column_default": "0",
+    "is_nullable": "YES",
+    "data_type": "integer",
+    "udt_name": "int4"
+  },
+  {
+    "table_name": "site_social_links",
+    "column_name": "is_visible",
+    "ordinal_position": 11,
+    "column_default": "true",
+    "is_nullable": "YES",
+    "data_type": "boolean",
+    "udt_name": "bool"
+  },
+  {
+    "table_name": "skills",
+    "column_name": "id",
+    "ordinal_position": 1,
+    "column_default": "gen_random_uuid()",
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "skills",
+    "column_name": "category_id",
+    "ordinal_position": 2,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "skills",
+    "column_name": "slug",
+    "ordinal_position": 3,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "skills",
+    "column_name": "name",
+    "ordinal_position": 4,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "skills",
+    "column_name": "is_active",
+    "ordinal_position": 5,
+    "column_default": "true",
+    "is_nullable": "NO",
+    "data_type": "boolean",
+    "udt_name": "bool"
+  },
+  {
+    "table_name": "skills",
+    "column_name": "created_at",
+    "ordinal_position": 6,
+    "column_default": "now()",
+    "is_nullable": "NO",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "skills",
+    "column_name": "sort_order",
+    "ordinal_position": 7,
+    "column_default": "0",
+    "is_nullable": "NO",
+    "data_type": "integer",
+    "udt_name": "int4"
+  },
+  {
+    "table_name": "social_links",
+    "column_name": "id",
+    "ordinal_position": 1,
+    "column_default": "gen_random_uuid()",
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "social_links",
+    "column_name": "profile_id",
+    "ordinal_position": 2,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "social_links",
+    "column_name": "platform",
+    "ordinal_position": 3,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "social_links",
+    "column_name": "url",
+    "ordinal_position": 4,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "team_invitations",
+    "column_name": "id",
+    "ordinal_position": 1,
+    "column_default": "gen_random_uuid()",
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "team_invitations",
+    "column_name": "team_id",
+    "ordinal_position": 2,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "team_invitations",
+    "column_name": "invited_profile_id",
+    "ordinal_position": 3,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "team_invitations",
+    "column_name": "invited_by",
+    "ordinal_position": 4,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "team_invitations",
+    "column_name": "status",
+    "ordinal_position": 5,
+    "column_default": "'pending'::text",
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "team_invitations",
+    "column_name": "expires_at",
+    "ordinal_position": 6,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "team_invitations",
+    "column_name": "created_at",
+    "ordinal_position": 7,
+    "column_default": "now()",
+    "is_nullable": "NO",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "team_members",
+    "column_name": "team_id",
+    "ordinal_position": 1,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "team_members",
+    "column_name": "profile_id",
+    "ordinal_position": 2,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "team_members",
+    "column_name": "role",
+    "ordinal_position": 3,
+    "column_default": "'member'::team_role",
+    "is_nullable": "NO",
+    "data_type": "USER-DEFINED",
+    "udt_name": "team_role"
+  },
+  {
+    "table_name": "team_members",
+    "column_name": "joined_at",
+    "ordinal_position": 4,
+    "column_default": "now()",
+    "is_nullable": "NO",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "teams",
+    "column_name": "id",
+    "ordinal_position": 1,
+    "column_default": "gen_random_uuid()",
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "teams",
+    "column_name": "owner_id",
+    "ordinal_position": 2,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "teams",
+    "column_name": "name",
+    "ordinal_position": 3,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "teams",
+    "column_name": "slug",
+    "ordinal_position": 4,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "teams",
+    "column_name": "description",
+    "ordinal_position": 5,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "teams",
+    "column_name": "avatar_url",
+    "ordinal_position": 6,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "teams",
+    "column_name": "visibility",
+    "ordinal_position": 7,
+    "column_default": "'public'::visibility",
+    "is_nullable": "NO",
+    "data_type": "USER-DEFINED",
+    "udt_name": "visibility"
+  },
+  {
+    "table_name": "teams",
+    "column_name": "created_at",
+    "ordinal_position": 8,
+    "column_default": "now()",
+    "is_nullable": "NO",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "teams",
+    "column_name": "updated_at",
+    "ordinal_position": 9,
+    "column_default": "now()",
+    "is_nullable": "NO",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "user_admin_roles",
+    "column_name": "user_id",
+    "ordinal_position": 1,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "user_admin_roles",
+    "column_name": "role_id",
+    "ordinal_position": 2,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "user_admin_roles",
+    "column_name": "assigned_by",
+    "ordinal_position": 3,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "user_admin_roles",
+    "column_name": "assigned_at",
+    "ordinal_position": 4,
+    "column_default": "now()",
+    "is_nullable": "NO",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "user_admin_roles",
+    "column_name": "admin_role_id",
+    "ordinal_position": 5,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "user_roles",
+    "column_name": "profile_id",
+    "ordinal_position": 1,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "user_roles",
+    "column_name": "role",
+    "ordinal_position": 2,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "text",
+    "udt_name": "text"
+  },
+  {
+    "table_name": "user_skills",
+    "column_name": "user_id",
+    "ordinal_position": 1,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "user_skills",
+    "column_name": "skill_id",
+    "ordinal_position": 2,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "user_skills",
+    "column_name": "level",
+    "ordinal_position": 3,
+    "column_default": "'beginner'::skill_level",
+    "is_nullable": "NO",
+    "data_type": "USER-DEFINED",
+    "udt_name": "skill_level"
+  },
+  {
+    "table_name": "user_skills",
+    "column_name": "years_experience",
+    "ordinal_position": 4,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "numeric",
+    "udt_name": "numeric"
+  },
+  {
+    "table_name": "user_skills",
+    "column_name": "is_primary",
+    "ordinal_position": 5,
+    "column_default": "false",
+    "is_nullable": "NO",
+    "data_type": "boolean",
+    "udt_name": "bool"
+  },
+  {
+    "table_name": "user_skills",
+    "column_name": "created_at",
+    "ordinal_position": 6,
+    "column_default": "now()",
+    "is_nullable": "NO",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "user_skills",
+    "column_name": "updated_at",
+    "ordinal_position": 7,
+    "column_default": "now()",
+    "is_nullable": "NO",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "users",
+    "column_name": "id",
+    "ordinal_position": 1,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "uuid",
+    "udt_name": "uuid"
+  },
+  {
+    "table_name": "users",
+    "column_name": "email",
+    "ordinal_position": 2,
+    "column_default": null,
+    "is_nullable": "NO",
+    "data_type": "USER-DEFINED",
+    "udt_name": "citext"
+  },
+  {
+    "table_name": "users",
+    "column_name": "account_status",
+    "ordinal_position": 3,
+    "column_default": "'active'::member_status",
+    "is_nullable": "NO",
+    "data_type": "USER-DEFINED",
+    "udt_name": "member_status"
+  },
+  {
+    "table_name": "users",
+    "column_name": "onboarding_completed",
+    "ordinal_position": 4,
+    "column_default": "false",
+    "is_nullable": "NO",
+    "data_type": "boolean",
+    "udt_name": "bool"
+  },
+  {
+    "table_name": "users",
+    "column_name": "last_seen_at",
+    "ordinal_position": 5,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "users",
+    "column_name": "created_at",
+    "ordinal_position": 6,
+    "column_default": "now()",
+    "is_nullable": "NO",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "users",
+    "column_name": "updated_at",
+    "ordinal_position": 7,
+    "column_default": "now()",
+    "is_nullable": "NO",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  },
+  {
+    "table_name": "users",
+    "column_name": "deleted_at",
+    "ordinal_position": 8,
+    "column_default": null,
+    "is_nullable": "YES",
+    "data_type": "timestamp with time zone",
+    "udt_name": "timestamptz"
+  }
+]

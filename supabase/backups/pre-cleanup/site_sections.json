@@ -1,0 +1,844 @@
+[
+  {
+    "id": "42198223-5e8b-4f9b-9309-5ff4c6663fee",
+    "key": "journal-carousel",
+    "title": "The DropOut Journal",
+    "is_enabled": true,
+    "sort_order": 0,
+    "config": {
+      "autoplay": true,
+      "interval": 5500,
+      "pinnedArticleIds": []
+    },
+    "updated_at": "2026-11-06T14:16:20.634306+00:00",
+    "section_key": "journal-carousel",
+    "display_order": 0,
+    "slug": "journal-carousel",
+    "description": "Ideas, technical deep dives, reflections, and field notes from builders and learners in the community.",
+    "cta_label": "Explore All Journals",
+    "cta_href": "/journal",
+    "enabled": true,
+    "content": {
+      "autoplay": true,
+      "interval": 5500,
+      "pinnedArticleIds": []
+    }
+  },
+  {
+    "id": "1125f0e5-55db-425e-9336-9c6d93cf207b",
+    "key": "featured-projects",
+    "title": "Featured Projects",
+    "is_enabled": true,
+    "sort_order": 0,
+    "config": {
+      "pinnedProjectIds": []
+    },
+    "updated_at": "2026-11-06T14:16:20.634306+00:00",
+    "section_key": "featured-projects",
+    "display_order": 0,
+    "slug": "featured-projects",
+    "description": "Independent platforms, tools, and creations designed and shipped by members of The DropOut College.",
+    "cta_label": "View All Projects",
+    "cta_href": "/projects",
+    "enabled": true,
+    "content": {
+      "pinnedProjectIds": []
+    }
+  },
+  {
+    "id": "1f2bea2e-ba1a-478b-8af2-ca8c4bca616d",
+    "key": "featured-members",
+    "title": "Featured Creators & Members",
+    "is_enabled": true,
+    "sort_order": 0,
+    "config": {
+      "pinnedUserIds": []
+    },
+    "updated_at": "2026-11-06T14:16:20.634306+00:00",
+    "section_key": "featured-members",
+    "display_order": 0,
+    "slug": "featured-members",
+    "description": "Get to know the relentlessly curious engineers, designers, and creators who make up our ecosystem.",
+    "cta_label": "Meet the Community",
+    "cta_href": "/members",
+    "enabled": true,
+    "content": {
+      "pinnedUserIds": []
+    }
+  },
+  {
+    "id": "0bfe110d-dbca-490a-9916-d46867adc2af",
+    "key": "cta",
+    "title": "Community CTA",
+    "is_enabled": true,
+    "sort_order": 11,
+    "config": {},
+    "updated_at": "2026-09-15T18:28:47.82+00:00",
+    "section_key": "cta",
+    "display_order": 11,
+    "slug": "cta",
+    "description": "",
+    "cta_label": "",
+    "cta_href": "",
+    "enabled": true,
+    "content": {}
+  },
+  {
+    "id": "2267c19b-9da9-46ad-bf0f-5f6c5db8d2dd",
+    "key": "stats",
+    "title": "Statistics",
+    "is_enabled": true,
+    "sort_order": 2,
+    "config": {},
+    "updated_at": "2026-09-15T18:28:47.819+00:00",
+    "section_key": "stats",
+    "display_order": 2,
+    "slug": "stats",
+    "description": "",
+    "cta_label": "",
+    "cta_href": "",
+    "enabled": true,
+    "content": {}
+  },
+  {
+    "id": "3b9ae882-4baf-4621-ba09-bc4f69a0d351",
+    "key": "hero",
+    "title": "Hero",
+    "is_enabled": true,
+    "sort_order": 1,
+    "config": {},
+    "updated_at": "2026-09-15T18:28:47.819+00:00",
+    "section_key": "hero",
+    "display_order": 1,
+    "slug": "hero",
+    "description": "",
+    "cta_label": "",
+    "cta_href": "",
+    "enabled": true,
+    "content": {}
+  },
+  {
+    "id": "63156d9c-082c-49c0-a5a1-3b0794d89424",
+    "key": "our_goal",
+    "title": "Our Goal",
+    "is_enabled": true,
+    "sort_order": 5,
+    "config": {},
+    "updated_at": "2026-09-15T18:28:47.819+00:00",
+    "section_key": "our_goal",
+    "display_order": 5,
+    "slug": "our_goal",
+    "description": "",
+    "cta_label": "",
+    "cta_href": "",
+    "enabled": true,
+    "content": {}
+  },
+  {
+    "id": "4f649307-25b0-4464-ad4a-83eca5933cef",
+    "key": "members",
+    "title": "Members",
+    "is_enabled": true,
+    "sort_order": 8,
+    "config": {},
+    "updated_at": "2026-09-15T18:28:47.82+00:00",
+    "section_key": "members",
+    "display_order": 8,
+    "slug": "members",
+    "description": "",
+    "cta_label": "",
+    "cta_href": "",
+    "enabled": true,
+    "content": {}
+  },
+  {
+    "id": "09ddaaa5-2ffc-4526-a398-f12cb6a9fd25",
+    "key": "projects",
+    "title": "Projects",
+    "is_enabled": true,
+    "sort_order": 9,
+    "config": {},
+    "updated_at": "2026-09-15T18:28:47.82+00:00",
+    "section_key": "projects",
+    "display_order": 9,
+    "slug": "projects",
+    "description": "",
+    "cta_label": "",
+    "cta_href": "",
+    "enabled": true,
+    "content": {}
+  },
+  {
+    "id": "f507e061-6055-4c0b-a800-4f424853c350",
+    "key": "who_we_are",
+    "title": "Who We Are",
+    "is_enabled": true,
+    "sort_order": 3,
+    "config": {},
+    "updated_at": "2026-09-15T18:28:47.819+00:00",
+    "section_key": "who_we_are",
+    "display_order": 3,
+    "slug": "who_we_are",
+    "description": "",
+    "cta_label": "",
+    "cta_href": "",
+    "enabled": true,
+    "content": {}
+  },
+  {
+    "id": "37f013d0-bc62-4694-a971-a46ed2a4d47d",
+    "key": "events",
+    "title": "Events",
+    "is_enabled": true,
+    "sort_order": 10,
+    "config": {},
+    "updated_at": "2026-09-15T18:28:47.82+00:00",
+    "section_key": "events",
+    "display_order": 10,
+    "slug": "events",
+    "description": "",
+    "cta_label": "",
+    "cta_href": "",
+    "enabled": true,
+    "content": {}
+  },
+  {
+    "id": "fe72ea27-c29f-4e26-803d-5da390e2b8a1",
+    "key": "discord_banner",
+    "title": "Discord Banner",
+    "is_enabled": true,
+    "sort_order": 12,
+    "config": {},
+    "updated_at": "2026-09-15T18:28:47.82+00:00",
+    "section_key": "discord_banner",
+    "display_order": 12,
+    "slug": "discord_banner",
+    "description": "",
+    "cta_label": "",
+    "cta_href": "",
+    "enabled": true,
+    "content": {}
+  },
+  {
+    "id": "5bbb2db3-6d80-42a5-9b53-6c2f1941bb21",
+    "key": "categories",
+    "title": "Communities",
+    "is_enabled": true,
+    "sort_order": 7,
+    "config": {},
+    "updated_at": "2026-09-15T18:28:47.82+00:00",
+    "section_key": "categories",
+    "display_order": 7,
+    "slug": "categories",
+    "description": "",
+    "cta_label": "",
+    "cta_href": "",
+    "enabled": true,
+    "content": {}
+  },
+  {
+    "id": "e47163bb-c367-4e99-9340-6bc982da5005",
+    "key": "values",
+    "title": "Community Values",
+    "is_enabled": true,
+    "sort_order": 6,
+    "config": {},
+    "updated_at": "2026-09-15T18:28:47.819+00:00",
+    "section_key": "values",
+    "display_order": 6,
+    "slug": "values",
+    "description": "",
+    "cta_label": "",
+    "cta_href": "",
+    "enabled": true,
+    "content": {}
+  },
+  {
+    "id": "f8a9c5e2-a405-4ab7-b9c1-2564d65cbb63",
+    "key": "our_aim",
+    "title": "Our Aim",
+    "is_enabled": true,
+    "sort_order": 4,
+    "config": {},
+    "updated_at": "2026-09-15T18:28:47.819+00:00",
+    "section_key": "our_aim",
+    "display_order": 4,
+    "slug": "our_aim",
+    "description": "",
+    "cta_label": "",
+    "cta_href": "",
+    "enabled": true,
+    "content": {}
+  },
+  {
+    "id": "efdd057b-d4e5-4925-ac71-a33cae5b35fd",
+    "key": "community-activity",
+    "title": "Live Community Pulse",
+    "is_enabled": true,
+    "sort_order": 0,
+    "config": {},
+    "updated_at": "2026-11-06T14:16:20.634306+00:00",
+    "section_key": "community-activity",
+    "display_order": 0,
+    "slug": "community-activity",
+    "description": "What is happening across The DropOut College right now.",
+    "cta_label": "View All Activity",
+    "cta_href": "/community",
+    "enabled": true,
+    "content": {}
+  },
+  {
+    "id": "1512d168-5dd7-477a-a9a1-7c72d21ab180",
+    "key": "community-stats",
+    "title": "Community by the Numbers",
+    "is_enabled": true,
+    "sort_order": 0,
+    "config": {},
+    "updated_at": "2026-11-06T14:16:20.634306+00:00",
+    "section_key": "community-stats",
+    "display_order": 0,
+    "slug": "community-stats",
+    "description": "Real-time metrics demonstrating our growing creative ecosystem.",
+    "cta_label": "",
+    "cta_href": "",
+    "enabled": true,
+    "content": {}
+  },
+  {
+    "id": "082ea677-6020-4cb8-b89d-1aedfa969fb0",
+    "key": "community-noticeboard",
+    "title": "Noticeboard & Updates",
+    "is_enabled": true,
+    "sort_order": 0,
+    "config": {
+      "announcements": [
+        {
+          "id": "notice-1",
+          "date": "November 2026",
+          "type": "news",
+          "title": "Welcome to the New Community Discovery Experience",
+          "content": "The DropOut College has transitioned to a new editorial discovery experience highlighting real builder projects, community journals, and peer collaborations.",
+          "linkUrl": "/journal",
+          "linkText": "Explore Journals",
+          "published": true
+        },
+        {
+          "id": "notice-2",
+          "date": "November 2026",
+          "type": "update",
+          "title": "DropOut Journal Writing Studio is Live",
+          "content": "Share your technical journeys, lessons from building in public, and project post-mortems with the global community.",
+          "linkUrl": "/journal/studio",
+          "linkText": "Open Studio",
+          "published": true
+        },
+        {
+          "id": "notice-3",
+          "date": "November 2026",
+          "type": "challenge",
+          "title": "Community Project Showcase Open",
+          "content": "Showcase your web apps, mobile tools, hardware builds, and creative media. Receive feedback and find peer collaborators.",
+          "linkUrl": "/projects/new",
+          "linkText": "Submit Project",
+          "published": true
+        }
+      ]
+    },
+    "updated_at": "2026-11-06T14:16:20.634306+00:00",
+    "section_key": "community-noticeboard",
+    "display_order": 0,
+    "slug": "community-noticeboard",
+    "description": "Community news, upcoming hack days, workshops, challenges, and important platform updates.",
+    "cta_label": "",
+    "cta_href": "",
+    "enabled": true,
+    "content": {
+      "announcements": [
+        {
+          "id": "notice-1",
+          "date": "November 2026",
+          "type": "news",
+          "title": "Welcome to the New Community Discovery Experience",
+          "content": "The DropOut College has transitioned to a new editorial discovery experience highlighting real builder projects, community journals, and peer collaborations.",
+          "linkUrl": "/journal",
+          "linkText": "Explore Journals",
+          "published": true
+        },
+        {
+          "id": "notice-2",
+          "date": "November 2026",
+          "type": "update",
+          "title": "DropOut Journal Writing Studio is Live",
+          "content": "Share your technical journeys, lessons from building in public, and project post-mortems with the global community.",
+          "linkUrl": "/journal/studio",
+          "linkText": "Open Studio",
+          "published": true
+        },
+        {
+          "id": "notice-3",
+          "date": "November 2026",
+          "type": "challenge",
+          "title": "Community Project Showcase Open",
+          "content": "Showcase your web apps, mobile tools, hardware builds, and creative media. Receive feedback and find peer collaborators.",
+          "linkUrl": "/projects/new",
+          "linkText": "Submit Project",
+          "published": true
+        }
+      ]
+    }
+  },
+  {
+    "id": "9b5e2c22-5e5a-437f-8845-e2515a3d25d9",
+    "key": "final-cta",
+    "title": "Join The DropOut College",
+    "is_enabled": true,
+    "sort_order": 0,
+    "config": {},
+    "updated_at": "2026-11-06T14:16:20.634306+00:00",
+    "section_key": "final-cta",
+    "display_order": 0,
+    "slug": "final-cta",
+    "description": "Whether you are building your first website, designing products, or exploring deep technical domains — you do not have to learn in isolation.",
+    "cta_label": "Join Discord Community",
+    "cta_href": "https://discord.gg/3xfu5TMgF",
+    "enabled": true,
+    "content": {}
+  },
+  {
+    "id": "11d0ea2e-785e-4be7-93bc-2ff4cb5ed985",
+    "key": "founders",
+    "title": "Founders & Leadership",
+    "is_enabled": true,
+    "sort_order": 0,
+    "config": {
+      "founders": [
+        {
+          "id": "ahmed-rafin",
+          "bio": "Self-taught developer from Bangladesh building web products, exploring AI, and learning through real-world projects. Rather than waiting to learn everything from conventional lecture halls, Ahmed focuses on rapid prototyping, modern frontend architectures, and autonomous builder workflows.",
+          "name": "Ahmed Rafin",
+          "role": "Co-Founder & CEO",
+          "quote": "I learn best by building real things. Instead of waiting until I know everything, I build, face problems, solve them, and improve along the way.",
+          "skills": [
+            "React",
+            "TypeScript",
+            "Next.js",
+            "Tailwind CSS",
+            "Node.js",
+            "Supabase",
+            "PostgreSQL",
+            "Local AI / Ollama",
+            "AI-assisted Dev",
+            "Prompt Engineering"
+          ],
+          "journey": [
+            {
+              "title": "Breaking Things Apart",
+              "period": "Curiosity",
+              "description": "Taking apart old computer hardware and wondering what happens behind the screen whenever a button is clicked."
+            },
+            {
+              "title": "The Global Web",
+              "period": "Exploration",
+              "description": "Discovering blogs, open-source communities, and realizing anyone with an internet connection can build for the world."
+            },
+            {
+              "title": "Esports & Team Strategy",
+              "period": "Discipline",
+              "description": "Learning tactical coordination, rapid decision making, and leadership under intense pressure through competitive gaming."
+            },
+            {
+              "title": "Self-Taught Coding",
+              "period": "Execution",
+              "description": "Mastering HTML, CSS, JavaScript, React, Supabase, and modern full-stack workflows through hands-on project creation."
+            },
+            {
+              "title": "AI-Assisted Building",
+              "period": "Acceleration",
+              "description": "Integrating local LLMs, MCP servers, and agentic workflows to learn faster and build platforms like Odhyay and The DropOut College."
+            }
+          ],
+          "tagline": "Self-Taught Developer & AI Builder",
+          "visible": true,
+          "location": "Bangladesh",
+          "projects": [
+            {
+              "link": "https://the-dropout-college.vercel.app/",
+              "name": "The DropOut College",
+              "tags": [
+                "Community",
+                "Next.js",
+                "Supabase"
+              ],
+              "description": "Co-Founder & CEO of a community platform for self-driven learners and builders."
+            },
+            {
+              "link": "https://odhyay.vercel.app/",
+              "name": "Odhyay",
+              "tags": [
+                "React",
+                "TypeScript",
+                "Vite",
+                "Tailwind"
+              ],
+              "description": "Bangla digital reading platform with typography controls and offline caching."
+            },
+            {
+              "link": "https://github.com/nirobmia-40/DropClip",
+              "name": "DropClip",
+              "tags": [
+                "Python",
+                "Desktop",
+                "CLI"
+              ],
+              "description": "Lightweight desktop video utility built with Python and distributed via GitHub releases."
+            }
+          ],
+          "githubUrl": "https://github.com/rafin610",
+          "sortOrder": 1,
+          "portraitUrl": "/images/founders/ahmed-rafin.jpg",
+          "socialLinks": [
+            {
+              "url": "https://github.com/rafin610",
+              "label": "GitHub",
+              "platform": "github"
+            },
+            {
+              "url": "https://x.com/RafinAhmed78831",
+              "label": "X",
+              "platform": "twitter"
+            },
+            {
+              "url": "https://www.facebook.com/profile.php?id=100035494603229",
+              "label": "Facebook",
+              "platform": "facebook"
+            }
+          ],
+          "portfolioUrl": "https://ahmedrafin.vercel.app/"
+        },
+        {
+          "id": "nirob-mia",
+          "bio": "Independent learner and creative digital builder exploring modern software, multimedia storytelling, and real-world commerce. Nirob brings practical experience from operating small businesses, producing digital video content, and engineering accessible web products.",
+          "name": "Nirob Mia",
+          "role": "Co-Founder & CEO",
+          "quote": "Curiosity is the foundation. Execution is the bridge. True mastery comes from building real things, making mistakes, and iterating with genuine curiosity.",
+          "skills": [
+            "Web Development",
+            "HTML5 & CSS3",
+            "Tailwind CSS",
+            "JavaScript (ES6+)",
+            "React & Next.js",
+            "Content Creation",
+            "Video Storytelling",
+            "Entrepreneurship",
+            "Product Strategy",
+            "E-Commerce Operations"
+          ],
+          "journey": [
+            {
+              "title": "Real-World Business Operations",
+              "period": "Commerce",
+              "description": "Direct hands-on experience managing stationery retail operations, customer evaluation, and local supply chain logistics."
+            },
+            {
+              "title": "YouTube Content & Digital Storytelling",
+              "period": "Media",
+              "description": "Exploring video pacing, visual composition, and digital communication to captivate audiences and explain concepts clearly."
+            },
+            {
+              "title": "Frontend Architecture & UI Systems",
+              "period": "Code",
+              "description": "Deepening practical capabilities in modern CSS, responsive layouts, Next.js, and product prototyping."
+            },
+            {
+              "title": "Co-Founding The DropOut College",
+              "period": "Venture",
+              "description": "Creating a learning environment that celebrates self-directed builders and practical real-world execution."
+            }
+          ],
+          "tagline": "Independent Learner, Digital Builder & Entrepreneur",
+          "visible": true,
+          "location": "Dhaka, Bangladesh",
+          "projects": [
+            {
+              "link": "https://the-dropout-college.vercel.app/",
+              "name": "The DropOut College",
+              "tags": [
+                "Community",
+                "Alternative Education",
+                "Web"
+              ],
+              "description": "Co-Founder & CEO of the alternative education ecosystem for self-taught creators."
+            },
+            {
+              "link": "https://odhyay.vercel.app/",
+              "name": "Odhyay",
+              "tags": [
+                "Next.js",
+                "TypeScript",
+                "Tailwind"
+              ],
+              "description": "Digital reading platform making educational chapters and literature intuitive and accessible."
+            },
+            {
+              "name": "Akhra Stationary",
+              "tags": [
+                "E-Commerce",
+                "Operations",
+                "Branding"
+              ],
+              "description": "E-commerce and stationery venture exploring physical product lines and customer experience."
+            },
+            {
+              "name": "Clip Cutter",
+              "tags": [
+                "Video Workflow",
+                "Creative Tech"
+              ],
+              "description": "Creative workflow utility for video creators to isolate highlights and prepare shorts."
+            }
+          ],
+          "githubUrl": "https://github.com/nirobmia-40",
+          "sortOrder": 2,
+          "portraitUrl": "/images/founders/nirob-mia.png",
+          "socialLinks": [
+            {
+              "url": "https://github.com/nirobmia-40",
+              "label": "GitHub",
+              "platform": "github"
+            },
+            {
+              "url": "https://www.linkedin.com/in/nirob-mia-6a053128b/",
+              "label": "LinkedIn",
+              "platform": "linkedin"
+            },
+            {
+              "url": "https://www.youtube.com/@NirobMia-40",
+              "label": "YouTube",
+              "platform": "youtube"
+            }
+          ],
+          "portfolioUrl": "https://nirob-portfolio-ten.vercel.app/"
+        }
+      ]
+    },
+    "updated_at": "2026-11-06T14:16:20.634306+00:00",
+    "section_key": "founders",
+    "display_order": 0,
+    "slug": "founders",
+    "description": "Meet the co-founders and leadership driving The DropOut College forward.",
+    "cta_label": "Learn More About Us",
+    "cta_href": "/about",
+    "enabled": true,
+    "content": {
+      "founders": [
+        {
+          "id": "ahmed-rafin",
+          "bio": "Self-taught developer from Bangladesh building web products, exploring AI, and learning through real-world projects. Rather than waiting to learn everything from conventional lecture halls, Ahmed focuses on rapid prototyping, modern frontend architectures, and autonomous builder workflows.",
+          "name": "Ahmed Rafin",
+          "role": "Co-Founder & CEO",
+          "quote": "I learn best by building real things. Instead of waiting until I know everything, I build, face problems, solve them, and improve along the way.",
+          "skills": [
+            "React",
+            "TypeScript",
+            "Next.js",
+            "Tailwind CSS",
+            "Node.js",
+            "Supabase",
+            "PostgreSQL",
+            "Local AI / Ollama",
+            "AI-assisted Dev",
+            "Prompt Engineering"
+          ],
+          "journey": [
+            {
+              "title": "Breaking Things Apart",
+              "period": "Curiosity",
+              "description": "Taking apart old computer hardware and wondering what happens behind the screen whenever a button is clicked."
+            },
+            {
+              "title": "The Global Web",
+              "period": "Exploration",
+              "description": "Discovering blogs, open-source communities, and realizing anyone with an internet connection can build for the world."
+            },
+            {
+              "title": "Esports & Team Strategy",
+              "period": "Discipline",
+              "description": "Learning tactical coordination, rapid decision making, and leadership under intense pressure through competitive gaming."
+            },
+            {
+              "title": "Self-Taught Coding",
+              "period": "Execution",
+              "description": "Mastering HTML, CSS, JavaScript, React, Supabase, and modern full-stack workflows through hands-on project creation."
+            },
+            {
+              "title": "AI-Assisted Building",
+              "period": "Acceleration",
+              "description": "Integrating local LLMs, MCP servers, and agentic workflows to learn faster and build platforms like Odhyay and The DropOut College."
+            }
+          ],
+          "tagline": "Self-Taught Developer & AI Builder",
+          "visible": true,
+          "location": "Bangladesh",
+          "projects": [
+            {
+              "link": "https://the-dropout-college.vercel.app/",
+              "name": "The DropOut College",
+              "tags": [
+                "Community",
+                "Next.js",
+                "Supabase"
+              ],
+              "description": "Co-Founder & CEO of a community platform for self-driven learners and builders."
+            },
+            {
+              "link": "https://odhyay.vercel.app/",
+              "name": "Odhyay",
+              "tags": [
+                "React",
+                "TypeScript",
+                "Vite",
+                "Tailwind"
+              ],
+              "description": "Bangla digital reading platform with typography controls and offline caching."
+            },
+            {
+              "link": "https://github.com/nirobmia-40/DropClip",
+              "name": "DropClip",
+              "tags": [
+                "Python",
+                "Desktop",
+                "CLI"
+              ],
+              "description": "Lightweight desktop video utility built with Python and distributed via GitHub releases."
+            }
+          ],
+          "githubUrl": "https://github.com/rafin610",
+          "sortOrder": 1,
+          "portraitUrl": "/images/founders/ahmed-rafin.jpg",
+          "socialLinks": [
+            {
+              "url": "https://github.com/rafin610",
+              "label": "GitHub",
+              "platform": "github"
+            },
+            {
+              "url": "https://x.com/RafinAhmed78831",
+              "label": "X",
+              "platform": "twitter"
+            },
+            {
+              "url": "https://www.facebook.com/profile.php?id=100035494603229",
+              "label": "Facebook",
+              "platform": "facebook"
+            }
+          ],
+          "portfolioUrl": "https://ahmedrafin.vercel.app/"
+        },
+        {
+          "id": "nirob-mia",
+          "bio": "Independent learner and creative digital builder exploring modern software, multimedia storytelling, and real-world commerce. Nirob brings practical experience from operating small businesses, producing digital video content, and engineering accessible web products.",
+          "name": "Nirob Mia",
+          "role": "Co-Founder & CEO",
+          "quote": "Curiosity is the foundation. Execution is the bridge. True mastery comes from building real things, making mistakes, and iterating with genuine curiosity.",
+          "skills": [
+            "Web Development",
+            "HTML5 & CSS3",
+            "Tailwind CSS",
+            "JavaScript (ES6+)",
+            "React & Next.js",
+            "Content Creation",
+            "Video Storytelling",
+            "Entrepreneurship",
+            "Product Strategy",
+            "E-Commerce Operations"
+          ],
+          "journey": [
+            {
+              "title": "Real-World Business Operations",
+              "period": "Commerce",
+              "description": "Direct hands-on experience managing stationery retail operations, customer evaluation, and local supply chain logistics."
+            },
+            {
+              "title": "YouTube Content & Digital Storytelling",
+              "period": "Media",
+              "description": "Exploring video pacing, visual composition, and digital communication to captivate audiences and explain concepts clearly."
+            },
+            {
+              "title": "Frontend Architecture & UI Systems",
+              "period": "Code",
+              "description": "Deepening practical capabilities in modern CSS, responsive layouts, Next.js, and product prototyping."
+            },
+            {
+              "title": "Co-Founding The DropOut College",
+              "period": "Venture",
+              "description": "Creating a learning environment that celebrates self-directed builders and practical real-world execution."
+            }
+          ],
+          "tagline": "Independent Learner, Digital Builder & Entrepreneur",
+          "visible": true,
+          "location": "Dhaka, Bangladesh",
+          "projects": [
+            {
+              "link": "https://the-dropout-college.vercel.app/",
+              "name": "The DropOut College",
+              "tags": [
+                "Community",
+                "Alternative Education",
+                "Web"
+              ],
+              "description": "Co-Founder & CEO of the alternative education ecosystem for self-taught creators."
+            },
+            {
+              "link": "https://odhyay.vercel.app/",
+              "name": "Odhyay",
+              "tags": [
+                "Next.js",
+                "TypeScript",
+                "Tailwind"
+              ],
+              "description": "Digital reading platform making educational chapters and literature intuitive and accessible."
+            },
+            {
+              "name": "Akhra Stationary",
+              "tags": [
+                "E-Commerce",
+                "Operations",
+                "Branding"
+              ],
+              "description": "E-commerce and stationery venture exploring physical product lines and customer experience."
+            },
+            {
+              "name": "Clip Cutter",
+              "tags": [
+                "Video Workflow",
+                "Creative Tech"
+              ],
+              "description": "Creative workflow utility for video creators to isolate highlights and prepare shorts."
+            }
+          ],
+          "githubUrl": "https://github.com/nirobmia-40",
+          "sortOrder": 2,
+          "portraitUrl": "/images/founders/nirob-mia.png",
+          "socialLinks": [
+            {
+              "url": "https://github.com/nirobmia-40",
+              "label": "GitHub",
+              "platform": "github"
+            },
+            {
+              "url": "https://www.linkedin.com/in/nirob-mia-6a053128b/",
+              "label": "LinkedIn",
+              "platform": "linkedin"
+            },
+            {
+              "url": "https://www.youtube.com/@NirobMia-40",
+              "label": "YouTube",
+              "platform": "youtube"
+            }
+          ],
+          "portfolioUrl": "https://nirob-portfolio-ten.vercel.app/"
+        }
+      ]
+    }
+  }
+]

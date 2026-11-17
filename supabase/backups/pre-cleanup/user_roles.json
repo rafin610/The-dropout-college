@@ -1,0 +1,70 @@
+[
+  {
+    "profile_id": "493a2169-d4ef-4cb5-bc37-686c7f163d56",
+    "role": "member"
+  },
+  {
+    "profile_id": "b780472b-38d9-44f2-bde5-80ddd27f969e",
+    "role": "member"
+  },
+  {
+    "profile_id": "1afc2903-56c1-4218-a203-27c67ec42c35",
+    "role": "admin"
+  },
+  {
+    "profile_id": "ccbd7623-0b57-4fff-9912-4b6c98d4d254",
+    "role": "admin"
+  },
+  {
+    "profile_id": "7219d289-d4aa-454b-a706-5a6d52fba844",
+    "role": "member"
+  },
+  {
+    "profile_id": "5ba0ff64-b75d-4159-9450-31df120200f7",
+    "role": "member"
+  },
+  {
+    "profile_id": "eb67091c-693e-46e5-abe8-9a65753e6336",
+    "role": "member"
+  },
+  {
+    "profile_id": "63af2ef8-f2c1-423b-995f-402bf94b097d",
+    "role": "moderator"
+  },
+  {
+    "profile_id": "9c937066-e272-47f2-b14e-94345f6cd255",
+    "role": "member"
+  },
+  {
+    "profile_id": "3482d611-296b-4ffd-b604-aa7f0f053675",
+    "role": "member"
+  },
+  {
+    "profile_id": "a1b9e426-2d33-4af3-b7ff-4b87f533dfe6",
+    "role": "member"
+  },
+  {
+    "profile_id": "ae9fa2d0-9392-4b97-91ee-65b48e441a69",
+    "role": "member"
+  },
+  {
+    "profile_id": "46353c8e-20cb-40ce-a8d5-09d87ea269bf",
+    "role": "member"
+  },
+  {
+    "profile_id": "a64c1536-7bb1-4578-b173-68bb526b5be7",
+    "role": "moderator"
+  },
+  {
+    "profile_id": "d443ead6-9bf8-4e99-8f54-0b098bb8d797",
+    "role": "member"
+  },
+  {
+    "profile_id": "a1e7e101-4d38-4d53-bd2a-481e98fb8af2",
+    "role": "member"
+  },
+  {
+    "profile_id": "5215f17c-c32b-486b-b7f9-7633070390c3",
+    "role": "member"
+  }
+]

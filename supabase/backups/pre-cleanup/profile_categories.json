@@ -1,0 +1,30 @@
+[
+  {
+    "profile_id": "1afc2903-56c1-4218-a203-27c67ec42c35",
+    "category_id": "7f50cc61-0b9c-4b35-bce6-c733205160fc"
+  },
+  {
+    "profile_id": "ccbd7623-0b57-4fff-9912-4b6c98d4d254",
+    "category_id": "352bcefa-ede2-4431-b866-7954c9e646ed"
+  },
+  {
+    "profile_id": "ccbd7623-0b57-4fff-9912-4b6c98d4d254",
+    "category_id": "7f50cc61-0b9c-4b35-bce6-c733205160fc"
+  },
+  {
+    "profile_id": "ccbd7623-0b57-4fff-9912-4b6c98d4d254",
+    "category_id": "a85a9839-4608-4400-bb5c-9346ffcc7c0a"
+  },
+  {
+    "profile_id": "493a2169-d4ef-4cb5-bc37-686c7f163d56",
+    "category_id": "352bcefa-ede2-4431-b866-7954c9e646ed"
+  },
+  {
+    "profile_id": "493a2169-d4ef-4cb5-bc37-686c7f163d56",
+    "category_id": "7f50cc61-0b9c-4b35-bce6-c733205160fc"
+  },
+  {
+    "profile_id": "a1b9e426-2d33-4af3-b7ff-4b87f533dfe6",
+    "category_id": "7f50cc61-0b9c-4b35-bce6-c733205160fc"
+  }
+]

@@ -42,6 +42,8 @@ const migrations = [
   "0013_security_hardening.sql",
   "0014_homepage_cms_and_founders.sql",
   "0015_team_and_project_relationships.sql",
+  "0016_campus_social.sql",
+  "0017_staff_admin_panel.sql",
 ];
 
 const compatNotificationPolicies = `
@@ -177,6 +179,16 @@ async function main() {
   psql(
     file("supabase/migrations/0015_team_and_project_relationships.sql"),
     "0015_team_and_project_relationships.sql (second application)",
+  );
+  console.log("Re-applying 0016_campus_social.sql to verify idempotence...");
+  psql(
+    file("supabase/migrations/0016_campus_social.sql"),
+    "0016_campus_social.sql (second application)",
+  );
+  console.log("Re-applying 0017_staff_admin_panel.sql to verify idempotence...");
+  psql(
+    file("supabase/migrations/0017_staff_admin_panel.sql"),
+    "0017_staff_admin_panel.sql (second application)",
   );
 
   console.log("Running RLS/RPC assertions...");

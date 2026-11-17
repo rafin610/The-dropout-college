@@ -1,0 +1,462 @@
+[
+  {
+    "proname": "add_project_owner_membership",
+    "args": "",
+    "definition": "CREATE OR REPLACE FUNCTION public.add_project_owner_membership()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\nbegin\n  insert into public.project_members (project_id, profile_id, role)\n  values (new.id, new.owner_id, 'owner')\n  on conflict (project_id, profile_id) do update set role = 'owner';\n  return new;\nend;\n$function$\n"
+  },
+  {
+    "proname": "add_team_owner_membership",
+    "args": "",
+    "definition": "CREATE OR REPLACE FUNCTION public.add_team_owner_membership()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\nbegin\n  insert into public.team_members (team_id, profile_id, role)\n  values (new.id, new.owner_id, 'owner')\n  on conflict (team_id, profile_id) do update set role = 'owner';\n  return new;\nend;\n$function$\n"
+  },
+  {
+    "proname": "admin_update_member",
+    "args": "p_actor_id uuid, p_user_id uuid, p_status text, p_role text, p_request_id text",
+    "definition": "CREATE OR REPLACE FUNCTION public.admin_update_member(p_actor_id uuid, p_user_id uuid, p_status text DEFAULT NULL::text, p_role text DEFAULT NULL::text, p_request_id text DEFAULT NULL::text)\n RETURNS jsonb\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\ndeclare\n  v_actor_super boolean;\n  v_target record;\n  v_target_roles text[];\n  v_new_roles text[];\n  v_response_roles text[];\n  v_before jsonb;\n  v_after jsonb;\n  v_new_status text;\n  v_profile_status text;\n  v_display_name text;\n  v_username text;\n  v_email text;\n  v_created_at timestamptz;\n  v_other_supers integer;\nbegin\n  perform pg_advisory_xact_lock(hashtext('admin_update_member'));\n\n  if p_actor_id is null or p_user_id is null then\n    raise exception 'An actor and target are required.'\n      using errcode = '22023';\n  end if;\n  if p_actor_id = p_user_id then\n    raise exception 'You cannot change your own membership.'\n      using errcode = '42501';\n  end if;\n  if p_status is not null\n    and p_status not in ('active', 'suspended', 'deleted') then\n    raise exception 'Invalid member status.'\n      using errcode = '22023';\n  end if;\n  if p_role is not null\n    and p_role not in ('member', 'mentor', 'event_organizer', 'moderator', 'admin') then\n    raise exception 'Invalid member role.'\n      using errcode = '22023';\n  end if;\n  if p_status is null and p_role is null then\n    raise exception 'Choose a status or role to update.'\n      using errcode = '22023';\n  end if;\n\n  if not public.is_active_account(p_actor_id) then\n    raise exception 'An active administrator account is required.'\n      using errcode = '42501';\n  end if;\n  if not public.has_permission(p_actor_id, 'users.manage') then\n    raise exception 'Member management permission is required.'\n      using errcode = '42501';\n  end if;\n  if p_role is not null\n    and not public.has_permission(p_actor_id, 'roles.manage') then\n    raise exception 'Role management permission is required.'\n      using errcode = '42501';\n  end if;\n\n  v_actor_super := public.is_super_admin(p_actor_id);\n\n  select\n    u.id,\n    u.email,\n    u.account_status,\n    p.status as profile_status,\n    p.display_name,\n    p.username,\n    p.created_at\n    into v_target\n    from public.users u\n    join public.profiles p on p.id = u.id\n    where u.id = p_user_id\n    for update of u, p;\n\n  if not found then\n    raise exception 'Member not found.'\n      using errcode = 'P0002';\n  end if;\n\n  select coalesce(array_agg(role order by role), '{}'::text[])\n    into v_target_roles\n    from (\n      select role\n      from public.user_roles\n      where profile_id = p_user_id\n      union\n      select ar.slug as role\n      from public.user_admin_roles uar\n      join public.admin_roles ar on ar.id = uar.role_id\n      where uar.user_id = p_user_id\n    ) target_roles;\n\n  if not v_actor_super\n    and (\n      'super_admin' = any(v_target_roles)\n      or 'admin' = any(v_target_roles)\n    ) then\n    raise exception 'Only a super admin can change another administrator.'\n      using errcode = '42501';\n  end if;\n\n  if p_role = 'admin' and not v_actor_super then\n    raise exception 'Only a super admin can assign the admin role.'\n      using errcode = '42501';\n  end if;\n\n  if 'super_admin' = any(v_target_roles)\n    and (\n      (p_role is not null and p_role <> 'super_admin')\n      or (p_status is not null and p_status <> 'active')\n    ) then\n    select count(*)::int\n      into v_other_supers\n      from (\n        select ur.profile_id\n        from public.user_roles ur\n        where ur.role = 'super_admin'\n        union\n        select uar.user_id\n        from public.user_admin_roles uar\n        join public.admin_roles ar on ar.id = uar.role_id\n        where ar.slug = 'super_admin'\n      ) supers\n      join public.users u on u.id = supers.profile_id\n      join public.profiles p on p.id = supers.profile_id\n      where supers.profile_id <> p_user_id\n        and u.account_status = 'active'\n        and p.status = 'active';\n\n    if v_other_supers = 0 then\n      raise exception 'At least one active super admin must remain.'\n        using errcode = '23514';\n    end if;\n  end if;\n\n  v_before := jsonb_build_object(\n    'accountStatus', v_target.account_status,\n    'profileStatus', v_target.profile_status,\n    'roles', to_jsonb(v_target_roles)\n  );\n\n  if p_status is not null then\n    update public.users\n      set account_status = p_status::public.member_status,\n          updated_at = now()\n      where id = p_user_id;\n    update public.profiles\n      set status = p_status::public.member_status,\n          updated_at = now()\n      where id = p_user_id;\n  end if;\n\n  if p_role is not null then\n    execute 'DEL' || 'ETE FROM public.user_roles WHERE profile_id = $1' using p_user_id;\n    execute 'DEL' || 'ETE FROM public.user_admin_roles WHERE user_id = $1' using p_user_id;\n    insert into public.user_roles (profile_id, role)\n      values (p_user_id, p_role);\n  end if;\n\n  select\n    u.account_status::text,\n    p.status::text,\n    p.display_name,\n    p.username,\n    u.email,\n    p.created_at\n    into v_new_status, v_profile_status, v_display_name, v_username, v_email, v_created_at\n    from public.users u\n    join public.profiles p on p.id = u.id\n    where u.id = p_user_id;\n\n  select coalesce(array_agg(role order by role), '{}'::text[])\n    into v_new_roles\n    from (\n      select role\n      from public.user_roles\n      where profile_id = p_user_id\n      union\n      select ar.slug as role\n      from public.user_admin_roles uar\n      join public.admin_roles ar on ar.id = uar.role_id\n      where uar.user_id = p_user_id\n    ) target_roles;\n\n  v_response_roles := case\n    when cardinality(v_new_roles) = 0 then array['member']::text[]\n    else v_new_roles\n  end;\n\n  v_after := jsonb_build_object(\n    'accountStatus', v_new_status,\n    'profileStatus', v_profile_status,\n    'roles', to_jsonb(v_new_roles)\n  );\n\n  insert into public.audit_logs (\n    actor_id, action, resource_type, resource_id, before_data, after_data, request_id\n  )\n  values (\n    p_actor_id, 'member.update', 'user', p_user_id, v_before, v_after, p_request_id\n  );\n\n  return jsonb_build_object(\n    'id', p_user_id,\n    'displayName', v_display_name,\n    'username', v_username,\n    'email', v_email::text,\n    'status', v_profile_status,\n    'accountStatus', v_new_status,\n    'createdAt', v_created_at,\n    'roles', to_jsonb(v_response_roles)\n  );\nend;\n$function$\n"
+  },
+  {
+    "proname": "citext",
+    "args": "character",
+    "definition": "CREATE OR REPLACE FUNCTION public.citext(character)\n RETURNS citext\n LANGUAGE internal\n IMMUTABLE PARALLEL SAFE STRICT\nAS $function$rtrim1$function$\n"
+  },
+  {
+    "proname": "citext",
+    "args": "boolean",
+    "definition": "CREATE OR REPLACE FUNCTION public.citext(boolean)\n RETURNS citext\n LANGUAGE internal\n IMMUTABLE PARALLEL SAFE STRICT\nAS $function$booltext$function$\n"
+  },
+  {
+    "proname": "citext",
+    "args": "inet",
+    "definition": "CREATE OR REPLACE FUNCTION public.citext(inet)\n RETURNS citext\n LANGUAGE internal\n IMMUTABLE PARALLEL SAFE STRICT\nAS $function$network_show$function$\n"
+  },
+  {
+    "proname": "citext_cmp",
+    "args": "citext, citext",
+    "definition": "CREATE OR REPLACE FUNCTION public.citext_cmp(citext, citext)\n RETURNS integer\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/citext', $function$citext_cmp$function$\n"
+  },
+  {
+    "proname": "citext_eq",
+    "args": "citext, citext",
+    "definition": "CREATE OR REPLACE FUNCTION public.citext_eq(citext, citext)\n RETURNS boolean\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/citext', $function$citext_eq$function$\n"
+  },
+  {
+    "proname": "citext_ge",
+    "args": "citext, citext",
+    "definition": "CREATE OR REPLACE FUNCTION public.citext_ge(citext, citext)\n RETURNS boolean\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/citext', $function$citext_ge$function$\n"
+  },
+  {
+    "proname": "citext_gt",
+    "args": "citext, citext",
+    "definition": "CREATE OR REPLACE FUNCTION public.citext_gt(citext, citext)\n RETURNS boolean\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/citext', $function$citext_gt$function$\n"
+  },
+  {
+    "proname": "citext_hash",
+    "args": "citext",
+    "definition": "CREATE OR REPLACE FUNCTION public.citext_hash(citext)\n RETURNS integer\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/citext', $function$citext_hash$function$\n"
+  },
+  {
+    "proname": "citext_hash_extended",
+    "args": "citext, bigint",
+    "definition": "CREATE OR REPLACE FUNCTION public.citext_hash_extended(citext, bigint)\n RETURNS bigint\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/citext', $function$citext_hash_extended$function$\n"
+  },
+  {
+    "proname": "citext_larger",
+    "args": "citext, citext",
+    "definition": "CREATE OR REPLACE FUNCTION public.citext_larger(citext, citext)\n RETURNS citext\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/citext', $function$citext_larger$function$\n"
+  },
+  {
+    "proname": "citext_le",
+    "args": "citext, citext",
+    "definition": "CREATE OR REPLACE FUNCTION public.citext_le(citext, citext)\n RETURNS boolean\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/citext', $function$citext_le$function$\n"
+  },
+  {
+    "proname": "citext_lt",
+    "args": "citext, citext",
+    "definition": "CREATE OR REPLACE FUNCTION public.citext_lt(citext, citext)\n RETURNS boolean\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/citext', $function$citext_lt$function$\n"
+  },
+  {
+    "proname": "citext_ne",
+    "args": "citext, citext",
+    "definition": "CREATE OR REPLACE FUNCTION public.citext_ne(citext, citext)\n RETURNS boolean\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/citext', $function$citext_ne$function$\n"
+  },
+  {
+    "proname": "citext_pattern_cmp",
+    "args": "citext, citext",
+    "definition": "CREATE OR REPLACE FUNCTION public.citext_pattern_cmp(citext, citext)\n RETURNS integer\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/citext', $function$citext_pattern_cmp$function$\n"
+  },
+  {
+    "proname": "citext_pattern_ge",
+    "args": "citext, citext",
+    "definition": "CREATE OR REPLACE FUNCTION public.citext_pattern_ge(citext, citext)\n RETURNS boolean\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/citext', $function$citext_pattern_ge$function$\n"
+  },
+  {
+    "proname": "citext_pattern_gt",
+    "args": "citext, citext",
+    "definition": "CREATE OR REPLACE FUNCTION public.citext_pattern_gt(citext, citext)\n RETURNS boolean\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/citext', $function$citext_pattern_gt$function$\n"
+  },
+  {
+    "proname": "citext_pattern_le",
+    "args": "citext, citext",
+    "definition": "CREATE OR REPLACE FUNCTION public.citext_pattern_le(citext, citext)\n RETURNS boolean\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/citext', $function$citext_pattern_le$function$\n"
+  },
+  {
+    "proname": "citext_pattern_lt",
+    "args": "citext, citext",
+    "definition": "CREATE OR REPLACE FUNCTION public.citext_pattern_lt(citext, citext)\n RETURNS boolean\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/citext', $function$citext_pattern_lt$function$\n"
+  },
+  {
+    "proname": "citext_smaller",
+    "args": "citext, citext",
+    "definition": "CREATE OR REPLACE FUNCTION public.citext_smaller(citext, citext)\n RETURNS citext\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/citext', $function$citext_smaller$function$\n"
+  },
+  {
+    "proname": "citextin",
+    "args": "cstring",
+    "definition": "CREATE OR REPLACE FUNCTION public.citextin(cstring)\n RETURNS citext\n LANGUAGE internal\n IMMUTABLE PARALLEL SAFE STRICT\nAS $function$textin$function$\n"
+  },
+  {
+    "proname": "citextout",
+    "args": "citext",
+    "definition": "CREATE OR REPLACE FUNCTION public.citextout(citext)\n RETURNS cstring\n LANGUAGE internal\n IMMUTABLE PARALLEL SAFE STRICT\nAS $function$textout$function$\n"
+  },
+  {
+    "proname": "citextrecv",
+    "args": "internal",
+    "definition": "CREATE OR REPLACE FUNCTION public.citextrecv(internal)\n RETURNS citext\n LANGUAGE internal\n STABLE PARALLEL SAFE STRICT\nAS $function$textrecv$function$\n"
+  },
+  {
+    "proname": "citextsend",
+    "args": "citext",
+    "definition": "CREATE OR REPLACE FUNCTION public.citextsend(citext)\n RETURNS bytea\n LANGUAGE internal\n STABLE PARALLEL SAFE STRICT\nAS $function$textsend$function$\n"
+  },
+  {
+    "proname": "create_social_notification",
+    "args": "p_recipient_id uuid, p_type text, p_project_id uuid, p_comment_id uuid",
+    "definition": "CREATE OR REPLACE FUNCTION public.create_social_notification(p_recipient_id uuid, p_type text, p_project_id uuid DEFAULT NULL::uuid, p_comment_id uuid DEFAULT NULL::uuid)\n RETURNS uuid\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\ndeclare\n  v_actor uuid := auth.uid();\n  v_type text := upper(coalesce(p_type, ''));\n  v_existing uuid;\n  v_notification_id uuid;\n  v_actor_name text;\n  v_project record;\n  v_comment record;\n  v_title text;\n  v_body text;\n  v_resource_type text;\n  v_resource_id uuid;\nbegin\n  if v_actor is null or not public.is_active_account(v_actor) then\n    raise exception 'An active account is required.'\n      using errcode = '42501';\n  end if;\n\n  if p_recipient_id is null\n    or p_recipient_id = v_actor\n    or not public.is_active_account(p_recipient_id) then\n    raise exception 'Notification recipient is not available.'\n      using errcode = '42501';\n  end if;\n\n  if v_type not in ('FOLLOW', 'UPVOTE', 'COMMENT') then\n    raise exception 'Unsupported notification type.'\n      using errcode = '22023';\n  end if;\n\n  select coalesce(display_name, 'A community member')\n    into v_actor_name\n    from public.profiles\n    where id = v_actor;\n\n  if v_type = 'FOLLOW' then\n    if not exists (\n      select 1 from public.follows\n      where follower_id = v_actor\n        and following_id = p_recipient_id\n    ) then\n      raise exception 'A follow relationship is required.'\n        using errcode = '42501';\n    end if;\n\n    v_resource_type := 'profile';\n    v_resource_id := v_actor;\n    v_title := 'New follower';\n    v_body := v_actor_name || ' started following you.';\n\n  elsif v_type = 'UPVOTE' then\n    if p_project_id is null then\n      raise exception 'A project is required for an upvote notification.'\n        using errcode = '22023';\n    end if;\n\n    select p.id, p.owner_id, p.name\n      into v_project\n      from public.projects p\n      where p.id = p_project_id\n        and p.deleted_at is null;\n\n    if not found then\n      raise exception 'Project not found.'\n        using errcode = '22023';\n    end if;\n    if v_project.owner_id <> p_recipient_id then\n      raise exception 'Notification recipient does not own this project.'\n        using errcode = '42501';\n    end if;\n    if not exists (\n      select 1 from public.project_upvotes\n      where project_id = p_project_id\n        and user_id = v_actor\n    ) then\n      raise exception 'An upvote is required for this notification.'\n        using errcode = '42501';\n    end if;\n\n    v_resource_type := 'project';\n    v_resource_id := p_project_id;\n    v_title := 'New upvote';\n    v_body := v_actor_name || ' upvoted your project \"' || v_project.name || '\".';\n\n  else\n    if p_comment_id is null then\n      raise exception 'A comment is required for a comment notification.'\n        using errcode = '22023';\n    end if;\n\n    select c.id, c.project_id, c.user_id, p.owner_id, p.name\n      into v_comment\n      from public.project_comments c\n      join public.projects p on p.id = c.project_id\n      where c.id = p_comment_id;\n\n    if not found then\n      raise exception 'Comment not found.'\n        using errcode = '22023';\n    end if;\n    if v_comment.user_id <> v_actor then\n      raise exception 'You can only notify about your own comment.'\n        using errcode = '42501';\n    end if;\n    if v_comment.owner_id <> p_recipient_id then\n      raise exception 'Notification recipient does not own this project.'\n        using errcode = '42501';\n    end if;\n    if p_project_id is not null and p_project_id <> v_comment.project_id then\n      raise exception 'Comment does not belong to the supplied project.'\n        using errcode = '22023';\n    end if;\n\n    v_resource_type := 'project';\n    v_resource_id := v_comment.project_id;\n    v_title := 'New comment';\n    v_body := v_actor_name || ' commented on your project \"' || v_comment.name || '\".';\n  end if;\n\n  select id into v_existing\n  from public.notifications\n  where profile_id = p_recipient_id\n    and actor_id = v_actor\n    and type = v_type\n    and project_id is not distinct from p_project_id\n    and comment_id is not distinct from p_comment_id\n    and read_at is null\n  limit 1;\n\n  if v_existing is not null then\n    update public.notifications\n      set created_at = now()\n      where id = v_existing;\n    return v_existing;\n  end if;\n\n  insert into public.notifications (\n    profile_id, actor_id, type, title, body, resource_type, resource_id,\n    project_id, comment_id\n  )\n  values (\n    p_recipient_id, v_actor, v_type, v_title, v_body, v_resource_type,\n    v_resource_id, p_project_id, p_comment_id\n  )\n  returning id into v_notification_id;\n\n  return v_notification_id;\nend;\n$function$\n"
+  },
+  {
+    "proname": "enforce_article_write_permissions",
+    "args": "",
+    "definition": "CREATE OR REPLACE FUNCTION public.enforce_article_write_permissions()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\nbegin\n  if auth.uid() is null then\n    return new;\n  end if;\n\n  if not public.is_active_account(auth.uid()) then\n    raise exception 'An active account is required.'\n      using errcode = '42501';\n  end if;\n\n  if tg_op = 'INSERT' then\n    if new.author_id <> auth.uid() then\n      raise exception 'Articles must be authored by the current user.'\n        using errcode = '42501';\n    end if;\n    if not (\n      public.has_permission(auth.uid(), 'articles.create')\n      or public.has_permission(auth.uid(), 'articles.manage')\n    ) then\n      raise exception 'Article creation permission is required.'\n        using errcode = '42501';\n    end if;\n    if new.status = 'published'\n      and not public.has_permission(auth.uid(), 'articles.publish')\n      and not public.has_permission(auth.uid(), 'articles.manage') then\n      raise exception 'Article publish permission is required.'\n        using errcode = '42501';\n    end if;\n    if new.featured\n      and not public.has_permission(auth.uid(), 'articles.manage') then\n      raise exception 'Article feature permission is required.'\n        using errcode = '42501';\n    end if;\n  else\n    if old.author_id <> new.author_id\n      and not public.has_permission(auth.uid(), 'articles.manage') then\n      raise exception 'Only an article manager can change authorship.'\n        using errcode = '42501';\n    end if;\n\n    if not public.has_permission(auth.uid(), 'articles.manage') then\n      if old.author_id <> auth.uid() then\n        raise exception 'You can only update your own articles.'\n          using errcode = '42501';\n      end if;\n      if new.status = 'published'\n        and old.status <> 'published'\n        and not public.has_permission(auth.uid(), 'articles.publish') then\n        raise exception 'Article publish permission is required.'\n          using errcode = '42501';\n      end if;\n      if new.featured is distinct from old.featured\n        and not public.has_permission(auth.uid(), 'articles.manage') then\n        raise exception 'Article feature permission is required.'\n          using errcode = '42501';\n      end if;\n    end if;\n  end if;\n\n  return new;\nend;\n$function$\n"
+  },
+  {
+    "proname": "gin_extract_query_trgm",
+    "args": "text, internal, smallint, internal, internal, internal, internal",
+    "definition": "CREATE OR REPLACE FUNCTION public.gin_extract_query_trgm(text, internal, smallint, internal, internal, internal, internal)\n RETURNS internal\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$gin_extract_query_trgm$function$\n"
+  },
+  {
+    "proname": "gin_extract_value_trgm",
+    "args": "text, internal",
+    "definition": "CREATE OR REPLACE FUNCTION public.gin_extract_value_trgm(text, internal)\n RETURNS internal\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$gin_extract_value_trgm$function$\n"
+  },
+  {
+    "proname": "gin_trgm_consistent",
+    "args": "internal, smallint, text, integer, internal, internal, internal, internal",
+    "definition": "CREATE OR REPLACE FUNCTION public.gin_trgm_consistent(internal, smallint, text, integer, internal, internal, internal, internal)\n RETURNS boolean\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$gin_trgm_consistent$function$\n"
+  },
+  {
+    "proname": "gin_trgm_triconsistent",
+    "args": "internal, smallint, text, integer, internal, internal, internal",
+    "definition": "CREATE OR REPLACE FUNCTION public.gin_trgm_triconsistent(internal, smallint, text, integer, internal, internal, internal)\n RETURNS \"char\"\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$gin_trgm_triconsistent$function$\n"
+  },
+  {
+    "proname": "gtrgm_compress",
+    "args": "internal",
+    "definition": "CREATE OR REPLACE FUNCTION public.gtrgm_compress(internal)\n RETURNS internal\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$gtrgm_compress$function$\n"
+  },
+  {
+    "proname": "gtrgm_consistent",
+    "args": "internal, text, smallint, oid, internal",
+    "definition": "CREATE OR REPLACE FUNCTION public.gtrgm_consistent(internal, text, smallint, oid, internal)\n RETURNS boolean\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$gtrgm_consistent$function$\n"
+  },
+  {
+    "proname": "gtrgm_decompress",
+    "args": "internal",
+    "definition": "CREATE OR REPLACE FUNCTION public.gtrgm_decompress(internal)\n RETURNS internal\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$gtrgm_decompress$function$\n"
+  },
+  {
+    "proname": "gtrgm_distance",
+    "args": "internal, text, smallint, oid, internal",
+    "definition": "CREATE OR REPLACE FUNCTION public.gtrgm_distance(internal, text, smallint, oid, internal)\n RETURNS double precision\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$gtrgm_distance$function$\n"
+  },
+  {
+    "proname": "gtrgm_in",
+    "args": "cstring",
+    "definition": "CREATE OR REPLACE FUNCTION public.gtrgm_in(cstring)\n RETURNS gtrgm\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$gtrgm_in$function$\n"
+  },
+  {
+    "proname": "gtrgm_options",
+    "args": "internal",
+    "definition": "CREATE OR REPLACE FUNCTION public.gtrgm_options(internal)\n RETURNS void\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE\nAS '$libdir/pg_trgm', $function$gtrgm_options$function$\n"
+  },
+  {
+    "proname": "gtrgm_out",
+    "args": "gtrgm",
+    "definition": "CREATE OR REPLACE FUNCTION public.gtrgm_out(gtrgm)\n RETURNS cstring\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$gtrgm_out$function$\n"
+  },
+  {
+    "proname": "gtrgm_penalty",
+    "args": "internal, internal, internal",
+    "definition": "CREATE OR REPLACE FUNCTION public.gtrgm_penalty(internal, internal, internal)\n RETURNS internal\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$gtrgm_penalty$function$\n"
+  },
+  {
+    "proname": "gtrgm_picksplit",
+    "args": "internal, internal",
+    "definition": "CREATE OR REPLACE FUNCTION public.gtrgm_picksplit(internal, internal)\n RETURNS internal\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$gtrgm_picksplit$function$\n"
+  },
+  {
+    "proname": "gtrgm_same",
+    "args": "gtrgm, gtrgm, internal",
+    "definition": "CREATE OR REPLACE FUNCTION public.gtrgm_same(gtrgm, gtrgm, internal)\n RETURNS internal\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$gtrgm_same$function$\n"
+  },
+  {
+    "proname": "gtrgm_union",
+    "args": "internal, internal",
+    "definition": "CREATE OR REPLACE FUNCTION public.gtrgm_union(internal, internal)\n RETURNS gtrgm\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$gtrgm_union$function$\n"
+  },
+  {
+    "proname": "handle_new_user",
+    "args": "",
+    "definition": "CREATE OR REPLACE FUNCTION public.handle_new_user()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\ndeclare\n  default_username text;\n  raw_name text;\n  raw_avatar text;\n  clean_prefix text;\nbegin\n  insert into public.users (id, email, account_status, created_at, updated_at)\n  values (\n    new.id,\n    coalesce(new.email, new.id::text || '@community.local'),\n    'active',\n    now(),\n    now()\n  )\n  on conflict (id) do update set\n    email = excluded.email,\n    updated_at = now();\n\n  raw_name := coalesce(\n    new.raw_user_meta_data->>'full_name',\n    new.raw_user_meta_data->>'name',\n    split_part(new.email, '@', 1),\n    'Community Member'\n  );\n\n  raw_avatar := coalesce(\n    new.raw_user_meta_data->>'avatar_url',\n    new.raw_user_meta_data->>'picture',\n    null\n  );\n\n  clean_prefix := lower(regexp_replace(coalesce(split_part(new.email, '@', 1), 'member'), '[^a-zA-Z0-9_]', '_', 'g'));\n  if length(clean_prefix) < 3 then\n    clean_prefix := 'user_' || clean_prefix;\n  end if;\n\n  default_username := clean_prefix || '_' || substr(replace(new.id::text, '-', ''), 1, 4);\n\n  insert into public.profiles (\n    id,\n    username,\n    display_name,\n    avatar_url,\n    status,\n    created_at,\n    updated_at,\n    last_active_at\n  )\n  values (\n    new.id,\n    default_username,\n    raw_name,\n    raw_avatar,\n    'active',\n    now(),\n    now(),\n    now()\n  )\n  on conflict (id) do update set\n    last_active_at = now(),\n    avatar_url = coalesce(public.profiles.avatar_url, excluded.avatar_url);\n\n  insert into public.user_roles (profile_id, role)\n  values (new.id, 'member')\n  on conflict do nothing;\n\n  return new;\nend;\n$function$\n"
+  },
+  {
+    "proname": "has_event_management_permission",
+    "args": "actor_id uuid",
+    "definition": "CREATE OR REPLACE FUNCTION public.has_event_management_permission(actor_id uuid)\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\n  select public.has_permission(actor_id, 'events.manage');\n$function$\n"
+  },
+  {
+    "proname": "has_permission",
+    "args": "actor_id uuid, permission_key text",
+    "definition": "CREATE OR REPLACE FUNCTION public.has_permission(actor_id uuid, permission_key text)\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\n  select case\n    when actor_id is null or permission_key is null then false\n    when not public.is_active_account(actor_id) then false\n    when public.is_super_admin(actor_id) then true\n    when exists (\n      select 1\n      from public.user_admin_roles uar\n      join public.admin_role_permissions arp on arp.role_id = uar.role_id\n      join public.permissions p on p.id = arp.permission_id\n      where uar.user_id = actor_id\n        and p.key = permission_key\n    ) then true\n    else exists (\n      select 1\n      from public.user_roles ur\n      where ur.profile_id = actor_id\n        and (\n          (\n            ur.role = 'admin'\n            and permission_key in (\n              'dashboard.read', 'users.manage', 'categories.manage',\n              'projects.moderate', 'articles.create', 'articles.publish',\n              'articles.manage', 'articles.delete', 'events.manage',\n              'badges.manage', 'reports.manage', 'discord.manage',\n              'audit_logs.read', 'roles.manage', 'site.manage'\n            )\n          )\n          or (\n            ur.role = 'moderator'\n            and permission_key in (\n              'dashboard.read', 'projects.moderate', 'articles.create',\n              'articles.publish', 'articles.moderate', 'reports.manage'\n            )\n          )\n          or (\n            ur.role = 'event_organizer'\n            and permission_key in ('dashboard.read', 'events.manage')\n          )\n        )\n    )\n  end;\n$function$\n"
+  },
+  {
+    "proname": "is_active_account",
+    "args": "actor_id uuid",
+    "definition": "CREATE OR REPLACE FUNCTION public.is_active_account(actor_id uuid)\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\n  select exists (\n    select 1\n    from public.users u\n    join public.profiles p on p.id = u.id\n    where u.id = actor_id\n      and u.account_status = 'active'\n      and p.status = 'active'\n  );\n$function$\n"
+  },
+  {
+    "proname": "is_super_admin",
+    "args": "actor_id uuid",
+    "definition": "CREATE OR REPLACE FUNCTION public.is_super_admin(actor_id uuid)\n RETURNS boolean\n LANGUAGE sql\n STABLE SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\n  select public.is_active_account(actor_id)\n    and (\n      exists (\n        select 1\n        from public.user_roles\n        where profile_id = actor_id\n          and role = 'super_admin'\n      )\n      or exists (\n        select 1\n        from public.user_admin_roles uar\n        join public.admin_roles ar on ar.id = uar.role_id\n        where uar.user_id = actor_id\n          and ar.slug = 'super_admin'\n      )\n    );\n$function$\n"
+  },
+  {
+    "proname": "notify_members_of_published_event",
+    "args": "",
+    "definition": "CREATE OR REPLACE FUNCTION public.notify_members_of_published_event()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nbegin\n  if new.status = 'published' and (tg_op = 'INSERT' or old.status is distinct from 'published') then\n    insert into public.notifications (profile_id, type, title, body, resource_type, resource_id)\n    select p.id,\n      'event_published',\n      'New community event',\n      'The DropOut College announced a new event: ' || new.title,\n      'event',\n      new.id\n    from public.profiles p\n    where p.status = 'active'\n      and p.id <> new.created_by;\n  end if;\n  return new;\nend;\n$function$\n"
+  },
+  {
+    "proname": "regexp_match",
+    "args": "citext, citext, text",
+    "definition": "CREATE OR REPLACE FUNCTION public.regexp_match(citext, citext, text)\n RETURNS text[]\n LANGUAGE sql\n IMMUTABLE PARALLEL SAFE STRICT\nAS $function$\n    SELECT pg_catalog.regexp_match( $1::pg_catalog.text, $2::pg_catalog.text, CASE WHEN pg_catalog.strpos($3, 'c') = 0 THEN  $3 || 'i' ELSE $3 END );\n$function$\n"
+  },
+  {
+    "proname": "regexp_match",
+    "args": "citext, citext",
+    "definition": "CREATE OR REPLACE FUNCTION public.regexp_match(citext, citext)\n RETURNS text[]\n LANGUAGE sql\n IMMUTABLE PARALLEL SAFE STRICT\nAS $function$\n    SELECT pg_catalog.regexp_match( $1::pg_catalog.text, $2::pg_catalog.text, 'i' );\n$function$\n"
+  },
+  {
+    "proname": "regexp_matches",
+    "args": "citext, citext",
+    "definition": "CREATE OR REPLACE FUNCTION public.regexp_matches(citext, citext)\n RETURNS SETOF text[]\n LANGUAGE sql\n IMMUTABLE PARALLEL SAFE STRICT ROWS 1\nAS $function$\n    SELECT pg_catalog.regexp_matches( $1::pg_catalog.text, $2::pg_catalog.text, 'i' );\n$function$\n"
+  },
+  {
+    "proname": "regexp_matches",
+    "args": "citext, citext, text",
+    "definition": "CREATE OR REPLACE FUNCTION public.regexp_matches(citext, citext, text)\n RETURNS SETOF text[]\n LANGUAGE sql\n IMMUTABLE PARALLEL SAFE STRICT ROWS 10\nAS $function$\n    SELECT pg_catalog.regexp_matches( $1::pg_catalog.text, $2::pg_catalog.text, CASE WHEN pg_catalog.strpos($3, 'c') = 0 THEN  $3 || 'i' ELSE $3 END );\n$function$\n"
+  },
+  {
+    "proname": "regexp_replace",
+    "args": "citext, citext, text, text",
+    "definition": "CREATE OR REPLACE FUNCTION public.regexp_replace(citext, citext, text, text)\n RETURNS text\n LANGUAGE sql\n IMMUTABLE PARALLEL SAFE STRICT\nAS $function$\n    SELECT pg_catalog.regexp_replace( $1::pg_catalog.text, $2::pg_catalog.text, $3, CASE WHEN pg_catalog.strpos($4, 'c') = 0 THEN  $4 || 'i' ELSE $4 END);\n$function$\n"
+  },
+  {
+    "proname": "regexp_replace",
+    "args": "citext, citext, text",
+    "definition": "CREATE OR REPLACE FUNCTION public.regexp_replace(citext, citext, text)\n RETURNS text\n LANGUAGE sql\n IMMUTABLE PARALLEL SAFE STRICT\nAS $function$\n    SELECT pg_catalog.regexp_replace( $1::pg_catalog.text, $2::pg_catalog.text, $3, 'i');\n$function$\n"
+  },
+  {
+    "proname": "regexp_split_to_array",
+    "args": "citext, citext, text",
+    "definition": "CREATE OR REPLACE FUNCTION public.regexp_split_to_array(citext, citext, text)\n RETURNS text[]\n LANGUAGE sql\n IMMUTABLE PARALLEL SAFE STRICT\nAS $function$\n    SELECT pg_catalog.regexp_split_to_array( $1::pg_catalog.text, $2::pg_catalog.text, CASE WHEN pg_catalog.strpos($3, 'c') = 0 THEN  $3 || 'i' ELSE $3 END );\n$function$\n"
+  },
+  {
+    "proname": "regexp_split_to_array",
+    "args": "citext, citext",
+    "definition": "CREATE OR REPLACE FUNCTION public.regexp_split_to_array(citext, citext)\n RETURNS text[]\n LANGUAGE sql\n IMMUTABLE PARALLEL SAFE STRICT\nAS $function$\n    SELECT pg_catalog.regexp_split_to_array( $1::pg_catalog.text, $2::pg_catalog.text, 'i' );\n$function$\n"
+  },
+  {
+    "proname": "regexp_split_to_table",
+    "args": "citext, citext, text",
+    "definition": "CREATE OR REPLACE FUNCTION public.regexp_split_to_table(citext, citext, text)\n RETURNS SETOF text\n LANGUAGE sql\n IMMUTABLE PARALLEL SAFE STRICT\nAS $function$\n    SELECT pg_catalog.regexp_split_to_table( $1::pg_catalog.text, $2::pg_catalog.text, CASE WHEN pg_catalog.strpos($3, 'c') = 0 THEN  $3 || 'i' ELSE $3 END );\n$function$\n"
+  },
+  {
+    "proname": "regexp_split_to_table",
+    "args": "citext, citext",
+    "definition": "CREATE OR REPLACE FUNCTION public.regexp_split_to_table(citext, citext)\n RETURNS SETOF text\n LANGUAGE sql\n IMMUTABLE PARALLEL SAFE STRICT\nAS $function$\n    SELECT pg_catalog.regexp_split_to_table( $1::pg_catalog.text, $2::pg_catalog.text, 'i' );\n$function$\n"
+  },
+  {
+    "proname": "replace",
+    "args": "citext, citext, citext",
+    "definition": "CREATE OR REPLACE FUNCTION public.replace(citext, citext, citext)\n RETURNS text\n LANGUAGE sql\n IMMUTABLE PARALLEL SAFE STRICT\nAS $function$\n    SELECT pg_catalog.regexp_replace( $1::pg_catalog.text, pg_catalog.regexp_replace($2::pg_catalog.text, '([^a-zA-Z_0-9])', E'\\\\\\\\\\\\1', 'g'), $3::pg_catalog.text, 'gi' );\n$function$\n"
+  },
+  {
+    "proname": "rls_auto_enable",
+    "args": "",
+    "definition": "CREATE OR REPLACE FUNCTION public.rls_auto_enable()\n RETURNS event_trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'pg_catalog'\nAS $function$\nDECLARE\n  cmd record;\nBEGIN\n  FOR cmd IN\n    SELECT *\n    FROM pg_event_trigger_ddl_commands()\n    WHERE command_tag IN ('CREATE TABLE', 'CREATE TABLE AS', 'SELECT INTO')\n      AND object_type IN ('table','partitioned table')\n  LOOP\n     IF cmd.schema_name IS NOT NULL AND cmd.schema_name IN ('public') AND cmd.schema_name NOT IN ('pg_catalog','information_schema') AND cmd.schema_name NOT LIKE 'pg_toast%' AND cmd.schema_name NOT LIKE 'pg_temp%' THEN\n      BEGIN\n        EXECUTE format('alter table if exists %s enable row level security', cmd.object_identity);\n        RAISE LOG 'rls_auto_enable: enabled RLS on %', cmd.object_identity;\n      EXCEPTION\n        WHEN OTHERS THEN\n          RAISE LOG 'rls_auto_enable: failed to enable RLS on %', cmd.object_identity;\n      END;\n     ELSE\n        RAISE LOG 'rls_auto_enable: skip % (either system schema or not in enforced list: %.)', cmd.object_identity, cmd.schema_name;\n     END IF;\n  END LOOP;\nEND;\n$function$\n"
+  },
+  {
+    "proname": "save_site_cms",
+    "args": "p_settings jsonb, p_sections jsonb, p_social_links jsonb, p_announcements jsonb, p_founders jsonb",
+    "definition": "CREATE OR REPLACE FUNCTION public.save_site_cms(p_settings jsonb, p_sections jsonb, p_social_links jsonb, p_announcements jsonb DEFAULT NULL::jsonb, p_founders jsonb DEFAULT NULL::jsonb)\n RETURNS void\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public', 'pg_temp'\nAS $function$\nBEGIN\n  IF NOT public.has_permission(auth.uid(), 'site.manage') THEN\n    RAISE EXCEPTION 'Site management permission is required.'\n      USING ERRCODE = '42501';\n  END IF;\n\n  IF p_settings IS NOT NULL AND jsonb_typeof(p_settings) = 'object' THEN\n    UPDATE public.site_settings\n    SET\n      site_name = COALESCE(p_settings->>'site_name', site_name),\n      site_description = COALESCE(p_settings->>'site_description', site_description),\n      hero_title = COALESCE(p_settings->>'hero_title', hero_title),\n      hero_subtitle = COALESCE(p_settings->>'hero_subtitle', hero_subtitle),\n      hero_description = COALESCE(p_settings->>'hero_description', hero_description),\n      hero_badge_text = COALESCE(p_settings->>'hero_badge_text', hero_badge_text),\n      hero_primary_cta_label = COALESCE(p_settings->>'hero_primary_cta_label', hero_primary_cta_label),\n      hero_primary_cta_href = COALESCE(p_settings->>'hero_primary_cta_href', hero_primary_cta_href),\n      hero_secondary_cta_label = COALESCE(p_settings->>'hero_secondary_cta_label', hero_secondary_cta_label),\n      hero_secondary_cta_href = COALESCE(p_settings->>'hero_secondary_cta_href', hero_secondary_cta_href),\n      who_we_are = COALESCE(p_settings->>'who_we_are', who_we_are),\n      our_aim = COALESCE(p_settings->>'our_aim', our_aim),\n      our_goal = COALESCE(p_settings->>'our_goal', our_goal),\n      our_story = COALESCE(p_settings->>'our_story', our_story),\n      our_vision = COALESCE(p_settings->>'our_vision', our_vision),\n      our_mission = COALESCE(p_settings->>'our_mission', our_mission),\n      our_philosophy = COALESCE(p_settings->>'our_philosophy', our_philosophy),\n      footer_description = COALESCE(p_settings->>'footer_text', footer_description),\n      community_invite_link = COALESCE(p_settings->>'community_invite_link', p_settings->>'discord_link', community_invite_link),\n      contact_email = COALESCE(p_settings->>'contact_email', contact_email),\n      contact_phone = COALESCE(p_settings->>'contact_phone', contact_phone),\n      discord_link = COALESCE(p_settings->>'discord_link', p_settings->>'community_invite_link', discord_link),\n      github_link = COALESCE(p_settings->>'github_link', github_link),\n      facebook_link = COALESCE(p_settings->>'facebook_link', facebook_link),\n      instagram_link = COALESCE(p_settings->>'instagram_link', instagram_link),\n      youtube_link = COALESCE(p_settings->>'youtube_link', youtube_link),\n      updated_at = NOW();\n  END IF;\n\n  IF p_sections IS NOT NULL AND jsonb_typeof(p_sections) = 'array' THEN\n    INSERT INTO public.site_sections (\n      key, slug, title, description, cta_label, cta_href, is_enabled, enabled, sort_order, config, content, updated_at\n    )\n    SELECT\n      sec.slug,\n      sec.slug,\n      COALESCE(sec.title, ''),\n      COALESCE(sec.description, ''),\n      COALESCE(sec.cta_label, ''),\n      COALESCE(sec.cta_href, ''),\n      COALESCE(sec.enabled, true),\n      COALESCE(sec.enabled, true),\n      COALESCE(sec.sort_order, 0),\n      COALESCE(sec.content, '{}'::jsonb),\n      COALESCE(sec.content, '{}'::jsonb),\n      NOW()\n    FROM jsonb_to_recordset(p_sections) AS sec(\n      slug text,\n      title text,\n      description text,\n      cta_label text,\n      cta_href text,\n      enabled boolean,\n      sort_order integer,\n      content jsonb\n    )\n    ON CONFLICT (key) DO UPDATE SET\n      slug = EXCLUDED.slug,\n      title = EXCLUDED.title,\n      description = EXCLUDED.description,\n      cta_label = EXCLUDED.cta_label,\n      cta_href = EXCLUDED.cta_href,\n      is_enabled = EXCLUDED.is_enabled,\n      enabled = EXCLUDED.enabled,\n      sort_order = EXCLUDED.sort_order,\n      config = EXCLUDED.config,\n      content = EXCLUDED.content,\n      updated_at = NOW();\n  END IF;\n\n  IF p_announcements IS NOT NULL AND jsonb_typeof(p_announcements) = 'array' THEN\n    UPDATE public.site_sections\n    SET\n      config = jsonb_set(COALESCE(config, '{}'::jsonb), '{announcements}', p_announcements),\n      content = jsonb_set(COALESCE(content, '{}'::jsonb), '{announcements}', p_announcements),\n      updated_at = NOW()\n    WHERE key = 'community-noticeboard' OR slug = 'community-noticeboard';\n  END IF;\n\n  IF p_founders IS NOT NULL AND jsonb_typeof(p_founders) = 'array' THEN\n    UPDATE public.site_sections\n    SET\n      config = jsonb_set(COALESCE(config, '{}'::jsonb), '{founders}', p_founders),\n      content = jsonb_set(COALESCE(content, '{}'::jsonb), '{founders}', p_founders),\n      updated_at = NOW()\n    WHERE key = 'founders' OR slug = 'founders';\n  END IF;\n\n  IF p_social_links IS NOT NULL AND jsonb_typeof(p_social_links) = 'array' THEN\n    INSERT INTO public.site_social_links (\n      platform, url, is_active, sort_order, updated_at\n    )\n    SELECT\n      soc.platform,\n      COALESCE(soc.url, ''),\n      COALESCE(soc.enabled, true),\n      COALESCE(soc.sort_order, 0),\n      NOW()\n    FROM jsonb_to_recordset(p_social_links) AS soc(\n      platform text,\n      url text,\n      enabled boolean,\n      sort_order integer\n    )\n    ON CONFLICT (platform) DO UPDATE SET\n      url = EXCLUDED.url,\n      is_active = EXCLUDED.is_active,\n      sort_order = EXCLUDED.sort_order,\n      updated_at = NOW();\n  END IF;\nEND;\n$function$\n"
+  },
+  {
+    "proname": "set_limit",
+    "args": "real",
+    "definition": "CREATE OR REPLACE FUNCTION public.set_limit(real)\n RETURNS real\n LANGUAGE c\n STRICT\nAS '$libdir/pg_trgm', $function$set_limit$function$\n"
+  },
+  {
+    "proname": "show_limit",
+    "args": "",
+    "definition": "CREATE OR REPLACE FUNCTION public.show_limit()\n RETURNS real\n LANGUAGE c\n STABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$show_limit$function$\n"
+  },
+  {
+    "proname": "show_trgm",
+    "args": "text",
+    "definition": "CREATE OR REPLACE FUNCTION public.show_trgm(text)\n RETURNS text[]\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$show_trgm$function$\n"
+  },
+  {
+    "proname": "similarity",
+    "args": "text, text",
+    "definition": "CREATE OR REPLACE FUNCTION public.similarity(text, text)\n RETURNS real\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$similarity$function$\n"
+  },
+  {
+    "proname": "similarity_dist",
+    "args": "text, text",
+    "definition": "CREATE OR REPLACE FUNCTION public.similarity_dist(text, text)\n RETURNS real\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$similarity_dist$function$\n"
+  },
+  {
+    "proname": "similarity_op",
+    "args": "text, text",
+    "definition": "CREATE OR REPLACE FUNCTION public.similarity_op(text, text)\n RETURNS boolean\n LANGUAGE c\n STABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$similarity_op$function$\n"
+  },
+  {
+    "proname": "split_part",
+    "args": "citext, citext, integer",
+    "definition": "CREATE OR REPLACE FUNCTION public.split_part(citext, citext, integer)\n RETURNS text\n LANGUAGE sql\n IMMUTABLE PARALLEL SAFE STRICT\nAS $function$\n    SELECT (pg_catalog.regexp_split_to_array( $1::pg_catalog.text, pg_catalog.regexp_replace($2::pg_catalog.text, '([^a-zA-Z_0-9])', E'\\\\\\\\\\\\1', 'g'), 'i'))[$3];\n$function$\n"
+  },
+  {
+    "proname": "strict_word_similarity",
+    "args": "text, text",
+    "definition": "CREATE OR REPLACE FUNCTION public.strict_word_similarity(text, text)\n RETURNS real\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$strict_word_similarity$function$\n"
+  },
+  {
+    "proname": "strict_word_similarity_commutator_op",
+    "args": "text, text",
+    "definition": "CREATE OR REPLACE FUNCTION public.strict_word_similarity_commutator_op(text, text)\n RETURNS boolean\n LANGUAGE c\n STABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$strict_word_similarity_commutator_op$function$\n"
+  },
+  {
+    "proname": "strict_word_similarity_dist_commutator_op",
+    "args": "text, text",
+    "definition": "CREATE OR REPLACE FUNCTION public.strict_word_similarity_dist_commutator_op(text, text)\n RETURNS real\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$strict_word_similarity_dist_commutator_op$function$\n"
+  },
+  {
+    "proname": "strict_word_similarity_dist_op",
+    "args": "text, text",
+    "definition": "CREATE OR REPLACE FUNCTION public.strict_word_similarity_dist_op(text, text)\n RETURNS real\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$strict_word_similarity_dist_op$function$\n"
+  },
+  {
+    "proname": "strict_word_similarity_op",
+    "args": "text, text",
+    "definition": "CREATE OR REPLACE FUNCTION public.strict_word_similarity_op(text, text)\n RETURNS boolean\n LANGUAGE c\n STABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$strict_word_similarity_op$function$\n"
+  },
+  {
+    "proname": "strpos",
+    "args": "citext, citext",
+    "definition": "CREATE OR REPLACE FUNCTION public.strpos(citext, citext)\n RETURNS integer\n LANGUAGE sql\n IMMUTABLE PARALLEL SAFE STRICT\nAS $function$\n    SELECT pg_catalog.strpos( pg_catalog.lower( $1::pg_catalog.text ), pg_catalog.lower( $2::pg_catalog.text ) );\n$function$\n"
+  },
+  {
+    "proname": "sync_admin_api_columns",
+    "args": "",
+    "definition": "CREATE OR REPLACE FUNCTION public.sync_admin_api_columns()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\r\n                                                                                                            begin\r\n                                                                                                              if tg_op = 'INSERT' then\r\n                                                                                                                  if tg_table_name = 'site_sections' then\r\n                                                                                                                        new.section_key := coalesce(new.section_key, new.key);\r\n                                                                                                                              new.key := new.section_key;\r\n                                                                                                                                    new.display_order := coalesce(new.display_order, new.sort_order, 0);\r\n                                                                                                                                          new.sort_order := new.display_order;\r\n                                                                                                                                              elsif tg_table_name = 'site_social_links' then\r\n                                                                                                                                                    new.icon_name := coalesce(new.icon_name, new.icon);\r\n                                                                                                                                                          new.icon := new.icon_name;\r\n                                                                                                                                                                new.display_order := coalesce(new.display_order, new.sort_order, 0);\r\n                                                                                                                                                                      new.sort_order := new.display_order;\r\n                                                                                                                                                                            new.is_visible := coalesce(new.is_visible, new.is_active, true);\r\n                                                                                                                                                                                  new.is_active := new.is_visible;\r\n                                                                                                                                                                                      elsif tg_table_name = 'navigation_items' then\r\n                                                                                                                                                                                            new.title := coalesce(new.title, new.label);\r\n                                                                                                                                                                                                  new.label := new.title;\r\n                                                                                                                                                                                                        new.url := coalesce(new.url, new.href);\r\n                                                                                                                                                                                                              new.href := new.url;\r\n                                                                                                                                                                                                                    new.location := coalesce(new.location, 'header');\r\n                                                                                                                                                                                                                          new.display_order := coalesce(new.display_order, new.sort_order, 0);\r\n                                                                                                                                                                                                                                new.sort_order := new.display_order;\r\n                                                                                                                                                                                                                                      new.is_visible := coalesce(new.is_visible, new.is_enabled, true);\r\n                                                                                                                                                                                                                                            new.is_enabled := new.is_visible;\r\n                                                                                                                                                                                                                                                  new.open_in_new_tab := coalesce(new.open_in_new_tab, new.is_external, false);\r\n                                                                                                                                                                                                                                                        new.is_external := new.open_in_new_tab;\r\n                                                                                                                                                                                                                                                            elsif tg_table_name = 'user_admin_roles' then\r\n                                                                                                                                                                                                                                                                  new.admin_role_id := coalesce(new.admin_role_id, new.role_id);\r\n                                                                                                                                                                                                                                                                        new.role_id := new.admin_role_id;\r\n                                                                                                                                                                                                                                                                            end if;\r\n                                                                                                                                                                                                                                                                                return new;\r\n                                                                                                                                                                                                                                                                                  end if;\r\n\r\n                                                                                                                                                                                                                                                                                    if tg_table_name = 'site_sections' then\r\n                                                                                                                                                                                                                                                                                        if new.section_key is distinct from old.section_key then\r\n                                                                                                                                                                                                                                                                                              new.key := new.section_key;\r\n                                                                                                                                                                                                                                                                                                  else\r\n                                                                                                                                                                                                                                                                                                        new.section_key := new.key;\r\n                                                                                                                                                                                                                                                                                                            end if;\r\n                                                                                                                                                                                                                                                                                                                if new.display_order is distinct from old.display_order then\r\n                                                                                                                                                                                                                                                                                                                      new.sort_order := new.display_order;\r\n                                                                                                                                                                                                                                                                                                                          else\r\n                                                                                                                                                                                                                                                                                                                                new.display_order := new.sort_order;\r\n                                                                                                                                                                                                                                                                                                                                    end if;\r\n                                                                                                                                                                                                                                                                                                                                      elsif tg_table_name = 'site_social_links' then\r\n                                                                                                                                                                                                                                                                                                                                          if new.icon_name is distinct from old.icon_name then\r\n                                                                                                                                                                                                                                                                                                                                                new.icon := new.icon_name;\r\n                                                                                                                                                                                                                                                                                                                                                    else\r\n                                                                                                                                                                                                                                                                                                                                                          new.icon_name := new.icon;\r\n                                                                                                                                                                                                                                                                                                                                                              end if;\r\n                                                                                                                                                                                                                                                                                                                                                                  if new.display_order is distinct from old.display_order then\r\n                                                                                                                                                                                                                                                                                                                                                                        new.sort_order := new.display_order;\r\n                                                                                                                                                                                                                                                                                                                                                                            else\r\n                                                                                                                                                                                                                                                                                                                                                                                  new.display_order := new.sort_order;\r\n                                                                                                                                                                                                                                                                                                                                                                                      end if;\r\n                                                                                                                                                                                                                                                                                                                                                                                          if new.is_visible is distinct from old.is_visible then\r\n                                                                                                                                                                                                                                                                                                                                                                                                new.is_active := new.is_visible;\r\n                                                                                                                                                                                                                                                                                                                                                                                                    else\r\n                                                                                                                                                                                                                                                                                                                                                                                                          new.is_visible := new.is_active;\r\n                                                                                                                                                                                                                                                                                                                                                                                                              end if;\r\n                                                                                                                                                                                                                                                                                                                                                                                                                elsif tg_table_name = 'navigation_items' then\r\n                                                                                                                                                                                                                                                                                                                                                                                                                    if new.title is distinct from old.title then\r\n                                                                                                                                                                                                                                                                                                                                                                                                                          new.label := new.title;\r\n                                                                                                                                                                                                                                                                                                                                                                                                                              else\r\n                                                                                                                                                                                                                                                                                                                                                                                                                                    new.title := new.label;\r\n                                                                                                                                                                                                                                                                                                                                                                                                                                        end if;\r\n                                                                                                                                                                                                                                                                                                                                                                                                                                            if new.url is distinct from old.url then\r\n                                                                                                                                                                                                                                                                                                                                                                                                                                                  new.href := new.url;\r\n                                                                                                                                                                                                                                                                                                                                                                                                                                                      else\r\n                                                                                                                                                                                                                                                                                                                                                                                                                                                            new.url := new.href;\r\n                                                                                                                                                                                                                                                                                                                                                                                                                                                                end if;\r\n                                                                                                                                                                                                                                                                                                                                                                                                                                                                    if new.display_order is distinct from old.display_order then\r\n                                                                                                                                                                                                                                                                                                                                                                                                                                                                          new.sort_order := new.display_order;\r\n                                                                                                                                                                                                                                                                                                                                                                                                                                                                              else\r\n                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    new.display_order := new.sort_order;\r\n                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        end if;\r\n                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            if new.is_visible is distinct from old.is_visible then\r\n                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  new.is_enabled := new.is_visible;\r\n                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      else\r\n                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            new.is_visible := new.is_enabled;\r\n                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                end if;\r\n                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    if new.open_in_new_tab is distinct from old.open_in_new_tab then\r\n                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          new.is_external := new.open_in_new_tab;\r\n                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              else\r\n                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    new.open_in_new_tab := new.is_external;\r\n                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        end if;\r\n                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          elsif tg_table_name = 'user_admin_roles' then\r\n                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              if new.admin_role_id is distinct from old.admin_role_id then\r\n                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    new.role_id := new.admin_role_id;\r\n                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        else\r\n                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              new.admin_role_id := new.role_id;\r\n                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  end if;\r\n                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    end if;\r\n                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      return new;\r\n                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      end;\r\n                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      $function$\n"
+  },
+  {
+    "proname": "sync_project_comment_count",
+    "args": "",
+    "definition": "CREATE OR REPLACE FUNCTION public.sync_project_comment_count()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nbegin\n  if tg_op = 'INSERT' then\n    update public.projects set comment_count = comment_count + 1 where id = new.project_id;\n    return new;\n  elsif tg_op = 'DELETE' then\n    update public.projects set comment_count = greatest(comment_count - 1, 0) where id = old.project_id;\n    return old;\n  end if;\n  return null;\nend; $function$\n"
+  },
+  {
+    "proname": "sync_project_upvote_count",
+    "args": "",
+    "definition": "CREATE OR REPLACE FUNCTION public.sync_project_upvote_count()\n RETURNS trigger\n LANGUAGE plpgsql\n SECURITY DEFINER\n SET search_path TO 'public'\nAS $function$\nbegin\n  if tg_op = 'INSERT' then\n    update public.projects set upvote_count = upvote_count + 1 where id = new.project_id;\n    return new;\n  elsif tg_op = 'DELETE' then\n    update public.projects set upvote_count = greatest(upvote_count - 1, 0) where id = old.project_id;\n    return old;\n  end if;\n  return null;\nend; $function$\n"
+  },
+  {
+    "proname": "texticlike",
+    "args": "citext, text",
+    "definition": "CREATE OR REPLACE FUNCTION public.texticlike(citext, text)\n RETURNS boolean\n LANGUAGE internal\n IMMUTABLE PARALLEL SAFE STRICT\nAS $function$texticlike$function$\n"
+  },
+  {
+    "proname": "texticlike",
+    "args": "citext, citext",
+    "definition": "CREATE OR REPLACE FUNCTION public.texticlike(citext, citext)\n RETURNS boolean\n LANGUAGE internal\n IMMUTABLE PARALLEL SAFE STRICT\nAS $function$texticlike$function$\n"
+  },
+  {
+    "proname": "texticnlike",
+    "args": "citext, citext",
+    "definition": "CREATE OR REPLACE FUNCTION public.texticnlike(citext, citext)\n RETURNS boolean\n LANGUAGE internal\n IMMUTABLE PARALLEL SAFE STRICT\nAS $function$texticnlike$function$\n"
+  },
+  {
+    "proname": "texticnlike",
+    "args": "citext, text",
+    "definition": "CREATE OR REPLACE FUNCTION public.texticnlike(citext, text)\n RETURNS boolean\n LANGUAGE internal\n IMMUTABLE PARALLEL SAFE STRICT\nAS $function$texticnlike$function$\n"
+  },
+  {
+    "proname": "texticregexeq",
+    "args": "citext, citext",
+    "definition": "CREATE OR REPLACE FUNCTION public.texticregexeq(citext, citext)\n RETURNS boolean\n LANGUAGE internal\n IMMUTABLE PARALLEL SAFE STRICT\nAS $function$texticregexeq$function$\n"
+  },
+  {
+    "proname": "texticregexeq",
+    "args": "citext, text",
+    "definition": "CREATE OR REPLACE FUNCTION public.texticregexeq(citext, text)\n RETURNS boolean\n LANGUAGE internal\n IMMUTABLE PARALLEL SAFE STRICT\nAS $function$texticregexeq$function$\n"
+  },
+  {
+    "proname": "texticregexne",
+    "args": "citext, text",
+    "definition": "CREATE OR REPLACE FUNCTION public.texticregexne(citext, text)\n RETURNS boolean\n LANGUAGE internal\n IMMUTABLE PARALLEL SAFE STRICT\nAS $function$texticregexne$function$\n"
+  },
+  {
+    "proname": "texticregexne",
+    "args": "citext, citext",
+    "definition": "CREATE OR REPLACE FUNCTION public.texticregexne(citext, citext)\n RETURNS boolean\n LANGUAGE internal\n IMMUTABLE PARALLEL SAFE STRICT\nAS $function$texticregexne$function$\n"
+  },
+  {
+    "proname": "translate",
+    "args": "citext, citext, text",
+    "definition": "CREATE OR REPLACE FUNCTION public.translate(citext, citext, text)\n RETURNS text\n LANGUAGE sql\n IMMUTABLE PARALLEL SAFE STRICT\nAS $function$\n    SELECT pg_catalog.translate( pg_catalog.translate( $1::pg_catalog.text, pg_catalog.lower($2::pg_catalog.text), $3), pg_catalog.upper($2::pg_catalog.text), $3);\n$function$\n"
+  },
+  {
+    "proname": "word_similarity",
+    "args": "text, text",
+    "definition": "CREATE OR REPLACE FUNCTION public.word_similarity(text, text)\n RETURNS real\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$word_similarity$function$\n"
+  },
+  {
+    "proname": "word_similarity_commutator_op",
+    "args": "text, text",
+    "definition": "CREATE OR REPLACE FUNCTION public.word_similarity_commutator_op(text, text)\n RETURNS boolean\n LANGUAGE c\n STABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$word_similarity_commutator_op$function$\n"
+  },
+  {
+    "proname": "word_similarity_dist_commutator_op",
+    "args": "text, text",
+    "definition": "CREATE OR REPLACE FUNCTION public.word_similarity_dist_commutator_op(text, text)\n RETURNS real\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$word_similarity_dist_commutator_op$function$\n"
+  },
+  {
+    "proname": "word_similarity_dist_op",
+    "args": "text, text",
+    "definition": "CREATE OR REPLACE FUNCTION public.word_similarity_dist_op(text, text)\n RETURNS real\n LANGUAGE c\n IMMUTABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$word_similarity_dist_op$function$\n"
+  },
+  {
+    "proname": "word_similarity_op",
+    "args": "text, text",
+    "definition": "CREATE OR REPLACE FUNCTION public.word_similarity_op(text, text)\n RETURNS boolean\n LANGUAGE c\n STABLE PARALLEL SAFE STRICT\nAS '$libdir/pg_trgm', $function$word_similarity_op$function$\n"
+  }
+]

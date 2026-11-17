@@ -1,0 +1,112 @@
+[
+  {
+    "id": "0e6eeed4-d442-4e4e-ad9b-afa1ea039aac",
+    "key": "dashboard.read",
+    "description": "View admin dashboard"
+  },
+  {
+    "id": "d55e5093-bcc2-4223-abcc-eabfe9f93cff",
+    "key": "users.manage",
+    "description": "Manage member accounts"
+  },
+  {
+    "id": "e378e853-9556-4257-b989-18f16728e4bf",
+    "key": "categories.manage",
+    "description": "Manage categories and skills"
+  },
+  {
+    "id": "48d02912-d285-4330-912b-9fb2fd9fd301",
+    "key": "projects.moderate",
+    "description": "Review and feature projects"
+  },
+  {
+    "id": "13dfea9c-bb3a-4f66-b013-849c7241e5f7",
+    "key": "events.manage",
+    "description": "Manage events and participants"
+  },
+  {
+    "id": "73df96ed-828e-4ac7-83df-f753c30deee6",
+    "key": "badges.manage",
+    "description": "Manage and assign badges"
+  },
+  {
+    "id": "e3744f9b-7c00-4aac-ae59-670678f5c8f4",
+    "key": "reports.manage",
+    "description": "Resolve moderation reports"
+  },
+  {
+    "id": "da4c92f8-8de6-4bcf-aebf-8e30ce10988d",
+    "key": "discord.manage",
+    "description": "Manage Discord integration"
+  },
+  {
+    "id": "863d1fee-aac9-4057-8906-3069b00d6b37",
+    "key": "roles.manage",
+    "description": "Manage administrator roles"
+  },
+  {
+    "id": "1c98b082-84e2-4ee9-a5bd-899ae5f11f85",
+    "key": "audit_logs.read",
+    "description": "Read audit logs"
+  },
+  {
+    "id": "213b2302-75ea-43b9-a43c-18bd2df9f289",
+    "key": "site_settings.manage",
+    "description": "Manage site settings and configuration"
+  },
+  {
+    "id": "3dea6a18-f6e5-4f74-aeb8-ecef0987a983",
+    "key": "site_content.manage",
+    "description": "Manage website content blocks"
+  },
+  {
+    "id": "e163a699-e4d8-4733-b757-222cbc02f16b",
+    "key": "navigation.manage",
+    "description": "Manage website navigation"
+  },
+  {
+    "id": "e0392b28-475e-4f09-9e11-3131bd078072",
+    "key": "cms.manage",
+    "description": "Manage all website content and navigation"
+  },
+  {
+    "id": "663cbe80-3960-491b-bbb2-2cf5411cfc5c",
+    "key": "members.read",
+    "description": "View community members"
+  },
+  {
+    "id": "2c0d0975-3fc2-4990-b0b6-c20a5b47c273",
+    "key": "members.manage",
+    "description": "Manage community members and roles"
+  },
+  {
+    "id": "3c08dc38-3d7d-43ee-99e0-ee55f5e10936",
+    "key": "site.manage",
+    "description": "Manage public site content"
+  },
+  {
+    "id": "c23c39ab-7c67-45af-a69c-21a8594afdda",
+    "key": "articles.create",
+    "description": "Create journal articles"
+  },
+  {
+    "id": "29433e38-706d-46e2-b7e9-1242d78e1b63",
+    "key": "articles.publish",
+    "description": "Publish journal articles"
+  },
+  {
+    "id": "3760e2b1-62c9-4387-955b-4b705d8b207c",
+    "key": "articles.manage",
+    "description": "Manage all journal articles"
+  },
+  {
+    "id": "e3ebf1eb-41cb-439b-904f-99662670739f",
+    "key": "articles.delete",
+    "description": "Delete journal articles"
+  },
+  {
+    "id": "4e4ef8df-a644-4432-a56a-9b2be3a0c8b6",
+    "key": "articles.moderate",
+    "description": "Moderate journal articles"
+  }
+]

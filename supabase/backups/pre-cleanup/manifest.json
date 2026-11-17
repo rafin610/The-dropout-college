@@ -1,0 +1,154 @@
+{
+  "timestamp": "2026-11-17T04:47:31.967Z",
+  "supabaseUrl": "https://ddgklwyjvttjcclanism.supabase.co",
+  "tables": {
+    "admin_role_permissions": {
+      "status": "ok",
+      "count": 0
+    },
+    "admin_roles": {
+      "status": "ok",
+      "count": 0
+    },
+    "articles": {
+      "status": "ok",
+      "count": 10
+    },
+    "audit_logs": {
+      "status": "ok",
+      "count": 0
+    },
+    "badges": {
+      "status": "ok",
+      "count": 0
+    },
+    "categories": {
+      "status": "ok",
+      "count": 3
+    },
+    "discord_connections": {
+      "status": "error",
+      "error": "permission denied for table discord_connections"
+    },
+    "event_participants": {
+      "status": "ok",
+      "count": 0
+    },
+    "events": {
+      "status": "ok",
+      "count": 0
+    },
+    "follows": {
+      "status": "ok",
+      "count": 2
+    },
+    "moderation_reports": {
+      "status": "ok",
+      "count": 0
+    },
+    "navigation_items": {
+      "status": "ok",
+      "count": 5
+    },
+    "notifications": {
+      "status": "ok",
+      "count": 0
+    },
+    "permissions": {
+      "status": "ok",
+      "count": 0
+    },
+    "profile_badges": {
+      "status": "ok",
+      "count": 0
+    },
+    "profile_categories": {
+      "status": "ok",
+      "count": 7
+    },
+    "profile_skills": {
+      "status": "ok",
+      "count": 26
+    },
+    "profiles": {
+      "status": "ok",
+      "count": 17
+    },
+    "project_comments": {
+      "status": "ok",
+      "count": 0
+    },
+    "project_links": {
+      "status": "ok",
+      "count": 0
+    },
+    "project_members": {
+      "status": "ok",
+      "count": 1
+    },
+    "project_technologies": {
+      "status": "ok",
+      "count": 0
+    },
+    "project_upvotes": {
+      "status": "ok",
+      "count": 2
+    },
+    "projects": {
+      "status": "ok",
+      "count": 1
+    },
+    "site_content": {
+      "status": "ok",
+      "count": 25
+    },
+    "site_sections": {
+      "status": "ok",
+      "count": 20
+    },
+    "site_settings": {
+      "status": "ok",
+      "count": 1
+    },
+    "site_social_links": {
+      "status": "ok",
+      "count": 1
+    },
+    "skills": {
+      "status": "ok",
+      "count": 18
+    },
+    "social_links": {
+      "status": "ok",
+      "count": 3
+    },
+    "team_invitations": {
+      "status": "ok",
+      "count": 0
+    },
+    "team_members": {
+      "status": "ok",
+      "count": 0
+    },
+    "teams": {
+      "status": "ok",
+      "count": 0
+    },
+    "user_admin_roles": {
+      "status": "ok",
+      "count": 0
+    },
+    "user_roles": {
+      "status": "ok",
+      "count": 17
+    },
+    "user_skills": {
+      "status": "ok",
+      "count": 0
+    },
+    "users": {
+      "status": "error",
+      "error": "permission denied for table users"
+    }
+  }
+}

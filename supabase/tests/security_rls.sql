@@ -1509,4 +1509,133 @@ select test.assert(
 );
 rollback;
 
+-- ============================================================================
+-- 8. Campus staff administration
+-- ============================================================================
+
+-- Legacy admin-role assignments can manage Moderator permissions.
+begin;
+select set_config('request.jwt.claim.sub', '22222222-2222-4222-8222-222222222222', true);
+set local role authenticated;
+
+select public.admin_set_moderator_permission(
+  '22222222-2222-4222-8222-222222222222',
+  'users.manage',
+  false,
+  'security-test-moderator-permission'
+);
+select test.assert(
+  not exists (
+    select 1
+    from public.admin_role_permissions arp
+    join public.admin_roles ar on ar.id = arp.role_id
+    join public.permissions p on p.id = arp.permission_id
+    where ar.slug = 'moderator' and p.key = 'users.manage'
+  ),
+  'an admin can revoke an allowlisted Moderator permission'
+);
+select public.admin_set_moderator_permission(
+  '22222222-2222-4222-8222-222222222222',
+  'users.manage',
+  true,
+  'security-test-moderator-permission'
+);
+select test.assert(
+  exists (
+    select 1
+    from public.admin_role_permissions arp
+    join public.admin_roles ar on ar.id = arp.role_id
+    join public.permissions p on p.id = arp.permission_id
+    where ar.slug = 'moderator' and p.key = 'users.manage'
+  ),
+  'an admin can grant an allowlisted Moderator permission'
+);
+select test.expect_error(
+  $sql$select public.admin_set_moderator_permission('22222222-2222-4222-8222-222222222222', 'roles.manage', true, 'security-test-protected-permission')$sql$,
+  '22023',
+  'system-level permissions cannot be assigned to Moderators'
+);
+select test.expect_error(
+  $sql$select public.admin_set_moderator_permission('11111111-1111-4111-8111-111111111111', 'users.manage', false, 'security-test-forged-actor')$sql$,
+  '42501',
+  'an authenticated admin cannot forge another actor id'
+);
+rollback;
+
+-- A Moderator cannot escalate their own permissions.
+begin;
+select set_config('request.jwt.claim.sub', '88888888-8888-4888-8888-888888888888', true);
+set local role authenticated;
+
+select test.expect_error(
+  $sql$select public.admin_set_moderator_permission('88888888-8888-4888-8888-888888888888', 'users.manage', true, 'security-test-moderator-escalation')$sql$,
+  '42501',
+  'a Moderator cannot manage Moderator permissions'
+);
+rollback;
+
+-- Authenticated staff updates enforce permissions and prevent self-edits.
+begin;
+select set_config('request.jwt.claim.sub', '33333333-3333-4333-8333-333333333333', true);
+set local role authenticated;
+
+select test.expect_error(
+  $sql$select public.staff_admin_update_member('55555555-5555-4555-8555-555555555555', 'suspended', null, 'security-test-member-update')$sql$,
+  '42501',
+  'a regular member cannot update another account'
+);
+rollback;
+
+begin;
+select set_config('request.jwt.claim.sub', '22222222-2222-4222-8222-222222222222', true);
+set local role authenticated;
+
+select test.expect_error(
+  $sql$select public.staff_admin_update_member('22222222-2222-4222-8222-222222222222', null, 'moderator', 'security-test-self-role')$sql$,
+  '42501',
+  'an admin cannot change their own role'
+);
+select public.staff_admin_update_member(
+  '55555555-5555-4555-8555-555555555555',
+  null,
+  'moderator',
+  'security-test-member-role'
+);
+select test.assert(
+  exists (
+    select 1 from public.user_roles
+    where profile_id = '55555555-5555-4555-8555-555555555555'
+      and role = 'moderator'
+  ),
+  'an admin can assign a permitted member role through the authenticated RPC'
+);
+rollback;
+
+-- The final active Admin cannot be suspended or demoted.
+begin;
+set local role service_role;
+
+delete from public.user_roles
+where profile_id = '11111111-1111-4111-8111-111111111111'
+  and role = 'super_admin';
+
+select test.expect_error(
+  $sql$update public.users set account_status = 'suspended' where id = '22222222-2222-4222-8222-222222222222'$sql$,
+  '23514',
+  'the last active Admin cannot be suspended'
+);
+select test.expect_error(
+  $sql$delete from public.user_admin_roles where user_id = '22222222-2222-4222-8222-222222222222' and role_id = (select id from public.admin_roles where slug = 'admin')$sql$,
+  '23514',
+  'the last active Admin role cannot be removed'
+);
+select test.assert(
+  exists (
+    select 1 from public.user_admin_roles
+    where user_id = '22222222-2222-4222-8222-222222222222'
+  ),
+  'the final Admin assignment remains intact after rejected changes'
+);
+rollback;
+
 select 'security_rls.sql: all assertions passed' as result;

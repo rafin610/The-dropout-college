@@ -4127,3 +4127,57 @@ body {
     animation-iteration-count: 1 !important;
   }
 }
+
+/* Staff panel — a quieter, denser glass treatment for administrative work. */
+.c-admin-nav,
+.c-admin-stat,
+.c-admin-card,
+.c-admin-role-cards article,
+.c-admin-action-menu,
+.c-admin-dialog,
+.c-admin-quicklinks button,
+.c-admin-search,
+.c-admin-filter select,
+.c-admin-table-wrap,
+.c-admin-actions summary,
+.c-admin-pagination button,
+.c-admin-confirm-person {
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--glass-highlight) 30%, transparent), transparent 55%),
+    color-mix(in srgb, var(--glass) 88%, transparent);
+  border-color: var(--glass-border);
+  box-shadow:
+    0 16px 38px rgba(3, 14, 18, .16),
+    inset 0 1px 0 var(--glass-highlight);
+  backdrop-filter: blur(28px) saturate(125%);
+  -webkit-backdrop-filter: blur(28px) saturate(125%);
+}
+
+.c-admin-nav button.active,
+.c-admin-nav button:hover,
+.c-admin-quicklinks button:hover,
+.c-admin-pagination button:hover:not(:disabled) {
+  border-color: var(--glass-border-strong);
+  box-shadow: inset 0 1px 0 var(--glass-highlight);
+}
+
+.c-admin-dialog {
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--glass-highlight) 34%, transparent), transparent 52%),
+    color-mix(in srgb, var(--glass-strong) 96%, transparent);
+}
+
+.c-admin-action-menu {
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--glass-highlight) 28%, transparent), transparent 55%),
+    var(--popover);
+  box-shadow: var(--shadow-lg), inset 0 1px 0 var(--glass-highlight);
+}
+
+.c-admin-table th {
+  background: color-mix(in srgb, var(--glass-soft) 85%, transparent);
+}
+
+.c-admin-table td {
+  border-top-color: var(--glass-border);
+}

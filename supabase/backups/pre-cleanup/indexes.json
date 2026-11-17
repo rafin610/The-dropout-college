@@ -1,0 +1,530 @@
+[
+  {
+    "schemaname": "public",
+    "tablename": "admin_role_permissions",
+    "indexname": "admin_role_permissions_pkey",
+    "indexdef": "CREATE UNIQUE INDEX admin_role_permissions_pkey ON public.admin_role_permissions USING btree (role_id, permission_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "admin_roles",
+    "indexname": "admin_roles_name_key",
+    "indexdef": "CREATE UNIQUE INDEX admin_roles_name_key ON public.admin_roles USING btree (name)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "admin_roles",
+    "indexname": "admin_roles_pkey",
+    "indexdef": "CREATE UNIQUE INDEX admin_roles_pkey ON public.admin_roles USING btree (id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "admin_roles",
+    "indexname": "admin_roles_slug_key",
+    "indexdef": "CREATE UNIQUE INDEX admin_roles_slug_key ON public.admin_roles USING btree (slug)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "articles",
+    "indexname": "articles_author_idx",
+    "indexdef": "CREATE INDEX articles_author_idx ON public.articles USING btree (author_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "articles",
+    "indexname": "articles_category_idx",
+    "indexdef": "CREATE INDEX articles_category_idx ON public.articles USING btree (category_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "articles",
+    "indexname": "articles_pkey",
+    "indexdef": "CREATE UNIQUE INDEX articles_pkey ON public.articles USING btree (id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "articles",
+    "indexname": "articles_search_idx",
+    "indexdef": "CREATE INDEX articles_search_idx ON public.articles USING gin (to_tsvector('english'::regconfig, ((title || ' '::text) || COALESCE(excerpt, ''::text))))"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "articles",
+    "indexname": "articles_slug_idx",
+    "indexdef": "CREATE INDEX articles_slug_idx ON public.articles USING btree (slug)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "articles",
+    "indexname": "articles_slug_key",
+    "indexdef": "CREATE UNIQUE INDEX articles_slug_key ON public.articles USING btree (slug)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "articles",
+    "indexname": "articles_status_idx",
+    "indexdef": "CREATE INDEX articles_status_idx ON public.articles USING btree (status, published_at DESC) WHERE (deleted_at IS NULL)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "audit_logs",
+    "indexname": "audit_logs_created_at_idx",
+    "indexdef": "CREATE INDEX audit_logs_created_at_idx ON public.audit_logs USING btree (created_at DESC)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "audit_logs",
+    "indexname": "audit_logs_pkey",
+    "indexdef": "CREATE UNIQUE INDEX audit_logs_pkey ON public.audit_logs USING btree (id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "audit_logs",
+    "indexname": "audit_logs_resource_idx",
+    "indexdef": "CREATE INDEX audit_logs_resource_idx ON public.audit_logs USING btree (resource_type, resource_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "badges",
+    "indexname": "badges_name_key",
+    "indexdef": "CREATE UNIQUE INDEX badges_name_key ON public.badges USING btree (name)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "badges",
+    "indexname": "badges_pkey",
+    "indexdef": "CREATE UNIQUE INDEX badges_pkey ON public.badges USING btree (id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "badges",
+    "indexname": "badges_slug_key",
+    "indexdef": "CREATE UNIQUE INDEX badges_slug_key ON public.badges USING btree (slug)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "categories",
+    "indexname": "categories_name_key",
+    "indexdef": "CREATE UNIQUE INDEX categories_name_key ON public.categories USING btree (name)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "categories",
+    "indexname": "categories_pkey",
+    "indexdef": "CREATE UNIQUE INDEX categories_pkey ON public.categories USING btree (id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "categories",
+    "indexname": "categories_slug_key",
+    "indexdef": "CREATE UNIQUE INDEX categories_slug_key ON public.categories USING btree (slug)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "discord_connections",
+    "indexname": "discord_connections_discord_user_id_key",
+    "indexdef": "CREATE UNIQUE INDEX discord_connections_discord_user_id_key ON public.discord_connections USING btree (discord_user_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "discord_connections",
+    "indexname": "discord_connections_pkey",
+    "indexdef": "CREATE UNIQUE INDEX discord_connections_pkey ON public.discord_connections USING btree (profile_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "event_participants",
+    "indexname": "event_participants_pkey",
+    "indexdef": "CREATE UNIQUE INDEX event_participants_pkey ON public.event_participants USING btree (event_id, profile_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "events",
+    "indexname": "events_pkey",
+    "indexdef": "CREATE UNIQUE INDEX events_pkey ON public.events USING btree (id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "events",
+    "indexname": "events_slug_key",
+    "indexdef": "CREATE UNIQUE INDEX events_slug_key ON public.events USING btree (slug)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "events",
+    "indexname": "events_status_starts_at_idx",
+    "indexdef": "CREATE INDEX events_status_starts_at_idx ON public.events USING btree (status, starts_at)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "follows",
+    "indexname": "follows_follower_id_following_id_key",
+    "indexdef": "CREATE UNIQUE INDEX follows_follower_id_following_id_key ON public.follows USING btree (follower_id, following_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "follows",
+    "indexname": "follows_follower_idx",
+    "indexdef": "CREATE INDEX follows_follower_idx ON public.follows USING btree (follower_id, created_at DESC)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "follows",
+    "indexname": "follows_following_idx",
+    "indexdef": "CREATE INDEX follows_following_idx ON public.follows USING btree (following_id, created_at DESC)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "follows",
+    "indexname": "follows_pkey",
+    "indexdef": "CREATE UNIQUE INDEX follows_pkey ON public.follows USING btree (id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "moderation_reports",
+    "indexname": "moderation_reports_pkey",
+    "indexdef": "CREATE UNIQUE INDEX moderation_reports_pkey ON public.moderation_reports USING btree (id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "moderation_reports",
+    "indexname": "moderation_reports_status_created_idx",
+    "indexdef": "CREATE INDEX moderation_reports_status_created_idx ON public.moderation_reports USING btree (status, created_at DESC)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "navigation_items",
+    "indexname": "navigation_items_pkey",
+    "indexdef": "CREATE UNIQUE INDEX navigation_items_pkey ON public.navigation_items USING btree (id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "navigation_items",
+    "indexname": "navigation_items_sort_idx",
+    "indexdef": "CREATE INDEX navigation_items_sort_idx ON public.navigation_items USING btree (sort_order)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "notifications",
+    "indexname": "notifications_actor_idx",
+    "indexdef": "CREATE INDEX notifications_actor_idx ON public.notifications USING btree (actor_id, created_at DESC)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "notifications",
+    "indexname": "notifications_pkey",
+    "indexdef": "CREATE UNIQUE INDEX notifications_pkey ON public.notifications USING btree (id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "notifications",
+    "indexname": "notifications_profile_created_idx",
+    "indexdef": "CREATE INDEX notifications_profile_created_idx ON public.notifications USING btree (profile_id, created_at DESC)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "notifications",
+    "indexname": "notifications_profile_created_idx2",
+    "indexdef": "CREATE INDEX notifications_profile_created_idx2 ON public.notifications USING btree (profile_id, created_at DESC)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "notifications",
+    "indexname": "notifications_profile_unread_idx",
+    "indexdef": "CREATE INDEX notifications_profile_unread_idx ON public.notifications USING btree (profile_id, read_at) WHERE (read_at IS NULL)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "permissions",
+    "indexname": "permissions_key_key",
+    "indexdef": "CREATE UNIQUE INDEX permissions_key_key ON public.permissions USING btree (key)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "permissions",
+    "indexname": "permissions_pkey",
+    "indexdef": "CREATE UNIQUE INDEX permissions_pkey ON public.permissions USING btree (id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "profile_badges",
+    "indexname": "profile_badges_pkey",
+    "indexdef": "CREATE UNIQUE INDEX profile_badges_pkey ON public.profile_badges USING btree (profile_id, badge_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "profile_categories",
+    "indexname": "profile_categories_category_id_idx",
+    "indexdef": "CREATE INDEX profile_categories_category_id_idx ON public.profile_categories USING btree (category_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "profile_categories",
+    "indexname": "profile_categories_pkey",
+    "indexdef": "CREATE UNIQUE INDEX profile_categories_pkey ON public.profile_categories USING btree (profile_id, category_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "profile_skills",
+    "indexname": "profile_skills_pkey",
+    "indexdef": "CREATE UNIQUE INDEX profile_skills_pkey ON public.profile_skills USING btree (profile_id, skill_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "profiles",
+    "indexname": "profiles_pkey",
+    "indexdef": "CREATE UNIQUE INDEX profiles_pkey ON public.profiles USING btree (id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "profiles",
+    "indexname": "profiles_username_key",
+    "indexdef": "CREATE UNIQUE INDEX profiles_username_key ON public.profiles USING btree (username)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "profiles",
+    "indexname": "profiles_username_trgm_idx",
+    "indexdef": "CREATE INDEX profiles_username_trgm_idx ON public.profiles USING gin (username gin_trgm_ops)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "project_comments",
+    "indexname": "project_comments_pkey",
+    "indexdef": "CREATE UNIQUE INDEX project_comments_pkey ON public.project_comments USING btree (id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "project_comments",
+    "indexname": "project_comments_project_idx",
+    "indexdef": "CREATE INDEX project_comments_project_idx ON public.project_comments USING btree (project_id, created_at DESC)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "project_links",
+    "indexname": "project_links_pkey",
+    "indexdef": "CREATE UNIQUE INDEX project_links_pkey ON public.project_links USING btree (id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "project_members",
+    "indexname": "project_members_pkey",
+    "indexdef": "CREATE UNIQUE INDEX project_members_pkey ON public.project_members USING btree (project_id, profile_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "project_technologies",
+    "indexname": "project_technologies_pkey",
+    "indexdef": "CREATE UNIQUE INDEX project_technologies_pkey ON public.project_technologies USING btree (project_id, technology)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "project_upvotes",
+    "indexname": "project_upvotes_pkey",
+    "indexdef": "CREATE UNIQUE INDEX project_upvotes_pkey ON public.project_upvotes USING btree (id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "project_upvotes",
+    "indexname": "project_upvotes_project_id_user_id_key",
+    "indexdef": "CREATE UNIQUE INDEX project_upvotes_project_id_user_id_key ON public.project_upvotes USING btree (project_id, user_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "project_upvotes",
+    "indexname": "project_upvotes_project_idx",
+    "indexdef": "CREATE INDEX project_upvotes_project_idx ON public.project_upvotes USING btree (project_id, created_at DESC)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "project_upvotes",
+    "indexname": "project_upvotes_user_idx",
+    "indexdef": "CREATE INDEX project_upvotes_user_idx ON public.project_upvotes USING btree (user_id, created_at DESC)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "projects",
+    "indexname": "projects_pkey",
+    "indexdef": "CREATE UNIQUE INDEX projects_pkey ON public.projects USING btree (id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "projects",
+    "indexname": "projects_search_idx",
+    "indexdef": "CREATE INDEX projects_search_idx ON public.projects USING gin (to_tsvector('english'::regconfig, ((name || ' '::text) || description)))"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "projects",
+    "indexname": "projects_slug_key",
+    "indexdef": "CREATE UNIQUE INDEX projects_slug_key ON public.projects USING btree (slug)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "site_content",
+    "indexname": "site_content_key_idx",
+    "indexdef": "CREATE INDEX site_content_key_idx ON public.site_content USING btree (key)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "site_content",
+    "indexname": "site_content_key_key",
+    "indexdef": "CREATE UNIQUE INDEX site_content_key_key ON public.site_content USING btree (key)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "site_content",
+    "indexname": "site_content_pkey",
+    "indexdef": "CREATE UNIQUE INDEX site_content_pkey ON public.site_content USING btree (id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "site_sections",
+    "indexname": "site_sections_key_key",
+    "indexdef": "CREATE UNIQUE INDEX site_sections_key_key ON public.site_sections USING btree (key)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "site_sections",
+    "indexname": "site_sections_pkey",
+    "indexdef": "CREATE UNIQUE INDEX site_sections_pkey ON public.site_sections USING btree (id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "site_sections",
+    "indexname": "site_sections_section_key_idx",
+    "indexdef": "CREATE UNIQUE INDEX site_sections_section_key_idx ON public.site_sections USING btree (section_key)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "site_sections",
+    "indexname": "site_sections_slug_idx",
+    "indexdef": "CREATE UNIQUE INDEX site_sections_slug_idx ON public.site_sections USING btree (slug)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "site_sections",
+    "indexname": "site_sections_sort_idx",
+    "indexdef": "CREATE INDEX site_sections_sort_idx ON public.site_sections USING btree (sort_order)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "site_settings",
+    "indexname": "site_settings_pkey",
+    "indexdef": "CREATE UNIQUE INDEX site_settings_pkey ON public.site_settings USING btree (id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "site_social_links",
+    "indexname": "site_social_links_pkey",
+    "indexdef": "CREATE UNIQUE INDEX site_social_links_pkey ON public.site_social_links USING btree (id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "site_social_links",
+    "indexname": "site_social_links_platform_key",
+    "indexdef": "CREATE UNIQUE INDEX site_social_links_platform_key ON public.site_social_links USING btree (platform)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "skills",
+    "indexname": "skills_active_sort_order_idx",
+    "indexdef": "CREATE INDEX skills_active_sort_order_idx ON public.skills USING btree (is_active, sort_order, name)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "skills",
+    "indexname": "skills_name_key",
+    "indexdef": "CREATE UNIQUE INDEX skills_name_key ON public.skills USING btree (name)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "skills",
+    "indexname": "skills_pkey",
+    "indexdef": "CREATE UNIQUE INDEX skills_pkey ON public.skills USING btree (id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "skills",
+    "indexname": "skills_slug_key",
+    "indexdef": "CREATE UNIQUE INDEX skills_slug_key ON public.skills USING btree (slug)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "social_links",
+    "indexname": "social_links_pkey",
+    "indexdef": "CREATE UNIQUE INDEX social_links_pkey ON public.social_links USING btree (id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "social_links",
+    "indexname": "social_links_profile_id_platform_key",
+    "indexdef": "CREATE UNIQUE INDEX social_links_profile_id_platform_key ON public.social_links USING btree (profile_id, platform)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "team_invitations",
+    "indexname": "team_invitations_pkey",
+    "indexdef": "CREATE UNIQUE INDEX team_invitations_pkey ON public.team_invitations USING btree (id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "team_members",
+    "indexname": "team_members_pkey",
+    "indexdef": "CREATE UNIQUE INDEX team_members_pkey ON public.team_members USING btree (team_id, profile_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "teams",
+    "indexname": "teams_pkey",
+    "indexdef": "CREATE UNIQUE INDEX teams_pkey ON public.teams USING btree (id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "teams",
+    "indexname": "teams_slug_key",
+    "indexdef": "CREATE UNIQUE INDEX teams_slug_key ON public.teams USING btree (slug)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "user_admin_roles",
+    "indexname": "user_admin_roles_pkey",
+    "indexdef": "CREATE UNIQUE INDEX user_admin_roles_pkey ON public.user_admin_roles USING btree (user_id, role_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "user_admin_roles",
+    "indexname": "user_admin_roles_user_id_idx",
+    "indexdef": "CREATE INDEX user_admin_roles_user_id_idx ON public.user_admin_roles USING btree (user_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "user_roles",
+    "indexname": "user_roles_pkey",
+    "indexdef": "CREATE UNIQUE INDEX user_roles_pkey ON public.user_roles USING btree (profile_id, role)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "user_roles",
+    "indexname": "user_roles_profile_id_role_idx",
+    "indexdef": "CREATE INDEX user_roles_profile_id_role_idx ON public.user_roles USING btree (profile_id, role)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "user_skills",
+    "indexname": "user_skills_pkey",
+    "indexdef": "CREATE UNIQUE INDEX user_skills_pkey ON public.user_skills USING btree (user_id, skill_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "users",
+    "indexname": "users_email_key",
+    "indexdef": "CREATE UNIQUE INDEX users_email_key ON public.users USING btree (email)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "users",
+    "indexname": "users_pkey",
+    "indexdef": "CREATE UNIQUE INDEX users_pkey ON public.users USING btree (id)"
+  }
+]

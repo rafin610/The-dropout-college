@@ -109,8 +109,8 @@ function isMissingTable(error: { code?: string; message?: string } | null) {
 }
 
 export async function checkUserCanWriteArticles(userId: string): Promise<boolean> {
-  const role = await getMemberRole(userId);
-  return isStaffRole(role);
+  const permissions = await getUserPermissions(userId);
+  return permissions.has("*") || permissions.has("articles.create") || permissions.has("articles.manage");
 }
 
 export async function getPublishedArticles({
@@ -262,6 +262,15 @@ export async function getStaffArticles(user: User): Promise<JournalArticle[]> {
   if (!isStaffRole(role)) {
     throw new ApiError("FORBIDDEN", "Staff permission required to view article studio.", 403);
   }
+  const permissions = await getUserPermissions(user.id);
+  if (
+    !permissions.has("*") &&
+    !permissions.has("articles.manage") &&
+    !permissions.has("articles.create") &&
+    !permissions.has("articles.moderate")
+  ) {
+    return [];
+  }
 
   const supabase = await createSupabaseServerClient();
   try {
@@ -271,7 +280,7 @@ export async function getStaffArticles(user: User): Promise<JournalArticle[]> {
       .is("deleted_at", null)
       .order("updated_at", { ascending: false });
 
-    if (role !== "admin") {
+    if (role !== "admin" && !permissions.has("articles.moderate")) {
       request = request.eq("author_id", user.id);
     }
 
@@ -291,8 +300,11 @@ export async function getStaffArticles(user: User): Promise<JournalArticle[]> {
 
 export async function saveArticle(input: SaveArticleInput, user: User): Promise<JournalArticle> {
   const role = await getMemberRole(user.id);
+  const permissions = await getUserPermissions(user.id);
+  const canManageAll = permissions.has("*") || permissions.has("articles.manage");
+  const canWrite = canManageAll || permissions.has("articles.create");
 
-  if (!isStaffRole(role)) {
+  if (!isStaffRole(role) || !canWrite) {
     throw new ApiError("FORBIDDEN", "Only Admins and Moderators can write and edit articles.", 403);
   }
 
@@ -314,6 +326,9 @@ export async function saveArticle(input: SaveArticleInput, user: User): Promise<
 
   const readingTime = calculateReadingTime(content);
   const isPublishing = input.status === "published";
+  if (isPublishing && !canManageAll && !permissions.has("articles.publish")) {
+    throw new ApiError("FORBIDDEN", "You do not have permission to publish journal articles.", 403);
+  }
 
   if (input.id) {
     const existing = await getArticleBySlugOrId(input.id, user);
@@ -321,7 +336,15 @@ export async function saveArticle(input: SaveArticleInput, user: User): Promise<
       throw new ApiError("NOT_FOUND", "Article not found for update.", 404);
     }
 
-    if (role !== "admin" && existing.authorId !== user.id) {
+    if (
+      existing.status === "published" &&
+      !canManageAll &&
+      !permissions.has("articles.publish")
+    ) {
+      throw new ApiError("FORBIDDEN", "You do not have permission to edit a published journal.", 403);
+    }
+
+    if (!canManageAll && existing.authorId !== user.id) {
       throw new ApiError("FORBIDDEN", "You can only update your own articles.", 403);
     }
 

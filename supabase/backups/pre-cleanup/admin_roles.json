@@ -1,0 +1,30 @@
+[
+  {
+    "id": "fd9e1eb1-694b-4117-90bd-ffa9a48bbf7b",
+    "name": "Super Admin",
+    "slug": "super_admin",
+    "description": "Full platform access",
+    "created_at": "2026-09-06T05:13:56.727322+00:00"
+  },
+  {
+    "id": "0ca1efd9-c5b9-4ed0-9c15-e00bdf0e9259",
+    "name": "Admin",
+    "slug": "admin",
+    "description": "Manage platform content and members",
+    "created_at": "2026-09-06T05:13:56.727322+00:00"
+  },
+  {
+    "id": "493c5c35-21a6-4e25-bac6-7df7478b3ce7",
+    "name": "Moderator",
+    "slug": "moderator",
+    "description": "Review and moderate community content",
+    "created_at": "2026-09-06T05:13:56.727322+00:00"
+  },
+  {
+    "id": "9668e58d-6d53-4d02-b314-f419f46999c8",
+    "name": "Event Manager",
+    "slug": "event_manager",
+    "description": "Create and manage events",
+    "created_at": "2026-09-06T05:13:56.727322+00:00"
+  }
+]

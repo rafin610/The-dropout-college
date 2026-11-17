@@ -1,0 +1,218 @@
+[
+  {
+    "id": "bc0b7804-0450-4fa3-b107-cb97d9db1cde",
+    "category_id": "352bcefa-ede2-4431-b866-7954c9e646ed",
+    "slug": "web-design",
+    "name": "Web Design",
+    "is_active": false,
+    "created_at": "2026-09-06T10:12:59.14946+00:00",
+    "sort_order": 0
+  },
+  {
+    "id": "b8527618-2c95-4025-9c80-113be4aed181",
+    "category_id": "352bcefa-ede2-4431-b866-7954c9e646ed",
+    "slug": "product-thinking",
+    "name": "Product Thinking",
+    "is_active": false,
+    "created_at": "2026-09-06T10:12:59.14946+00:00",
+    "sort_order": 0
+  },
+  {
+    "id": "6c059c87-1e18-4ee7-9918-d15cfe3cf40e",
+    "category_id": "7f50cc61-0b9c-4b35-bce6-c733205160fc",
+    "slug": "javascript",
+    "name": "JavaScript",
+    "is_active": false,
+    "created_at": "2026-09-06T10:12:59.14946+00:00",
+    "sort_order": 0
+  },
+  {
+    "id": "5e3f7f92-f7d2-48e9-94a9-7239d7fef329",
+    "category_id": "7f50cc61-0b9c-4b35-bce6-c733205160fc",
+    "slug": "react",
+    "name": "React",
+    "is_active": false,
+    "created_at": "2026-09-06T10:12:59.14946+00:00",
+    "sort_order": 0
+  },
+  {
+    "id": "1cebb57f-48fb-421d-8e07-33aa2107d1aa",
+    "category_id": "a85a9839-4608-4400-bb5c-9346ffcc7c0a",
+    "slug": "community-building",
+    "name": "Community Building",
+    "is_active": false,
+    "created_at": "2026-09-06T10:12:59.14946+00:00",
+    "sort_order": 0
+  },
+  {
+    "id": "632cffa5-a1f9-4441-b58e-78d9f8fea818",
+    "category_id": "a85a9839-4608-4400-bb5c-9346ffcc7c0a",
+    "slug": "mentoring",
+    "name": "Mentoring",
+    "is_active": false,
+    "created_at": "2026-09-06T10:12:59.14946+00:00",
+    "sort_order": 0
+  },
+  {
+    "id": "68d2db0d-5374-4f76-8a42-d5be2ccb2af1",
+    "category_id": null,
+    "slug": "web-development",
+    "name": "Web Development",
+    "is_active": true,
+    "created_at": "2026-09-16T03:50:48.407177+00:00",
+    "sort_order": 10
+  },
+  {
+    "id": "25abac18-105b-4d35-9d28-191de6625f86",
+    "category_id": null,
+    "slug": "software-development",
+    "name": "Software Development",
+    "is_active": true,
+    "created_at": "2026-09-16T03:50:48.407177+00:00",
+    "sort_order": 20
+  },
+  {
+    "id": "90398cc2-19a5-4ee1-a972-f23e7eebd9b2",
+    "category_id": null,
+    "slug": "ai-machine-learning",
+    "name": "AI / Machine Learning",
+    "is_active": true,
+    "created_at": "2026-09-16T03:50:48.407177+00:00",
+    "sort_order": 30
+  },
+  {
+    "id": "fc8d78e6-e0a8-4d13-b4ae-5fd1f8224635",
+    "category_id": null,
+    "slug": "python",
+    "name": "Python",
+    "is_active": true,
+    "created_at": "2026-09-16T03:50:48.407177+00:00",
+    "sort_order": 40
+  },
+  {
+    "id": "9c79f9b4-8ebe-4df8-a539-8f7fbdb5e4f9",
+    "category_id": null,
+    "slug": "cyber-security",
+    "name": "Cyber Security",
+    "is_active": true,
+    "created_at": "2026-09-16T03:50:48.407177+00:00",
+    "sort_order": 50
+  },
+  {
+    "id": "fc8ad042-4180-4604-ba57-3fac9a3214cc",
+    "category_id": null,
+    "slug": "data-science",
+    "name": "Data Science",
+    "is_active": true,
+    "created_at": "2026-09-16T03:50:48.407177+00:00",
+    "sort_order": 60
+  },
+  {
+    "id": "2a08e666-749e-4933-94b3-7911f313fbc0",
+    "category_id": null,
+    "slug": "ui-ux-design",
+    "name": "UI/UX Design",
+    "is_active": true,
+    "created_at": "2026-09-16T03:50:48.407177+00:00",
+    "sort_order": 70
+  },
+  {
+    "id": "1edb806b-5f81-4dba-9cad-08d1da7d70e8",
+    "category_id": null,
+    "slug": "video-editing",
+    "name": "Video Editing",
+    "is_active": true,
+    "created_at": "2026-09-16T03:50:48.407177+00:00",
+    "sort_order": 80
+  },
+  {
+    "id": "bc9cc696-ab34-4286-ba65-bd039ce6c7cd",
+    "category_id": null,
+    "slug": "content-creation",
+    "name": "Content Creation",
+    "is_active": true,
+    "created_at": "2026-09-16T03:50:48.407177+00:00",
+    "sort_order": 90
+  },
+  {
+    "id": "57ce8951-c743-4f49-9231-3f8672b5e482",
+    "category_id": null,
+    "slug": "digital-marketing",
+    "name": "Digital Marketing",
+    "is_active": true,
+    "created_at": "2026-09-16T03:50:48.407177+00:00",
+    "sort_order": 100
+  },
+  {
+    "id": "0a2c4dd9-9721-4d86-b4ae-3ab883d679e5",
+    "category_id": null,
+    "slug": "gaming-esports",
+    "name": "Gaming / Esports",
+    "is_active": true,
+    "created_at": "2026-09-16T03:50:48.407177+00:00",
+    "sort_order": 110
+  },
+  {
+    "id": "5adb9798-0628-442f-a5d9-59abae6644ce",
+    "category_id": null,
+    "slug": "writing",
+    "name": "Writing",
+    "is_active": true,
+    "created_at": "2026-09-16T03:50:48.407177+00:00",
+    "sort_order": 120
+  },
+  {
+    "id": "21bca20a-2191-426e-8c43-8e586f8f6a57",
+    "category_id": null,
+    "slug": "public-speaking",
+    "name": "Public Speaking",
+    "is_active": true,
+    "created_at": "2026-09-16T03:50:48.407177+00:00",
+    "sort_order": 130
+  },
+  {
+    "id": "d66b2f62-2eae-4c81-a14b-13bb97dd0324",
+    "category_id": null,
+    "slug": "learning-education",
+    "name": "Learning / Education",
+    "is_active": true,
+    "created_at": "2026-09-16T03:50:48.407177+00:00",
+    "sort_order": 140
+  },
+  {
+    "id": "b914dda5-1cee-4a0d-a69c-cee3a7709626",
+    "category_id": null,
+    "slug": "entrepreneurship-business",
+    "name": "Entrepreneurship / Business",
+    "is_active": true,
+    "created_at": "2026-09-16T03:50:48.407177+00:00",
+    "sort_order": 150
+  },
+  {
+    "id": "612bcd64-7739-4dc8-8c36-136d855d0da9",
+    "category_id": null,
+    "slug": "research",
+    "name": "Research",
+    "is_active": true,
+    "created_at": "2026-09-16T03:50:48.407177+00:00",
+    "sort_order": 160
+  },
+  {
+    "id": "2d5155c5-b24f-4d05-b15a-1959d153e56b",
+    "category_id": null,
+    "slug": "photography",
+    "name": "Photography",
+    "is_active": true,
+    "created_at": "2026-09-16T03:50:48.407177+00:00",
+    "sort_order": 170
+  },
+  {
+    "id": "6fb4ba5b-65af-40e0-8dd1-817c7f16d8ec",
+    "category_id": null,
+    "slug": "music",
+    "name": "Music",
+    "is_active": true,
+    "created_at": "2026-09-16T03:50:48.407177+00:00",
+    "sort_order": 180
+  }
+]

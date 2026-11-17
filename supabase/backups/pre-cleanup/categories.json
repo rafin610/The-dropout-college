@@ -1,0 +1,38 @@
+[
+  {
+    "id": "352bcefa-ede2-4431-b866-7954c9e646ed",
+    "slug": "learn",
+    "name": "Learn",
+    "description": "Build practical knowledge with guided prompts, resources, and thoughtful feedback.",
+    "icon": "spark",
+    "color": "#d8ff62",
+    "is_active": true,
+    "sort_order": 1,
+    "created_at": "2026-09-06T10:12:59.14946+00:00",
+    "updated_at": "2026-09-06T10:12:59.14946+00:00"
+  },
+  {
+    "id": "7f50cc61-0b9c-4b35-bce6-c733205160fc",
+    "slug": "build",
+    "name": "Build",
+    "description": "Ship projects, prototypes, and experiments with peers who move quickly.",
+    "icon": "box",
+    "color": "#77e7e1",
+    "is_active": true,
+    "sort_order": 2,
+    "created_at": "2026-09-06T10:12:59.14946+00:00",
+    "updated_at": "2026-09-06T10:12:59.14946+00:00"
+  },
+  {
+    "id": "a85a9839-4608-4400-bb5c-9346ffcc7c0a",
+    "slug": "connect",
+    "name": "Connect",
+    "description": "Find people, communities, and real opportunities for collaboration and growth.",
+    "icon": "users",
+    "color": "#c4a4ff",
+    "is_active": true,
+    "sort_order": 3,
+    "created_at": "2026-09-06T10:12:59.14946+00:00",
+    "updated_at": "2026-09-06T10:12:59.14946+00:00"
+  }
+]

@@ -1,0 +1,922 @@
+[
+  {
+    "schemaname": "public",
+    "tablename": "admin_role_permissions",
+    "policyname": "authenticated users read role permissions",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "qual": "true",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "admin_roles",
+    "policyname": "authenticated users read admin role definitions",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "qual": "true",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "articles",
+    "policyname": "admins can delete articles",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "DELETE",
+    "qual": "(has_permission(auth.uid(), 'articles.manage'::text) OR has_permission(auth.uid(), 'articles.delete'::text))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "articles",
+    "policyname": "admins can update articles",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "UPDATE",
+    "qual": "has_permission(auth.uid(), 'articles.manage'::text)",
+    "with_check": "has_permission(auth.uid(), 'articles.manage'::text)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "articles",
+    "policyname": "authors can read own articles",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "qual": "((auth.uid() = author_id) AND (deleted_at IS NULL) AND is_active_account(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "articles",
+    "policyname": "moderators can delete own drafts",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "DELETE",
+    "qual": "((auth.uid() = author_id) AND (status = 'draft'::text) AND has_permission(auth.uid(), 'articles.create'::text))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "articles",
+    "policyname": "moderators can update own articles",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "UPDATE",
+    "qual": "((auth.uid() = author_id) AND has_permission(auth.uid(), 'articles.create'::text))",
+    "with_check": "((auth.uid() = author_id) AND has_permission(auth.uid(), 'articles.create'::text))"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "articles",
+    "policyname": "public articles are readable",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "((status = 'published'::text) AND (deleted_at IS NULL))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "articles",
+    "policyname": "staff can insert articles",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "((auth.uid() = author_id) AND (has_permission(auth.uid(), 'articles.create'::text) OR has_permission(auth.uid(), 'articles.manage'::text)))"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "articles",
+    "policyname": "staff can read all articles",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "qual": "((deleted_at IS NULL) AND (has_permission(auth.uid(), 'articles.manage'::text) OR has_permission(auth.uid(), 'articles.moderate'::text)))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "badges",
+    "policyname": "badge managers manage badges",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "ALL",
+    "qual": "has_permission(auth.uid(), 'badges.manage'::text)",
+    "with_check": "has_permission(auth.uid(), 'badges.manage'::text)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "badges",
+    "policyname": "badges are publicly readable",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "true",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "categories",
+    "policyname": "active categories are readable",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "(is_active = true)",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "event_participants",
+    "policyname": "event_participants_users_manage_own",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "ALL",
+    "qual": "((auth.uid() = profile_id) AND is_active_account(auth.uid()))",
+    "with_check": "((auth.uid() = profile_id) AND is_active_account(auth.uid()))"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "events",
+    "policyname": "event creators and managers read events",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "qual": "((auth.uid() = created_by) OR has_permission(auth.uid(), 'events.manage'::text))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "events",
+    "policyname": "event managers create events",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "((auth.uid() = created_by) AND has_permission(auth.uid(), 'events.manage'::text))"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "events",
+    "policyname": "event managers delete events",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "DELETE",
+    "qual": "has_permission(auth.uid(), 'events.manage'::text)",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "events",
+    "policyname": "event managers update events",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "UPDATE",
+    "qual": "has_permission(auth.uid(), 'events.manage'::text)",
+    "with_check": "has_permission(auth.uid(), 'events.manage'::text)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "events",
+    "policyname": "published events are readable",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "(status = 'published'::event_status)",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "follows",
+    "policyname": "follows are publicly readable",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "true",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "follows",
+    "policyname": "users can follow other users",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "((auth.uid() = follower_id) AND (follower_id <> following_id) AND is_active_account(auth.uid()) AND is_active_account(following_id))"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "follows",
+    "policyname": "users can unfollow users",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "DELETE",
+    "qual": "((auth.uid() = follower_id) AND is_active_account(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "navigation_items",
+    "policyname": "navigation_items_admin_all",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "ALL",
+    "qual": "true",
+    "with_check": "true"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "navigation_items",
+    "policyname": "navigation_items_public_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "true",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "notifications",
+    "policyname": "users read their notifications",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "qual": "(auth.uid() = profile_id)",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "notifications",
+    "policyname": "users update their notifications",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "UPDATE",
+    "qual": "((auth.uid() = profile_id) AND is_active_account(auth.uid()))",
+    "with_check": "((auth.uid() = profile_id) AND is_active_account(auth.uid()))"
+  },
+  {
+    "schemaname": "storage",
+    "tablename": "objects",
+    "policyname": "authenticated users can upload project covers",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "((bucket_id = 'project-covers'::text) AND is_active_account(auth.uid()) AND ((storage.foldername(name))[1] = (auth.uid())::text))"
+  },
+  {
+    "schemaname": "storage",
+    "tablename": "objects",
+    "policyname": "project covers are publicly readable",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "(bucket_id = 'project-covers'::text)",
+    "with_check": null
+  },
+  {
+    "schemaname": "storage",
+    "tablename": "objects",
+    "policyname": "users can delete their project covers",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "DELETE",
+    "qual": "((bucket_id = 'project-covers'::text) AND is_active_account(auth.uid()) AND ((storage.foldername(name))[1] = (auth.uid())::text))",
+    "with_check": null
+  },
+  {
+    "schemaname": "storage",
+    "tablename": "objects",
+    "policyname": "users can update their project covers",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "UPDATE",
+    "qual": "((bucket_id = 'project-covers'::text) AND is_active_account(auth.uid()) AND ((storage.foldername(name))[1] = (auth.uid())::text))",
+    "with_check": "((bucket_id = 'project-covers'::text) AND is_active_account(auth.uid()) AND ((storage.foldername(name))[1] = (auth.uid())::text))"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "permissions",
+    "policyname": "authenticated users read permission definitions",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "qual": "true",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "profile_badges",
+    "policyname": "badge managers manage profile badges",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "ALL",
+    "qual": "has_permission(auth.uid(), 'badges.manage'::text)",
+    "with_check": "has_permission(auth.uid(), 'badges.manage'::text)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "profile_badges",
+    "policyname": "profile badges are publicly readable",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "(is_active_account(profile_id) OR (auth.uid() = profile_id))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "profile_categories",
+    "policyname": "public profile categories are readable",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "true",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "profile_categories",
+    "policyname": "users manage their profile categories",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "ALL",
+    "qual": "((auth.uid() = profile_id) AND is_active_account(auth.uid()))",
+    "with_check": "((auth.uid() = profile_id) AND is_active_account(auth.uid()))"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "profile_skills",
+    "policyname": "public profile skills are readable",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "true",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "profile_skills",
+    "policyname": "users manage their profile skills",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "ALL",
+    "qual": "((auth.uid() = profile_id) AND is_active_account(auth.uid()))",
+    "with_check": "((auth.uid() = profile_id) AND is_active_account(auth.uid()))"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "profiles",
+    "policyname": "public profiles are readable",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "(((status = 'active'::member_status) AND is_active_account(id)) OR (auth.uid() = id))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "profiles",
+    "policyname": "users can insert own profile",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "((auth.uid() = id) AND (status = 'active'::member_status))"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "profiles",
+    "policyname": "users update their profile",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "UPDATE",
+    "qual": "((auth.uid() = id) AND is_active_account(id))",
+    "with_check": "((auth.uid() = id) AND is_active_account(id) AND (status = 'active'::member_status))"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "project_comments",
+    "policyname": "admins moderate comments",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "DELETE",
+    "qual": "has_permission(auth.uid(), 'projects.moderate'::text)",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "project_comments",
+    "policyname": "project comments are readable when project is public",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "((EXISTS ( SELECT 1\n   FROM projects p\n  WHERE ((p.id = project_comments.project_id) AND (p.visibility = 'public'::visibility) AND (p.deleted_at IS NULL)))) OR (auth.uid() = user_id) OR (EXISTS ( SELECT 1\n   FROM user_roles ur\n  WHERE ((ur.profile_id = auth.uid()) AND (ur.role = ANY (ARRAY['admin'::text, 'super_admin'::text]))))))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "project_comments",
+    "policyname": "users create their own comments",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "((auth.uid() = user_id) AND is_active_account(auth.uid()) AND (EXISTS ( SELECT 1\n   FROM projects p\n  WHERE ((p.id = project_comments.project_id) AND (p.deleted_at IS NULL) AND ((p.visibility = 'public'::visibility) OR (p.owner_id = auth.uid()))))))"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "project_comments",
+    "policyname": "users delete their own comments",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "DELETE",
+    "qual": "((auth.uid() = user_id) AND is_active_account(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "project_comments",
+    "policyname": "users update their own comments",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "UPDATE",
+    "qual": "((auth.uid() = user_id) AND is_active_account(auth.uid()))",
+    "with_check": "((auth.uid() = user_id) AND is_active_account(auth.uid()))"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "project_links",
+    "policyname": "project owners manage links",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "ALL",
+    "qual": "(is_active_account(auth.uid()) AND (has_permission(auth.uid(), 'projects.moderate'::text) OR (EXISTS ( SELECT 1\n   FROM projects p\n  WHERE ((p.id = project_links.project_id) AND (p.owner_id = auth.uid()))))))",
+    "with_check": "(is_active_account(auth.uid()) AND (has_permission(auth.uid(), 'projects.moderate'::text) OR (EXISTS ( SELECT 1\n   FROM projects p\n  WHERE ((p.id = project_links.project_id) AND (p.owner_id = auth.uid()))))))"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "project_links",
+    "policyname": "visible project links are readable",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "(EXISTS ( SELECT 1\n   FROM projects p\n  WHERE ((p.id = project_links.project_id) AND (p.deleted_at IS NULL) AND ((p.visibility = 'public'::visibility) OR ((p.visibility = 'members'::visibility) AND is_active_account(auth.uid())) OR (p.owner_id = auth.uid()) OR has_permission(auth.uid(), 'projects.moderate'::text)))))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "project_members",
+    "policyname": "project owners manage project members",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "ALL",
+    "qual": "(is_active_account(auth.uid()) AND (EXISTS ( SELECT 1\n   FROM projects p\n  WHERE ((p.id = project_members.project_id) AND (p.owner_id = auth.uid())))))",
+    "with_check": "(is_active_account(auth.uid()) AND (EXISTS ( SELECT 1\n   FROM projects p\n  WHERE ((p.id = project_members.project_id) AND (p.owner_id = auth.uid())))))"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "project_members",
+    "policyname": "visible project rosters are readable",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "((auth.uid() = profile_id) OR (EXISTS ( SELECT 1\n   FROM projects p\n  WHERE ((p.id = project_members.project_id) AND (p.deleted_at IS NULL) AND ((p.visibility = 'public'::visibility) OR (p.owner_id = auth.uid()) OR ((p.visibility = 'members'::visibility) AND is_active_account(auth.uid())) OR has_permission(auth.uid(), 'projects.moderate'::text))))))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "project_technologies",
+    "policyname": "project owners manage technologies",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "ALL",
+    "qual": "(is_active_account(auth.uid()) AND (has_permission(auth.uid(), 'projects.moderate'::text) OR (EXISTS ( SELECT 1\n   FROM projects p\n  WHERE ((p.id = project_technologies.project_id) AND (p.owner_id = auth.uid()))))))",
+    "with_check": "(is_active_account(auth.uid()) AND (has_permission(auth.uid(), 'projects.moderate'::text) OR (EXISTS ( SELECT 1\n   FROM projects p\n  WHERE ((p.id = project_technologies.project_id) AND (p.owner_id = auth.uid()))))))"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "project_technologies",
+    "policyname": "visible project technologies are readable",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "(EXISTS ( SELECT 1\n   FROM projects p\n  WHERE ((p.id = project_technologies.project_id) AND (p.deleted_at IS NULL) AND ((p.visibility = 'public'::visibility) OR ((p.visibility = 'members'::visibility) AND is_active_account(auth.uid())) OR (p.owner_id = auth.uid()) OR has_permission(auth.uid(), 'projects.moderate'::text)))))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "project_upvotes",
+    "policyname": "project upvotes are readable to everyone for visible projects",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "((EXISTS ( SELECT 1\n   FROM projects p\n  WHERE ((p.id = project_upvotes.project_id) AND (p.visibility = 'public'::visibility) AND (p.deleted_at IS NULL)))) OR (auth.uid() = user_id) OR (EXISTS ( SELECT 1\n   FROM user_roles ur\n  WHERE ((ur.profile_id = auth.uid()) AND (ur.role = ANY (ARRAY['admin'::text, 'super_admin'::text]))))))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "project_upvotes",
+    "policyname": "users delete their own upvotes",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "DELETE",
+    "qual": "((auth.uid() = user_id) AND is_active_account(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "project_upvotes",
+    "policyname": "users manage their own upvotes",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "((auth.uid() = user_id) AND is_active_account(auth.uid()) AND (EXISTS ( SELECT 1\n   FROM projects p\n  WHERE ((p.id = project_upvotes.project_id) AND (p.deleted_at IS NULL) AND ((p.visibility = 'public'::visibility) OR (p.owner_id = auth.uid()))))))"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "projects",
+    "policyname": "owners create projects",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "((auth.uid() = owner_id) AND is_active_account(auth.uid()))"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "projects",
+    "policyname": "owners delete projects",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "DELETE",
+    "qual": "((auth.uid() = owner_id) AND is_active_account(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "projects",
+    "policyname": "owners update projects",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "UPDATE",
+    "qual": "((auth.uid() = owner_id) AND is_active_account(auth.uid()))",
+    "with_check": "((auth.uid() = owner_id) AND is_active_account(auth.uid()))"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "projects",
+    "policyname": "projects visible by visibility",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "(((visibility = 'public'::visibility) AND (deleted_at IS NULL)) OR ((visibility = 'members'::visibility) AND (deleted_at IS NULL) AND is_active_account(auth.uid())) OR (auth.uid() = owner_id) OR has_permission(auth.uid(), 'projects.moderate'::text))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "site_content",
+    "policyname": "site_content_admin_all",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "ALL",
+    "qual": "true",
+    "with_check": "true"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "site_content",
+    "policyname": "site_content_public_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "true",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "site_sections",
+    "policyname": "site managers manage site sections",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "ALL",
+    "qual": "has_permission(auth.uid(), 'site.manage'::text)",
+    "with_check": "has_permission(auth.uid(), 'site.manage'::text)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "site_sections",
+    "policyname": "site_sections_admin_all",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "ALL",
+    "qual": "true",
+    "with_check": "true"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "site_sections",
+    "policyname": "site_sections_public_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "true",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "site_settings",
+    "policyname": "site managers manage site settings",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "ALL",
+    "qual": "has_permission(auth.uid(), 'site.manage'::text)",
+    "with_check": "has_permission(auth.uid(), 'site.manage'::text)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "site_settings",
+    "policyname": "site_settings_admin_insert",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "true"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "site_settings",
+    "policyname": "site_settings_admin_update",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "UPDATE",
+    "qual": "true",
+    "with_check": "true"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "site_settings",
+    "policyname": "site_settings_public_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "true",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "site_social_links",
+    "policyname": "site managers manage social links",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "ALL",
+    "qual": "has_permission(auth.uid(), 'site.manage'::text)",
+    "with_check": "has_permission(auth.uid(), 'site.manage'::text)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "site_social_links",
+    "policyname": "site_social_links_admin_all",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "ALL",
+    "qual": "true",
+    "with_check": "true"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "site_social_links",
+    "policyname": "site_social_links_public_read",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "true",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "skills",
+    "policyname": "active skills and displayed skills are readable",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "((is_active = true) OR (EXISTS ( SELECT 1\n   FROM profile_skills\n  WHERE (profile_skills.skill_id = skills.id))))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "social_links",
+    "policyname": "public social links are readable",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "true",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "social_links",
+    "policyname": "users manage their own social links",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "ALL",
+    "qual": "((auth.uid() = profile_id) AND is_active_account(auth.uid()))",
+    "with_check": "((auth.uid() = profile_id) AND is_active_account(auth.uid()))"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "team_invitations",
+    "policyname": "invitation participants can read",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "qual": "((auth.uid() = invited_profile_id) OR (auth.uid() = invited_by))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "team_invitations",
+    "policyname": "invitation participants update",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "UPDATE",
+    "qual": "(((auth.uid() = invited_profile_id) OR (auth.uid() = invited_by)) AND is_active_account(auth.uid()))",
+    "with_check": "(((auth.uid() = invited_profile_id) OR (auth.uid() = invited_by)) AND is_active_account(auth.uid()))"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "team_invitations",
+    "policyname": "inviters create invitations",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "((auth.uid() = invited_by) AND is_active_account(auth.uid()))"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "team_invitations",
+    "policyname": "inviters delete invitations",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "DELETE",
+    "qual": "((auth.uid() = invited_by) AND is_active_account(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "team_members",
+    "policyname": "members can leave teams",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "DELETE",
+    "qual": "((auth.uid() = profile_id) AND (role <> 'owner'::team_role) AND is_active_account(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "team_members",
+    "policyname": "team owners manage team members",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "ALL",
+    "qual": "(is_active_account(auth.uid()) AND (EXISTS ( SELECT 1\n   FROM teams t\n  WHERE ((t.id = team_members.team_id) AND (t.owner_id = auth.uid())))))",
+    "with_check": "(is_active_account(auth.uid()) AND (EXISTS ( SELECT 1\n   FROM teams t\n  WHERE ((t.id = team_members.team_id) AND (t.owner_id = auth.uid())))) AND ((role <> 'owner'::team_role) OR (profile_id = auth.uid())))"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "team_members",
+    "policyname": "visible team rosters are readable",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "((auth.uid() = profile_id) OR (EXISTS ( SELECT 1\n   FROM teams t\n  WHERE ((t.id = team_members.team_id) AND ((t.visibility = 'public'::visibility) OR (t.owner_id = auth.uid()) OR ((t.visibility = 'members'::visibility) AND is_active_account(auth.uid())))))))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "teams",
+    "policyname": "active members create their teams",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "((owner_id = auth.uid()) AND is_active_account(auth.uid()))"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "teams",
+    "policyname": "active members read member teams",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "qual": "((visibility = 'members'::visibility) AND is_active_account(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "teams",
+    "policyname": "public teams are readable",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "(visibility = 'public'::visibility)",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "teams",
+    "policyname": "team owners delete their teams",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "DELETE",
+    "qual": "((owner_id = auth.uid()) AND is_active_account(auth.uid()))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "teams",
+    "policyname": "team owners read their teams",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "qual": "(owner_id = auth.uid())",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "teams",
+    "policyname": "team owners update their teams",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "UPDATE",
+    "qual": "((owner_id = auth.uid()) AND is_active_account(auth.uid()))",
+    "with_check": "((owner_id = auth.uid()) AND is_active_account(auth.uid()))"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "user_admin_roles",
+    "policyname": "users read their admin assignments",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "(auth.uid() = user_id)",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "user_roles",
+    "policyname": "public community roles are readable",
+    "permissive": "PERMISSIVE",
+    "roles": "{public}",
+    "cmd": "SELECT",
+    "qual": "(is_active_account(profile_id) OR (auth.uid() = profile_id))",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "user_skills",
+    "policyname": "users manage their skills",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "ALL",
+    "qual": "((auth.uid() = user_id) AND is_active_account(auth.uid()))",
+    "with_check": "((auth.uid() = user_id) AND is_active_account(auth.uid()))"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "users",
+    "policyname": "users can insert own account",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "INSERT",
+    "qual": null,
+    "with_check": "(auth.uid() = id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "users",
+    "policyname": "users can read own account",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "SELECT",
+    "qual": "(auth.uid() = id)",
+    "with_check": null
+  },
+  {
+    "schemaname": "public",
+    "tablename": "users",
+    "policyname": "users can update own account",
+    "permissive": "PERMISSIVE",
+    "roles": "{authenticated}",
+    "cmd": "UPDATE",
+    "qual": "((auth.uid() = id) AND is_active_account(id))",
+    "with_check": "((auth.uid() = id) AND is_active_account(id))"
+  }
+]

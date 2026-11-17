@@ -24,7 +24,11 @@ export async function getUserPermissions(userId: string): Promise<Set<string>> {
       .select("role")
       .eq("profile_id", userId);
 
-    const roles = (userRoles ?? []).map((r) => r.role);
+    if (userRoles === null) {
+      return permissions;
+    }
+
+    const roles = userRoles.map((r) => r.role);
     if (roles.includes("super_admin")) {
       permissions.add("*");
       permissions.add("dashboard.read");
@@ -40,31 +44,32 @@ export async function getUserPermissions(userId: string): Promise<Set<string>> {
       permissions.add("site.manage");
       return permissions;
     }
-    if (roles.includes("admin")) {
-      permissions.add("dashboard.read");
-      permissions.add("users.manage");
-      permissions.add("categories.manage");
-      permissions.add("projects.moderate");
-      permissions.add("articles.create");
-      permissions.add("articles.publish");
-      permissions.add("articles.manage");
-      permissions.add("articles.delete");
-      permissions.add("events.manage");
-      permissions.add("badges.manage");
-      permissions.add("reports.manage");
-      permissions.add("discord.manage");
-      permissions.add("audit_logs.read");
-      permissions.add("roles.manage");
-      permissions.add("site.manage");
+
+    const configuredRoles = roles.filter((role) => role === "admin" || role === "moderator");
+    if (configuredRoles.length) {
+      const { data: roleDefinitions, error: definitionsError } = await supabase
+        .from("admin_roles")
+        .select("slug, admin_role_permissions(permissions(key))")
+        .in("slug", configuredRoles);
+      if (definitionsError) throw definitionsError;
+
+      for (const roleDefinition of roleDefinitions ?? []) {
+        const rawPermissions = roleDefinition.admin_role_permissions;
+        const assignments = Array.isArray(rawPermissions)
+          ? rawPermissions
+          : rawPermissions
+            ? [rawPermissions]
+            : [];
+        for (const assignment of assignments as Array<Record<string, unknown>>) {
+          const rawPermission = assignment.permissions;
+          const permission = Array.isArray(rawPermission) ? rawPermission[0] : rawPermission;
+          if (permission && typeof permission === "object" && "key" in permission && typeof permission.key === "string") {
+            permissions.add(permission.key);
+          }
+        }
+      }
     }
-    if (roles.includes("moderator")) {
-      permissions.add("dashboard.read");
-      permissions.add("projects.moderate");
-      permissions.add("articles.create");
-      permissions.add("articles.publish");
-      permissions.add("articles.moderate");
-      permissions.add("reports.manage");
-    }
+
     if (roles.includes("event_organizer")) {
       permissions.add("dashboard.read");
       permissions.add("events.manage");

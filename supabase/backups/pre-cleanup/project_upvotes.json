@@ -1,0 +1,26 @@
+[
+  {
+    "id": "6655cc75-9a5d-4cdc-975a-df940290743d",
+    "project_id": "26c883c9-3c09-486a-ba71-259d9a48e0fc",
+    "user_id": "1afc2903-56c1-4218-a203-27c67ec42c35",
+    "created_at": "2026-09-23T15:20:43.493433+00:00"
+  },
+  {
+    "id": "f6046ddc-c12a-4c7f-9d86-bd4cc2a04894",
+    "project_id": "324e075e-cc8b-4aa3-abbb-0d1fc16a8f3d",
+    "user_id": "1afc2903-56c1-4218-a203-27c67ec42c35",
+    "created_at": "2026-09-23T15:20:43.854092+00:00"
+  },
+  {
+    "id": "6d36d705-5dc0-4d0a-a194-82f90dc6eacd",
+    "project_id": "26c883c9-3c09-486a-ba71-259d9a48e0fc",
+    "user_id": "ccbd7623-0b57-4fff-9912-4b6c98d4d254",
+    "created_at": "2026-09-23T15:20:46.396032+00:00"
+  },
+  {
+    "id": "e191ed1d-33ad-45d8-8ba3-ebd28c09ebe2",
+    "project_id": "324e075e-cc8b-4aa3-abbb-0d1fc16a8f3d",
+    "user_id": "ccbd7623-0b57-4fff-9912-4b6c98d4d254",
+    "created_at": "2026-10-07T04:59:18.433771+00:00"
+  }
+]

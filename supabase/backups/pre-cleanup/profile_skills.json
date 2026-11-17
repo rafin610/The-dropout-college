@@ -1,0 +1,210 @@
+[
+  {
+    "profile_id": "1afc2903-56c1-4218-a203-27c67ec42c35",
+    "skill_id": "fc8d78e6-e0a8-4d13-b4ae-5fd1f8224635",
+    "level": "beginner",
+    "years_experience": null,
+    "created_at": "2026-09-16T03:57:23.700892+00:00",
+    "updated_at": "2026-09-16T03:57:23.700892+00:00"
+  },
+  {
+    "profile_id": "1afc2903-56c1-4218-a203-27c67ec42c35",
+    "skill_id": "90398cc2-19a5-4ee1-a972-f23e7eebd9b2",
+    "level": "beginner",
+    "years_experience": null,
+    "created_at": "2026-09-16T03:57:23.700892+00:00",
+    "updated_at": "2026-09-16T03:57:23.700892+00:00"
+  },
+  {
+    "profile_id": "1afc2903-56c1-4218-a203-27c67ec42c35",
+    "skill_id": "fc8ad042-4180-4604-ba57-3fac9a3214cc",
+    "level": "beginner",
+    "years_experience": null,
+    "created_at": "2026-09-16T03:57:23.700892+00:00",
+    "updated_at": "2026-09-16T03:57:23.700892+00:00"
+  },
+  {
+    "profile_id": "1afc2903-56c1-4218-a203-27c67ec42c35",
+    "skill_id": "5adb9798-0628-442f-a5d9-59abae6644ce",
+    "level": "beginner",
+    "years_experience": null,
+    "created_at": "2026-09-16T03:57:23.700892+00:00",
+    "updated_at": "2026-09-16T03:57:23.700892+00:00"
+  },
+  {
+    "profile_id": "1afc2903-56c1-4218-a203-27c67ec42c35",
+    "skill_id": "57ce8951-c743-4f49-9231-3f8672b5e482",
+    "level": "beginner",
+    "years_experience": null,
+    "created_at": "2026-09-16T03:57:23.700892+00:00",
+    "updated_at": "2026-09-16T03:57:23.700892+00:00"
+  },
+  {
+    "profile_id": "1afc2903-56c1-4218-a203-27c67ec42c35",
+    "skill_id": "2d5155c5-b24f-4d05-b15a-1959d153e56b",
+    "level": "beginner",
+    "years_experience": null,
+    "created_at": "2026-09-16T03:57:23.700892+00:00",
+    "updated_at": "2026-09-16T03:57:23.700892+00:00"
+  },
+  {
+    "profile_id": "1afc2903-56c1-4218-a203-27c67ec42c35",
+    "skill_id": "d66b2f62-2eae-4c81-a14b-13bb97dd0324",
+    "level": "beginner",
+    "years_experience": null,
+    "created_at": "2026-09-16T03:57:23.700892+00:00",
+    "updated_at": "2026-09-16T03:57:23.700892+00:00"
+  },
+  {
+    "profile_id": "1afc2903-56c1-4218-a203-27c67ec42c35",
+    "skill_id": "b914dda5-1cee-4a0d-a69c-cee3a7709626",
+    "level": "beginner",
+    "years_experience": null,
+    "created_at": "2026-09-16T03:57:23.700892+00:00",
+    "updated_at": "2026-09-16T03:57:23.700892+00:00"
+  },
+  {
+    "profile_id": "ccbd7623-0b57-4fff-9912-4b6c98d4d254",
+    "skill_id": "68d2db0d-5374-4f76-8a42-d5be2ccb2af1",
+    "level": "beginner",
+    "years_experience": null,
+    "created_at": "2026-09-16T03:57:51.961807+00:00",
+    "updated_at": "2026-09-16T03:57:51.961807+00:00"
+  },
+  {
+    "profile_id": "ccbd7623-0b57-4fff-9912-4b6c98d4d254",
+    "skill_id": "25abac18-105b-4d35-9d28-191de6625f86",
+    "level": "beginner",
+    "years_experience": null,
+    "created_at": "2026-09-16T03:57:51.961807+00:00",
+    "updated_at": "2026-09-16T03:57:51.961807+00:00"
+  },
+  {
+    "profile_id": "ccbd7623-0b57-4fff-9912-4b6c98d4d254",
+    "skill_id": "90398cc2-19a5-4ee1-a972-f23e7eebd9b2",
+    "level": "beginner",
+    "years_experience": null,
+    "created_at": "2026-09-16T03:57:51.961807+00:00",
+    "updated_at": "2026-09-16T03:57:51.961807+00:00"
+  },
+  {
+    "profile_id": "493a2169-d4ef-4cb5-bc37-686c7f163d56",
+    "skill_id": "68d2db0d-5374-4f76-8a42-d5be2ccb2af1",
+    "level": "beginner",
+    "years_experience": null,
+    "created_at": "2026-09-18T13:50:54.788716+00:00",
+    "updated_at": "2026-09-18T13:50:54.788716+00:00"
+  },
+  {
+    "profile_id": "493a2169-d4ef-4cb5-bc37-686c7f163d56",
+    "skill_id": "25abac18-105b-4d35-9d28-191de6625f86",
+    "level": "beginner",
+    "years_experience": null,
+    "created_at": "2026-09-18T13:50:54.788716+00:00",
+    "updated_at": "2026-09-18T13:50:54.788716+00:00"
+  },
+  {
+    "profile_id": "493a2169-d4ef-4cb5-bc37-686c7f163d56",
+    "skill_id": "b914dda5-1cee-4a0d-a69c-cee3a7709626",
+    "level": "beginner",
+    "years_experience": null,
+    "created_at": "2026-09-18T13:50:54.788716+00:00",
+    "updated_at": "2026-09-18T13:50:54.788716+00:00"
+  },
+  {
+    "profile_id": "63af2ef8-f2c1-423b-995f-402bf94b097d",
+    "skill_id": "68d2db0d-5374-4f76-8a42-d5be2ccb2af1",
+    "level": "beginner",
+    "years_experience": null,
+    "created_at": "2026-09-28T04:55:30.445273+00:00",
+    "updated_at": "2026-09-28T04:55:30.445273+00:00"
+  },
+  {
+    "profile_id": "63af2ef8-f2c1-423b-995f-402bf94b097d",
+    "skill_id": "fc8d78e6-e0a8-4d13-b4ae-5fd1f8224635",
+    "level": "beginner",
+    "years_experience": null,
+    "created_at": "2026-09-28T04:55:30.445273+00:00",
+    "updated_at": "2026-09-28T04:55:30.445273+00:00"
+  },
+  {
+    "profile_id": "63af2ef8-f2c1-423b-995f-402bf94b097d",
+    "skill_id": "9c79f9b4-8ebe-4df8-a539-8f7fbdb5e4f9",
+    "level": "beginner",
+    "years_experience": null,
+    "created_at": "2026-09-28T04:55:30.445273+00:00",
+    "updated_at": "2026-09-28T04:55:30.445273+00:00"
+  },
+  {
+    "profile_id": "63af2ef8-f2c1-423b-995f-402bf94b097d",
+    "skill_id": "bc9cc696-ab34-4286-ba65-bd039ce6c7cd",
+    "level": "beginner",
+    "years_experience": null,
+    "created_at": "2026-09-28T04:55:30.445273+00:00",
+    "updated_at": "2026-09-28T04:55:30.445273+00:00"
+  },
+  {
+    "profile_id": "63af2ef8-f2c1-423b-995f-402bf94b097d",
+    "skill_id": "5adb9798-0628-442f-a5d9-59abae6644ce",
+    "level": "beginner",
+    "years_experience": null,
+    "created_at": "2026-09-28T04:55:30.445273+00:00",
+    "updated_at": "2026-09-28T04:55:30.445273+00:00"
+  },
+  {
+    "profile_id": "63af2ef8-f2c1-423b-995f-402bf94b097d",
+    "skill_id": "d66b2f62-2eae-4c81-a14b-13bb97dd0324",
+    "level": "beginner",
+    "years_experience": null,
+    "created_at": "2026-09-28T04:55:30.445273+00:00",
+    "updated_at": "2026-09-28T04:55:30.445273+00:00"
+  },
+  {
+    "profile_id": "a1b9e426-2d33-4af3-b7ff-4b87f533dfe6",
+    "skill_id": "0a2c4dd9-9721-4d86-b4ae-3ab883d679e5",
+    "level": "beginner",
+    "years_experience": null,
+    "created_at": "2026-10-12T17:17:30.141502+00:00",
+    "updated_at": "2026-10-12T17:17:30.141502+00:00"
+  },
+  {
+    "profile_id": "46353c8e-20cb-40ce-a8d5-09d87ea269bf",
+    "skill_id": "d66b2f62-2eae-4c81-a14b-13bb97dd0324",
+    "level": "beginner",
+    "years_experience": null,
+    "created_at": "2026-10-14T05:19:20.494514+00:00",
+    "updated_at": "2026-10-14T05:19:20.494514+00:00"
+  },
+  {
+    "profile_id": "a64c1536-7bb1-4578-b173-68bb526b5be7",
+    "skill_id": "21bca20a-2191-426e-8c43-8e586f8f6a57",
+    "level": "beginner",
+    "years_experience": null,
+    "created_at": "2026-10-23T18:37:23.770515+00:00",
+    "updated_at": "2026-10-23T18:37:23.770515+00:00"
+  },
+  {
+    "profile_id": "a64c1536-7bb1-4578-b173-68bb526b5be7",
+    "skill_id": "5adb9798-0628-442f-a5d9-59abae6644ce",
+    "level": "beginner",
+    "years_experience": null,
+    "created_at": "2026-10-23T18:37:23.770515+00:00",
+    "updated_at": "2026-10-23T18:37:23.770515+00:00"
+  },
+  {
+    "profile_id": "a64c1536-7bb1-4578-b173-68bb526b5be7",
+    "skill_id": "d66b2f62-2eae-4c81-a14b-13bb97dd0324",
+    "level": "beginner",
+    "years_experience": null,
+    "created_at": "2026-10-23T18:37:23.770515+00:00",
+    "updated_at": "2026-10-23T18:37:23.770515+00:00"
+  },
+  {
+    "profile_id": "a64c1536-7bb1-4578-b173-68bb526b5be7",
+    "skill_id": "b914dda5-1cee-4a0d-a69c-cee3a7709626",
+    "level": "beginner",
+    "years_experience": null,
+    "created_at": "2026-10-23T18:37:23.770515+00:00",
+    "updated_at": "2026-10-23T18:37:23.770515+00:00"
+  }
+]
